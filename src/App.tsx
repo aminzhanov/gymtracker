@@ -882,7 +882,7 @@ export default function App() {
                                         <WeekBadge week={s.week} /> ·{" "}
                                       </>
                                     )}
-                                    {s.status}
+                                    {t(s.status)}
                                   </span>
                                 </div>
                                 <ArrowRight size={18} />
@@ -1258,9 +1258,11 @@ export default function App() {
                       </label>
                       <p className="footnote">
                         {t(
-                          languageReady
-                            ? "Language is synced with this athlete's account."
-                            : "Language is saved on this device until the account language update is applied.",
+                          demo
+                            ? "Language is saved separately for each demo athlete on this device."
+                            : languageReady
+                              ? "Language is synced with this athlete's account."
+                              : "Language is saved on this device until the account language update is applied.",
                         )}
                       </p>
                       <label>

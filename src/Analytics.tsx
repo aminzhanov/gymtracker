@@ -580,7 +580,7 @@ export function Analytics({
                 {(expanded ? prs.rows : prs.rows.slice(0, 5)).map((r) => (
                   <tr key={r.exerciseId}>
                     <td>
-                      <strong>{r.name}</strong>
+                      <strong>{exerciseName(r.name, r.exerciseId)}</strong>
                     </td>
                     <td>
                       {number(r.best, 1)}

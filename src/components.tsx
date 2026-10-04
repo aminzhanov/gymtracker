@@ -150,7 +150,7 @@ export function Modal({
         ref={ref}
       >
         <div className="modal-head">
-          <h2>{t(title)}</h2>
+          <h2>{title}</h2>
           <button
             className="icon-button"
             onClick={onClose}
@@ -605,7 +605,7 @@ export function Panel({
     <section className={`panel ${className}`}>
       <div className="panel-title">
         <div className="panel-heading">
-          <h2>{t(title)}</h2>
+          <h2>{title}</h2>
           {info && <InfoButton title={title}>{info}</InfoButton>}
         </div>
         {action}

@@ -371,7 +371,7 @@ export const ru: Record<string, string> = {
   Close: "Закрыть",
   Set: "Подход",
   Weight: "Вес",
-  Reps: "Повторения",
+  Reps: "Повт.",
   "Add set": "Добавить подход",
   "Duration (minutes)": "Длительность (минуты)",
   "Exercise notes": "Заметки к упражнению",
@@ -386,7 +386,7 @@ export const ru: Record<string, string> = {
   kg: "кг",
   "kg ×": "кг ×",
   "kg on": "кг ·",
-  sets: "подходов",
+  sets: "подх.",
   of: "из",
   Complete: "Завершить",
   Reopen: "Открыть снова",
@@ -561,4 +561,6 @@ export const ru: Record<string, string> = {
   session: "тренировка",
   sessions: "тренировок",
   template: "шаблон",
+  "Language is saved separately for each demo athlete on this device.":
+    "Язык сохраняется отдельно для каждого демопрофиля на этом устройстве.",
 };

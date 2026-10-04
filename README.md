@@ -212,3 +212,13 @@ The Calendar weeks toggle retains the old month-clipped Monday–Sunday view.
 Turning A/B split off hides training-group controls and uses calendar weeks;
 saved assignments remain available when the split is enabled again. Analytics
 outside Calendar continue using their existing calendar-week calculations.
+
+### Compact analytics and Russian language
+
+Training volume supports **This month**, **Last 3 months** and **All history** with no history cap. All charts fit their card width and use fewer axis labels as history grows. Assigned A/B week labels use A1/B1, and both Calendar and Analytics retain their volume tables in a collapsed **Show breakdown** disclosure.
+
+Analytics now has two summary cards: completed lifting volume and **Strength trend**. The trend averages each exercise’s percentage change from its first to latest daily best estimated 1RM within the inclusive last 30 days. It needs completed logs on two distinct days per exercise, excludes future and zero-weight logs, and weights exercises equally. Planned sets affect the volume projection only. The **Warm-up checklist** uses tappable session boxes for warm-ups and cool-downs, with done, partial, skipped, pending and unplanned states.
+
+The dashboard restores its playful dumbbell welcome card and places total checked sets, active-week completed volume and monthly records in tags under the personalized message.
+
+For existing accounts, run [`supabase/migrations/008_language_preferences.sql`](supabase/migrations/008_language_preferences.sql) once in **Supabase → SQL Editor → New snippet → Run**, after migration 007. Then refresh LiftLog. It adds each athlete’s **Settings → Language → English / Русский** preference to the existing access-controlled, revision-checked training saves. Old clients preserve the preference, and repeat runs preserve data. Until this update is applied, language is remembered on that device; after it, language follows the athlete’s account across devices. Custom exercise/session names, notes and coach messages remain as entered. Demo language is stored per demo athlete in that browser.
