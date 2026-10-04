@@ -3135,3 +3135,24 @@ summary {
     font-size: 14px;
   }
 }
+
+.sidebar .logo.custom-name {
+  width: auto;
+  max-width: calc(100% - 30px);
+  font-size: 24px;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+.logo.custom-name .logo-name {
+  overflow-wrap: anywhere;
+}
+.mobile-logo {
+  min-width: 0;
+}
+.mobile-logo .logo.custom-name {
+  width: auto;
+  font-size: 18px;
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+  margin-right: 12px;
+}

@@ -576,10 +576,11 @@ export function Panel({
     </section>
   );
 }
-export function Logo() {
+export function Logo({ name = "LiftLog" }: { name?: string }) {
   return (
-    <div className="logo">
-      LiftLog<span className="logo-spark">✦</span>
+    <div className={`logo ${name !== "LiftLog" ? "custom-name" : ""}`}>
+      <span className="logo-name">{name}</span>
+      <span className="logo-spark">✦</span>
       <small>train together</small>
     </div>
   );

@@ -19,11 +19,19 @@ export async function loadCloud(owner: string) {
     target_owner: owner,
   });
   if (error) throw error;
-  const { data: messages, error: messagesError } = await supabase!
-    .from("coach_messages")
-    .select("dashboard_message,sidebar_message")
-    .eq("owner_user_id", owner)
-    .maybeSingle();
+  const [messageResult, nameResult] = await Promise.all([
+    supabase!
+      .from("coach_messages")
+      .select("dashboard_message,sidebar_message")
+      .eq("owner_user_id", owner)
+      .maybeSingle(),
+    supabase!
+      .from("coach_messages")
+      .select("app_name")
+      .eq("owner_user_id", owner)
+      .maybeSingle(),
+  ]);
+  const { data: messages, error: messagesError } = messageResult;
   return {
     data: validateBackup(data.data),
     revision: Number(data.revision),
@@ -31,19 +39,23 @@ export async function loadCloud(owner: string) {
       typeof data.data?.settings?.useABSplit === "boolean",
     messages: messages
       ? {
+          appName: nameResult.data?.app_name || DEFAULT_MESSAGES.appName,
           dashboard: messages.dashboard_message,
           sidebar: messages.sidebar_message,
         }
       : DEFAULT_MESSAGES,
     messagesReady: !messagesError,
+    appNameReady: !nameResult.error,
   };
 }
 export async function saveCoachMessages(
   owner: string,
   messages: CoachMessages,
+  appNameReady: boolean,
 ) {
   const validated = validateMessages(messages);
   const { error } = await supabase!.rpc("save_coach_messages", {
+    ...(appNameReady ? { app_name: validated.appName } : {}),
     target_owner: owner,
     dashboard_message: validated.dashboard,
     sidebar_message: validated.sidebar,

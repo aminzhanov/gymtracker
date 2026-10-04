@@ -126,6 +126,14 @@ An expired invitation can be resent by the project administrator in Supabase Aut
 
 If you have already run migration 002, run only [`supabase/migrations/003_coach_messages.sql`](supabase/migrations/003_coach_messages.sql) in **SQL Editor**, then refresh LiftLog. It adds coach-only personal messages per athlete and updates session saves to preserve recovery checkmarks. Accounts, workouts, A/B preferences and training revisions remain intact; it is safe to rerun. In **Settings**, coaches select an athlete and edit their dashboard/menu messages. Athletes can read their own messages, but cannot edit them or replace them through a training backup. Before this update, real-account message editing is disabled. Existing recovery checkmarks are preserved; the app cannot reconstruct past skipped recovery that was previously auto-completed.
 
+### Personal app names and Home Screen icon
+
+After migration 002, run only [`supabase/migrations/004_personal_app_name.sql`](supabase/migrations/004_personal_app_name.sql) in SQL Editor and refresh. This includes migration 003 when needed, preserves existing messages and workout data, and is safe to rerun. Active coaches can set the selected athlete's app name (1–40 characters), dashboard message and menu message in Settings. Names are stored separately from training backups; athletes cannot edit them. Clients on migration 003 can still save messages while the name field waits for the upgrade.
+
+Sign in to the athlete's account in Safari before using Share → Add to Home Screen. The loaded personal name supplies the page title and Apple Home Screen title. Check the name in the installation dialog; existing Home Screen entries may need removing and adding again to receive a new name/icon. The manifest omits a shared name so it does not override the personal Apple title. Icons are committed PNGs and a SVG favicon; regenerate with `python3 scripts/generate_app_icons.py` (Pillow required). Relative icon and launch URLs support GitHub Pages subpaths. This adds an install icon and standalone launch; cloud training still requires an internet connection.
+
+In Analytics, Growth (%) supports All history as well as individual months. All history starts each exercise at 0% from its first completed daily best across the full selected history. Monthly mode uses that month's first completed daily best. Incomplete and zero-weight records do not supply a baseline.
+
 ## Cloud saves and backups
 
 Cloud edits are queued and saved transactionally. Each selected athlete has a database revision. If another device or the coach changed that athlete's data, a stale save stops rather than silently overwriting newer data. Export unsaved local edits first, then reload saved data and reconcile. The app warns before navigating away while edits are pending or unsaved. It is online-first: offline cloud editing is not a supported sync workflow.

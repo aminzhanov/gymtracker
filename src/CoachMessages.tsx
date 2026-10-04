@@ -6,10 +6,12 @@ import { validateMessages } from "./messages";
 export function CoachMessageEditor({
   messages,
   ready,
+  appNameReady,
   onSave,
 }: {
   messages: CoachMessages;
   ready: boolean;
+  appNameReady: boolean;
   onSave: (messages: CoachMessages) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(messages);
@@ -25,11 +27,13 @@ export function CoachMessageEditor({
         setFailed(false);
         try {
           await onSave(validateMessages(draft));
-          setFeedback("Messages saved.");
+          setFeedback("Personalization saved.");
         } catch (error) {
           setFailed(true);
           setFeedback(
-            error instanceof Error ? error.message : "Could not save messages.",
+            error instanceof Error
+              ? error.message
+              : "Could not save personalization.",
           );
         } finally {
           setBusy(false);
@@ -37,6 +41,24 @@ export function CoachMessageEditor({
       }}
     >
       <fieldset className="message-fields" disabled={!ready || busy}>
+        <label>
+          App name
+          <input
+            aria-label="App name"
+            maxLength={40}
+            value={draft.appName}
+            disabled={!appNameReady}
+            onChange={(event) => {
+              setDraft({ ...draft, appName: event.target.value });
+              setFeedback("");
+            }}
+          />
+        </label>
+        {!appNameReady && ready && (
+          <p className="muted">
+            Personal app names will be available after the account update.
+          </p>
+        )}
         <label>
           Dashboard message
           <textarea
@@ -63,7 +85,7 @@ export function CoachMessageEditor({
         </label>
         <button className="button primary" type="submit">
           <Save size={17} />
-          {busy ? "Saving…" : "Save messages"}
+          {busy ? "Saving…" : "Save personalization"}
         </button>
       </fieldset>
       {!ready && (

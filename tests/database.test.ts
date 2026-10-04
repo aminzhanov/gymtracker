@@ -468,6 +468,144 @@ test("database isolation, atomic backups, completion and concurrency", async (t)
       );
     },
   );
+  const saveName = (uid: string, name: string | null) =>
+    db.query("select public.save_coach_messages($1,$2,$3,$4)", [
+      uid,
+      "Keep going!",
+      "Strong together.",
+      name,
+    ]);
+  await t.test(
+    "personal name upgrade preserves messages, workouts and revisions on repeat",
+    async () => {
+      await login(coach);
+      const before = await load(athlete);
+      const messages = (
+        await db.query(
+          "select * from public.coach_messages where owner_user_id=$1",
+          [athlete],
+        )
+      ).rows[0];
+      await db.exec("reset role");
+      const migration = await readFile(
+        new URL(
+          "../supabase/migrations/004_personal_app_name.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      await db.exec(migration);
+      await db.exec(migration);
+      await login(coach);
+      assert.deepEqual(await load(athlete), before);
+      assert.deepEqual(
+        (
+          await db.query(
+            "select * from public.coach_messages where owner_user_id=$1",
+            [athlete],
+          )
+        ).rows[0],
+        { ...messages, app_name: "LiftLog" },
+      );
+    },
+  );
+  await t.test(
+    "coach can personalize assigned athlete names and legacy message saves preserve them",
+    async () => {
+      await login(coach);
+      await saveName(athlete, "  Maya Moves  ");
+      await saveMessages(athlete);
+      assert.equal(
+        (
+          await db.query<{ app_name: string }>(
+            "select app_name from public.coach_messages where owner_user_id=$1",
+            [athlete],
+          )
+        ).rows[0].app_name,
+        "Maya Moves",
+      );
+      await db.exec("reset role");
+      await db.exec(
+        await readFile(
+          new URL(
+            "../supabase/migrations/004_personal_app_name.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
+      await login(athlete);
+      assert.equal(
+        (
+          await db.query<{ app_name: string }>(
+            "select app_name from public.coach_messages where owner_user_id=$1",
+            [athlete],
+          )
+        ).rows[0].app_name,
+        "Maya Moves",
+      );
+    },
+  );
+  await t.test(
+    "personal app names enforce coach assignment, validation and atomic updates",
+    async () => {
+      await login(athlete);
+      await assert.rejects(
+        () => saveName(athlete, "My App"),
+        /Coach access required/,
+      );
+      await assert.rejects(
+        () =>
+          db.query(
+            "update public.coach_messages set app_name='Forged' where owner_user_id=$1",
+            [athlete],
+          ),
+        /permission denied/,
+      );
+      await login(stranger);
+      assert.equal(
+        (
+          await db.query(
+            "select * from public.coach_messages where owner_user_id=$1",
+            [athlete],
+          )
+        ).rows.length,
+        0,
+      );
+      await login(coach);
+      await assert.rejects(
+        () => saveName(stranger, "Foreign"),
+        /Coach access required/,
+      );
+      const before = (
+        await db.query(
+          "select * from public.coach_messages where owner_user_id=$1",
+          [athlete],
+        )
+      ).rows;
+      for (const name of [
+        null,
+        "",
+        " ",
+        "x".repeat(41),
+        "Two\nLines",
+        "Two\rLines",
+      ])
+        await assert.rejects(
+          () => saveName(athlete, name),
+          /Enter an app name/,
+        );
+      assert.deepEqual(
+        (
+          await db.query(
+            "select * from public.coach_messages where owner_user_id=$1",
+            [athlete],
+          )
+        ).rows,
+        before,
+      );
+    },
+  );
   await t.test(
     "inactive coaches and unauthenticated callers cannot write personal messages",
     async () => {
@@ -480,10 +618,63 @@ test("database isolation, atomic backups, completion and concurrency", async (t)
         () => saveMessages(athlete),
         /Coach access required/,
       );
+      await assert.rejects(
+        () => saveName(athlete, "Inactive"),
+        /Coach access required/,
+      );
       await db.exec("reset role");
       await db.exec("set role anon");
       await assert.rejects(() => saveMessages(athlete), /permission denied/);
+      await assert.rejects(
+        () => saveName(athlete, "Anonymous"),
+        /permission denied/,
+      );
     },
   );
   await db.close();
+});
+
+test("personal app upgrade also works when the previous message upgrade was skipped", async () => {
+  const db = new PGlite();
+  try {
+    await db.exec(
+      `create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb); create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$; grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated;`,
+    );
+    for (const file of [
+      "001_liftlog",
+      "002_program_preferences",
+      "004_personal_app_name",
+    ])
+      await db.exec(
+        await readFile(
+          new URL(`../supabase/migrations/${file}.sql`, import.meta.url),
+          "utf8",
+        ),
+      );
+    await db.query(
+      "insert into auth.users values($1,'coach@example.test','{}')",
+      [coach],
+    );
+    await db.query("update public.profiles set role='coach' where id=$1", [
+      coach,
+    ]);
+    await db.query("select set_config('request.jwt.claim.sub',$1,false)", [
+      coach,
+    ]);
+    await db.exec("set role authenticated");
+    await db.query(
+      "select public.save_coach_messages($1,'Go!','Strong!','Coach Club')",
+      [coach],
+    );
+    assert.equal(
+      (
+        await db.query<{ app_name: string }>(
+          "select app_name from public.coach_messages",
+        )
+      ).rows[0].app_name,
+      "Coach Club",
+    );
+  } finally {
+    await db.close();
+  }
 });

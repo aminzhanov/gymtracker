@@ -68,6 +68,7 @@ export interface Profile {
   active: boolean;
 }
 export interface CoachMessages {
+  appName: string;
   dashboard: string;
   sidebar: string;
 }

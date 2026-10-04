@@ -135,7 +135,11 @@ test("coach message validation preserves line breaks and rejects empty or oversi
       dashboard: "  Keep going!  ",
       sidebar: "Strong friends.\nStronger days.",
     }),
-    { dashboard: "Keep going!", sidebar: "Strong friends.\nStronger days." },
+    {
+      appName: "LiftLog",
+      dashboard: "Keep going!",
+      sidebar: "Strong friends.\nStronger days.",
+    },
   );
   for (const messages of [
     { dashboard: " ", sidebar: "Go" },
@@ -144,6 +148,24 @@ test("coach message validation preserves line breaks and rejects empty or oversi
     null,
   ])
     assert.throws(() => validateMessages(messages));
+});
+test("app names normalize legacy settings and reject invalid personal names", () => {
+  const messages = { dashboard: "Go!", sidebar: "Strong!" };
+  assert.equal(validateMessages(messages).appName, "LiftLog");
+  assert.equal(
+    validateMessages({ ...messages, appName: "  Maya Moves  " }).appName,
+    "Maya Moves",
+  );
+  for (const appName of [
+    null,
+    4,
+    "",
+    " ",
+    "x".repeat(41),
+    "First\nSecond",
+    "First\rSecond",
+  ])
+    assert.throws(() => validateMessages({ ...messages, appName }));
 });
 test("unfinished sets never contribute to volume, e1RM or records", () => {
   const s = fixture();
@@ -290,6 +312,25 @@ test("monthly growth uses each exercise's first completed daily best", () => {
     record("2026-10-04", 20, "curl"),
     record("2026-10-18", 25, "curl"),
   ];
+  const allHistory = exerciseProgress(
+    sessions.slice().reverse(),
+    "bench",
+    "weight",
+    "percent",
+    "",
+  );
+  assert.equal(allHistory.baseline.date, "2026-09-29");
+  assert.equal(allHistory.baseline.value, 50);
+  assert.deepEqual(
+    allHistory.rows.map((row) => Math.round(row.value)),
+    [0, 120, 142, 98],
+  );
+  assert.deepEqual(
+    exerciseProgress(sessions, "curl", "weight", "percent", "").rows.map(
+      (row) => row.value,
+    ),
+    [0, 25],
+  );
   const bench = exerciseProgress(
     sessions,
     "bench",

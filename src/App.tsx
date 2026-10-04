@@ -197,6 +197,15 @@ export default function App() {
     useState(!supabase);
   const [messages, setMessages] = useState<CoachMessages>(DEFAULT_MESSAGES);
   const [messagesReady, setMessagesReady] = useState(!supabase);
+  const [appNameReady, setAppNameReady] = useState(!supabase);
+  useEffect(() => {
+    const name = (demo || authId) && data ? messages.appName : "LiftLog";
+    document.title = `${name} · Train together`;
+    for (const metaName of ["apple-mobile-web-app-title", "application-name"])
+      document
+        .querySelector<HTMLMetaElement>(`meta[name="${metaName}"]`)
+        ?.setAttribute("content", name);
+  }, [messages.appName, data, demo, authId]);
   const messageOwner = useRef(owner);
   messageOwner.current = owner;
   const [page, setPage] = useState<Page>("Dashboard");
@@ -290,6 +299,7 @@ export default function App() {
     setData(null);
     setMessages(DEFAULT_MESSAGES);
     setMessagesReady(false);
+    setAppNameReady(false);
     dataRef.current = null;
     blocked.current = false;
     setSaveState("saved");
@@ -301,6 +311,7 @@ export default function App() {
           programPreferenceReady: true,
           messages: loadLocalMessages(owner),
           messagesReady: true,
+          appNameReady: true,
         }))
       : loadCloud(owner);
     load
@@ -310,6 +321,7 @@ export default function App() {
         setProgramPreferenceReady(result.programPreferenceReady);
         setMessages(result.messages);
         setMessagesReady(result.messagesReady);
+        setAppNameReady(result.appNameReady);
         dataRef.current = result.data;
         setData(result.data);
       })
@@ -460,7 +472,7 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${menu ? "open" : ""}`}>
-        <Logo />
+        <Logo name={messages.appName} />
         <nav>
           {pages
             .filter((p) => p.name !== "People" || coach)
@@ -498,7 +510,7 @@ export default function App() {
             {menu ? <X /> : <Menu />}
           </button>
           <div className="mobile-logo">
-            <Logo />
+            <Logo name={messages.appName} />
           </div>
           <div className="search-field">
             <Search size={18} />
@@ -1046,23 +1058,25 @@ export default function App() {
                   </div>
                   {coach && (
                     <Panel
-                      title={`Personal messages for ${viewing?.name || data.settings.name}`}
+                      title={`Personal app for ${viewing?.name || data.settings.name}`}
                     >
                       <p className="muted">
-                        Choose an athlete at the top to personalize their
-                        dashboard and menu.
+                        Choose an athlete at the top to personalize their app
+                        name, dashboard and menu.
                       </p>
                       <CoachMessageEditor
                         key={owner}
                         messages={messages}
                         ready={messagesReady}
+                        appNameReady={appNameReady}
                         onSave={async (next) => {
                           if (demo)
                             localStorage.setItem(
                               `liftlog-messages-${owner}`,
                               JSON.stringify(next),
                             );
-                          else await saveCoachMessages(owner, next);
+                          else
+                            await saveCoachMessages(owner, next, appNameReady);
                           if (messageOwner.current === owner) setMessages(next);
                         }}
                       />

@@ -353,8 +353,11 @@ export function Analytics({
               <div className="progress-baselines">
                 <p className="muted">
                   0% is each exercise’s first completed{" "}
-                  {metric === "weight" ? "top weight" : "estimated 1RM"} in the
-                  selected month.
+                  {metric === "weight" ? "top weight" : "estimated 1RM"}{" "}
+                  {progressMonth
+                    ? "in the selected month"
+                    : "across all recorded history"}
+                  .
                 </p>
                 {histories
                   .filter((history) => history.baseline)
@@ -396,8 +399,6 @@ export function Analytics({
               onChange={(event) => {
                 const next = event.target.value as "kg" | "percent";
                 setScale(next);
-                if (next === "percent" && !progressMonth)
-                  setProgressMonth(dateKey().slice(0, 7));
               }}
             >
               <option value="kg">Weight (kg)</option>
@@ -411,7 +412,7 @@ export function Analytics({
               value={progressMonth}
               onChange={(event) => setProgressMonth(event.target.value)}
             >
-              {scale === "kg" && <option value="">All history</option>}
+              <option value="">All history</option>
               {months.map((month) => (
                 <option key={month} value={month}>
                   {parseDate(`${month}-01`).toLocaleDateString(undefined, {
