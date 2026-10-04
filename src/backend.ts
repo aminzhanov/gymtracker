@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import type { AppData, Profile, CoachMessages } from "./types";
+import type { AppData, Profile, CoachMessages, TechniqueVideos } from "./types";
 import { DEFAULT_MESSAGES, validateMessages } from "./messages";
+import { driveVideoLink, normalizeTechniqueVideos } from "./technique";
 import { emptyData, validateBackup } from "./model";
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -19,7 +20,7 @@ export async function loadCloud(owner: string) {
     target_owner: owner,
   });
   if (error) throw error;
-  const [messageResult, nameResult] = await Promise.all([
+  const [messageResult, nameResult, videoResult] = await Promise.all([
     supabase!
       .from("coach_messages")
       .select("dashboard_message,sidebar_message")
@@ -30,6 +31,10 @@ export async function loadCloud(owner: string) {
       .select("app_name")
       .eq("owner_user_id", owner)
       .maybeSingle(),
+    supabase!
+      .from("exercise_technique_videos")
+      .select("exercise_id,drive_file_id,resource_key")
+      .eq("owner_user_id", owner),
   ]);
   const { data: messages, error: messagesError } = messageResult;
   return {
@@ -46,7 +51,38 @@ export async function loadCloud(owner: string) {
       : DEFAULT_MESSAGES,
     messagesReady: !messagesError,
     appNameReady: !nameResult.error,
+    techniqueVideos: Object.fromEntries(
+      (videoResult.data || []).map((video) => [
+        video.exercise_id,
+        driveVideoLink(
+          `https://drive.google.com/file/d/${video.drive_file_id}/view${video.resource_key ? `?resourcekey=${video.resource_key}` : ""}`,
+        ).url,
+      ]),
+    ) as TechniqueVideos,
+    techniqueVideosReady: !videoResult.error,
   };
+}
+export function loadLocalTechniqueVideos(owner: string): TechniqueVideos {
+  try {
+    const raw = localStorage.getItem(`liftlog-technique-videos-${owner}`);
+    return raw ? normalizeTechniqueVideos(JSON.parse(raw)) : {};
+  } catch {
+    return {};
+  }
+}
+export async function saveTechniqueVideo(
+  owner: string,
+  exerciseId: string,
+  url: string,
+) {
+  const video = url.trim() ? driveVideoLink(url) : null;
+  const { error } = await supabase!.rpc("save_technique_video", {
+    target_owner: owner,
+    target_exercise: exerciseId,
+    drive_file: video?.fileId || null,
+    drive_resource_key: video?.resourceKey || null,
+  });
+  if (error) throw error;
 }
 export async function saveCoachMessages(
   owner: string,

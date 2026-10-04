@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Plus, Trash2, Save, Check, Dumbbell, ChevronDown } from "lucide-react";
-import type { AppData, Session, Template, WorkoutExercise } from "./types";
+import type {
+  AppData,
+  Session,
+  Template,
+  WorkoutExercise,
+  TechniqueVideos,
+} from "./types";
 import { Modal, WeekBadge, Empty, DateField } from "./components";
 import {
   id,
@@ -14,6 +20,7 @@ import {
   updateSessionExercise,
 } from "./model";
 import { WorkoutExerciseCard } from "./WorkoutExerciseCard";
+import { ExerciseReorderList } from "./ExerciseReorder";
 const icons = [
   "🏋️",
   "💪",
@@ -61,6 +68,9 @@ export function SessionEditor({
   onClose,
   isTemplate = false,
   onCustom,
+  techniqueVideos,
+  techniqueReady,
+  onSaveTechnique,
 }: {
   initial: Session;
   data: AppData;
@@ -70,6 +80,9 @@ export function SessionEditor({
   onClose: () => void;
   isTemplate?: boolean;
   onCustom: (name: string) => string;
+  techniqueVideos: TechniqueVideos;
+  techniqueReady: boolean;
+  onSaveTechnique?: (exerciseId: string, url: string) => Promise<void>;
 }) {
   const [s, setS] = useState<Session>(structuredClone(initial));
   const [addedExercise, setAddedExercise] = useState<string | null>(null);
@@ -166,26 +179,38 @@ export function SessionEditor({
               detail="Add strength work, a warm-up or a cool-down."
             />
           )}
-          {s.exercises.map((exercise) => (
-            <WorkoutExerciseCard
-              key={exercise.id}
-              exercise={exercise}
-              session={s}
-              sessions={data.sessions}
-              isTemplate={isTemplate}
-              initiallyExpanded={exercise.id === addedExercise}
-              canSave={Boolean(s.name.trim())}
-              onChange={changeExercise}
-              onSave={() => onSave(s)}
-              onRemove={() =>
-                patch({
-                  exercises: s.exercises.filter(
-                    (old) => old.id !== exercise.id,
-                  ),
-                })
-              }
-            />
-          ))}
+          <ExerciseReorderList
+            exercises={s.exercises}
+            onReorder={(exercises) => patch({ exercises })}
+            render={(exercise, controls) => (
+              <WorkoutExerciseCard
+                key={exercise.id}
+                exercise={exercise}
+                session={s}
+                sessions={data.sessions}
+                isTemplate={isTemplate}
+                initiallyExpanded={exercise.id === addedExercise}
+                canSave={Boolean(s.name.trim())}
+                orderControls={controls}
+                techniqueUrl={techniqueVideos[exercise.exerciseId]}
+                techniqueReady={techniqueReady}
+                onSaveTechnique={
+                  onSaveTechnique
+                    ? (url) => onSaveTechnique(exercise.exerciseId, url)
+                    : undefined
+                }
+                onChange={changeExercise}
+                onSave={() => onSave(s)}
+                onRemove={() =>
+                  patch({
+                    exercises: s.exercises.filter(
+                      (old) => old.id !== exercise.id,
+                    ),
+                  })
+                }
+              />
+            )}
+          />
           <button
             className="button secondary full"
             onClick={() => setAdding(!adding)}

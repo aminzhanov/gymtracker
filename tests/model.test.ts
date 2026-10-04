@@ -25,6 +25,7 @@ import {
   updateSessionExercise,
   recoveryHistory,
   fullDate,
+  reorderExercises,
 } from "../src/model.ts";
 import { validateMessages } from "../src/messages.ts";
 const fixture = () => {
@@ -38,6 +39,35 @@ const fixture = () => {
   s.exercises = [e];
   return s;
 };
+test("moving exercises preserves every set, note, identity and completion without mutating history", () => {
+  const session = fixture();
+  const warmup = newExercise("warm", "Warm-up", "warmup");
+  warmup.notes = "Shoulder felt better after mobility.";
+  warmup.done = true;
+  const last = newExercise("curl", "Biceps Curl");
+  session.exercises.push(warmup, last);
+  session.exercises[0].notes = "Controlled descent.\nTry 82.5 kg next time.";
+  const before = structuredClone(session);
+  const moved = reorderExercises(
+    session.exercises,
+    last.id,
+    session.exercises[0].id,
+  );
+  assert.deepEqual(moved, [last, session.exercises[0], warmup]);
+  assert.deepEqual(session, before);
+  assert.deepEqual(
+    reorderExercises(moved, last.id, warmup.id),
+    session.exercises,
+  );
+  assert.equal(reorderExercises(moved, "missing", warmup.id), moved);
+  assert.equal(reorderExercises(moved, last.id, last.id), moved);
+  const data = emptyData();
+  data.sessions = [{ ...session, exercises: moved }];
+  assert.deepEqual(
+    validateBackup(JSON.parse(JSON.stringify(data))).sessions[0].exercises,
+    moved,
+  );
+});
 test("overview completion preserves weight and reps, and reopening marks the session planned", () => {
   const session = fixture();
   const original = structuredClone(session);

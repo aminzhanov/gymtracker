@@ -46,6 +46,20 @@ export function updateSessionExercise(
     ),
   };
 }
+/** Move one exercise without changing its identity, sets, notes or completion. */
+export function reorderExercises(
+  exercises: WorkoutExercise[],
+  fromId: string,
+  toId: string,
+): WorkoutExercise[] {
+  const from = exercises.findIndex((e) => e.id === fromId);
+  const to = exercises.findIndex((e) => e.id === toId);
+  if (from < 0 || to < 0 || from === to) return exercises;
+  const next = [...exercises];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
 export type RecoveryStatus =
   "done" | "partial" | "skipped" | "pending" | "unplanned";
 export function recoveryHistory(sessions: Session[], today = dateKey()) {

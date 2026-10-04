@@ -72,3 +72,4 @@ export interface CoachMessages {
   dashboard: string;
   sidebar: string;
 }
+export type TechniqueVideos = Record<string, string>;

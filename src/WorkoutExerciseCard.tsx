@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   Check,
   ChevronDown,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { Session, WorkoutExercise } from "./types";
 import { LastTime, SetRow } from "./components";
+import { TechniqueVideo, TechniqueVideoEditor } from "./TechniqueVideo";
 import {
   exerciseSummary,
   exerciseComplete,
@@ -27,6 +28,10 @@ export function WorkoutExerciseCard({
   onChange,
   onSave,
   onRemove,
+  techniqueUrl,
+  techniqueReady = false,
+  onSaveTechnique,
+  orderControls,
 }: {
   exercise: WorkoutExercise;
   session: Session;
@@ -37,8 +42,13 @@ export function WorkoutExerciseCard({
   onChange: (exercise: WorkoutExercise) => void;
   onSave: () => void;
   onRemove?: () => void;
+  techniqueUrl?: string;
+  techniqueReady?: boolean;
+  onSaveTechnique?: (url: string) => Promise<void>;
+  orderControls?: ReactNode;
 }) {
   const [expanded, setExpanded] = useState(initiallyExpanded);
+  const [notesOpen, setNotesOpen] = useState(false);
   const completed =
     exercise.kind === "strength"
       ? exercise.sets.filter((set) => set.done).length
@@ -48,6 +58,7 @@ export function WorkoutExerciseCard({
     <section
       className={`exercise-block ${exercise.kind !== "strength" ? "recovery-block" : ""} ${expanded ? "expanded" : "collapsed"}`}
     >
+      {orderControls}
       {!expanded ? (
         <div className="exercise-overview-row">
           <button
@@ -216,16 +227,6 @@ export function WorkoutExerciseCard({
                   }
                 />
               </label>
-              <label className="grow">
-                Notes
-                <input
-                  placeholder="Light cardio, mobility…"
-                  value={exercise.notes}
-                  onChange={(event) =>
-                    onChange({ ...exercise, notes: event.target.value })
-                  }
-                />
-              </label>
               {!isTemplate && (
                 <button
                   className={`done-button ${exercise.done ? "checked" : ""}`}
@@ -239,6 +240,31 @@ export function WorkoutExerciseCard({
                 </button>
               )}
             </div>
+          )}
+          <label className="exercise-notes-label">
+            Exercise notes
+            <textarea
+              aria-label={`Notes for ${exercise.name}`}
+              rows={3}
+              maxLength={4000}
+              placeholder={
+                isTemplate
+                  ? "Form cues or instructions…"
+                  : "How it felt, technique, what to adjust next time…"
+              }
+              value={exercise.notes}
+              onChange={(event) =>
+                onChange({ ...exercise, notes: event.target.value })
+              }
+            />
+          </label>
+          {onSaveTechnique && (
+            <TechniqueVideoEditor
+              name={exercise.name}
+              url={techniqueUrl}
+              ready={techniqueReady}
+              onSave={onSaveTechnique}
+            />
           )}
           <div className="exercise-save">
             <button
@@ -254,6 +280,26 @@ export function WorkoutExerciseCard({
           </div>
         </>
       )}
+      {!expanded && exercise.notes.trim() && (
+        <div
+          className={`exercise-note-preview ${notesOpen ? "notes-open" : ""}`}
+        >
+          <div className="flex">
+            <strong>Exercise notes</strong>
+            <button
+              type="button"
+              className="text-button"
+              aria-label={`${notesOpen ? "Hide" : "Read"} notes for ${exercise.name}`}
+              aria-expanded={notesOpen}
+              onClick={() => setNotesOpen(!notesOpen)}
+            >
+              {notesOpen ? "Show less" : "Read note"}
+            </button>
+          </div>
+          <p>{exercise.notes}</p>
+        </div>
+      )}
+      <TechniqueVideo name={exercise.name} url={techniqueUrl} />
     </section>
   );
 }

@@ -8,6 +8,7 @@ import {
   newExercise,
   validateBackup,
   completeSession,
+  reorderExercises,
 } from "../src/model.ts";
 const coach = "00000000-0000-4000-8000-000000000001";
 const athlete = "00000000-0000-4000-8000-000000000002";
@@ -606,8 +607,216 @@ test("database isolation, atomic backups, completion and concurrency", async (t)
       );
     },
   );
+  const saveVideo = (
+    uid: string,
+    eid = "default-0",
+    file: string | null = "1DemoVideo_file-1234567890",
+    resource: string | null = "0-Resource_Key",
+  ) =>
+    db.query("select public.save_technique_video($1,$2,$3,$4)", [
+      uid,
+      eid,
+      file,
+      resource,
+    ]);
   await t.test(
-    "inactive coaches and unauthenticated callers cannot write personal messages",
+    "technique upgrade is repeatable and preserves training, messages and revisions",
+    async () => {
+      await login(coach);
+      const before = await load(athlete);
+      const messages = (await db.query("select * from public.coach_messages"))
+        .rows;
+      await db.exec("reset role");
+      const migration = await readFile(
+        new URL(
+          "../supabase/migrations/005_technique_videos.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      await db.exec(migration);
+      await db.exec(migration);
+      await login(coach);
+      assert.deepEqual(await load(athlete), before);
+      assert.deepEqual(
+        (await db.query("select * from public.coach_messages")).rows,
+        messages,
+      );
+      await saveVideo(athlete);
+      await saveVideo(coach, "default-0", "Coach_demo_video-987654321");
+      assert.deepEqual(await load(athlete), before);
+    },
+  );
+  await t.test(
+    "athletes can view their technique links but cannot change links or access another athlete",
+    async () => {
+      await login(athlete);
+      assert.equal(
+        (await db.query("select * from public.exercise_technique_videos")).rows
+          .length,
+        1,
+      );
+      await assert.rejects(() => saveVideo(athlete), /Coach access required/);
+      await assert.rejects(
+        () => saveVideo(athlete, "default-0", null),
+        /Coach access required/,
+      );
+      await assert.rejects(
+        () => db.query("delete from public.exercise_technique_videos"),
+        /permission denied/,
+      );
+      await login(stranger);
+      assert.equal(
+        (await db.query("select * from public.exercise_technique_videos")).rows
+          .length,
+        0,
+      );
+      await login(coach);
+      await assert.rejects(() => saveVideo(stranger), /Coach access required/);
+      const before = (
+        await db.query(
+          "select * from public.exercise_technique_videos where owner_user_id=$1",
+          [athlete],
+        )
+      ).rows;
+      for (const file of [
+        "short",
+        "javascript:alert(1)",
+        "x".repeat(201),
+        "bad/path/video",
+      ])
+        await assert.rejects(
+          () => saveVideo(athlete, "default-0", file),
+          /Invalid Google Drive/,
+        );
+      await assert.rejects(
+        () =>
+          saveVideo(
+            athlete,
+            "default-0",
+            "1DemoVideo_file-1234567890",
+            "bad&key",
+          ),
+        /Invalid Google Drive/,
+      );
+      await assert.rejects(() => saveVideo(athlete, ""), /Invalid exercise/);
+      assert.deepEqual(
+        (
+          await db.query(
+            "select * from public.exercise_technique_videos where owner_user_id=$1",
+            [athlete],
+          )
+        ).rows,
+        before,
+      );
+    },
+  );
+  await t.test(
+    "athlete exercise order and notes roundtrip while ordinary backups cannot replace coach videos",
+    async () => {
+      await login(athlete);
+      const before = await load(athlete);
+      const next = validateBackup(before.data);
+      const first = next.sessions[0].exercises[0];
+      const last = next.sessions[0].exercises.at(-1)!;
+      first.notes = "Slower descent felt better.\nNext time: 82.5 kg.";
+      const reordered = reorderExercises(
+        next.sessions[0].exercises,
+        last.id,
+        first.id,
+      );
+      next.sessions[0].exercises = reordered;
+      const notesAndOrder = reordered.map((e) => ({
+        id: e.id,
+        notes: e.notes,
+      }));
+      const video = (
+        await db.query("select * from public.exercise_technique_videos")
+      ).rows;
+      await save(
+        athlete,
+        { ...next, techniqueVideos: { "default-0": "https://attacker.test" } },
+        before.revision,
+      );
+      const after = await load(athlete);
+      assert.deepEqual(
+        validateBackup(after.data).sessions[0].exercises.map((e) => ({
+          id: e.id,
+          notes: e.notes,
+        })),
+        notesAndOrder,
+      );
+      assert.equal(after.revision, before.revision + 1);
+      assert.deepEqual(
+        (await db.query("select * from public.exercise_technique_videos")).rows,
+        video,
+      );
+      await login(coach);
+      const template = validateBackup(after.data).templates[0];
+      assert.ok(template);
+      {
+        const updated = validateBackup(after.data);
+        updated.templates[0].exercises.reverse();
+        updated.templates[0].exercises[0].notes =
+          "Coach cue: pause at the top.";
+        await save(athlete, updated, after.revision);
+        assert.deepEqual(
+          validateBackup((await load(athlete)).data).templates[0].exercises,
+          updated.templates[0].exercises,
+        );
+      }
+    },
+  );
+  await t.test(
+    "coach can replace and remove one demonstration without changing another profile or exercise",
+    async () => {
+      await login(coach);
+      await saveVideo(athlete, "default-0", "New_demo_video-1234567890", null);
+      await saveVideo(
+        athlete,
+        "default-1",
+        "Second_demo_video-1234567890",
+        null,
+      );
+      await db.exec("reset role");
+      await db.exec(
+        await readFile(
+          new URL(
+            "../supabase/migrations/005_technique_videos.sql",
+            import.meta.url,
+          ),
+          "utf8",
+        ),
+      );
+      await login(coach);
+      assert.equal(
+        (await db.query("select * from public.exercise_technique_videos")).rows
+          .length,
+        3,
+      );
+      await saveVideo(athlete, "default-0", null, null);
+      assert.equal(
+        (
+          await db.query(
+            "select * from public.exercise_technique_videos where owner_user_id=$1",
+            [athlete],
+          )
+        ).rows.length,
+        1,
+      );
+      assert.equal(
+        (
+          await db.query(
+            "select * from public.exercise_technique_videos where owner_user_id=$1",
+            [coach],
+          )
+        ).rows.length,
+        1,
+      );
+    },
+  );
+  await t.test(
+    "inactive coaches and unauthenticated callers cannot write personal messages or technique links",
     async () => {
       await db.exec("reset role");
       await db.query("update public.profiles set active=false where id=$1", [
@@ -622,6 +831,7 @@ test("database isolation, atomic backups, completion and concurrency", async (t)
         () => saveName(athlete, "Inactive"),
         /Coach access required/,
       );
+      await assert.rejects(() => saveVideo(athlete), /Coach access required/);
       await db.exec("reset role");
       await db.exec("set role anon");
       await assert.rejects(() => saveMessages(athlete), /permission denied/);
@@ -629,12 +839,17 @@ test("database isolation, atomic backups, completion and concurrency", async (t)
         () => saveName(athlete, "Anonymous"),
         /permission denied/,
       );
+      await assert.rejects(() => saveVideo(athlete), /permission denied/);
+      await assert.rejects(
+        () => db.query("select * from public.exercise_technique_videos"),
+        /permission denied/,
+      );
     },
   );
   await db.close();
 });
 
-test("personal app upgrade also works when the previous message upgrade was skipped", async () => {
+test("personal app and video upgrades also work when the previous message upgrade was skipped", async () => {
   const db = new PGlite();
   try {
     await db.exec(
@@ -643,6 +858,7 @@ test("personal app upgrade also works when the previous message upgrade was skip
     for (const file of [
       "001_liftlog",
       "002_program_preferences",
+      "005_technique_videos",
       "004_personal_app_name",
     ])
       await db.exec(
@@ -665,6 +881,15 @@ test("personal app upgrade also works when the previous message upgrade was skip
     await db.query(
       "select public.save_coach_messages($1,'Go!','Strong!','Coach Club')",
       [coach],
+    );
+    await db.query(
+      "select public.save_technique_video($1,'default-0','Coach_video_file-1234567890',null)",
+      [coach],
+    );
+    assert.equal(
+      (await db.query("select * from public.exercise_technique_videos")).rows
+        .length,
+      1,
     );
     assert.equal(
       (

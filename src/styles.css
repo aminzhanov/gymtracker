@@ -3156,3 +3156,187 @@ summary {
   line-height: 1.2;
   margin-right: 12px;
 }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.exercise-order-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: -5px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  color: #797184;
+  font-size: 12px;
+}
+.exercise-order-controls span {
+  flex: 1;
+}
+.exercise-order-controls .icon-button {
+  width: 36px;
+  height: 36px;
+}
+.exercise-order-controls button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.exercise-drag-handle {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+.exercise-drag-handle:active {
+  cursor: grabbing;
+}
+.dragging-exercise .exercise-block {
+  border-color: #7faaff;
+  opacity: 0.7;
+}
+.exercise-drop-target .exercise-block {
+  outline: 3px solid #276cff;
+  outline-offset: 2px;
+}
+.exercise-notes-label {
+  margin: 16px 0 12px;
+}
+.exercise-notes-label textarea {
+  width: 100%;
+  resize: vertical;
+}
+.exercise-note-preview {
+  background: #fbf8f2;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-top: 12px;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.exercise-note-preview .flex {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.exercise-note-preview strong {
+  font-size: 12px;
+  color: #797184;
+}
+.exercise-note-preview p {
+  white-space: pre-wrap;
+  margin: 5px 0 0;
+}
+.exercise-note-preview:not(.notes-open) p {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.technique-video {
+  margin-top: 12px;
+}
+.technique-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--blue);
+  font-size: 14px;
+  font-weight: 700;
+  min-height: 44px;
+}
+.technique-toggle .rotated {
+  transform: rotate(180deg);
+}
+.technique-content {
+  background: #fbf8f2;
+  border-radius: 12px;
+  padding: 14px;
+  margin-top: 8px;
+}
+.technique-player {
+  width: min(100%, 320px);
+  width: min(100%, 320px, 39.375dvh);
+  aspect-ratio: 9 / 16;
+  margin: 0 auto 12px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #222339;
+}
+.technique-player iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.technique-content > .text-button {
+  justify-content: center;
+}
+.technique-editor {
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f7faff;
+}
+.technique-editor label {
+  margin-bottom: 8px;
+}
+.technique-editor input {
+  width: 100%;
+  min-width: 0;
+}
+.technique-editor .wrap {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.technique-editor .footnote {
+  margin-bottom: 12px;
+}
+.library-item {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.library-item .grow {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.library-video-button {
+  font-size: 14px;
+  min-height: 36px;
+}
+@media (max-width: 760px) {
+  .library-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .library-item {
+    font-size: 15px;
+    padding: 12px;
+  }
+  .exercise-order-controls .icon-button {
+    width: 44px;
+    height: 44px;
+  }
+  .exercise-order-controls,
+  .exercise-note-preview,
+  .technique-toggle {
+    font-size: 15px;
+  }
+  .exercise-notes-label,
+  .technique-editor label {
+    font-size: 14px;
+  }
+  .exercise-notes-label textarea,
+  .technique-editor input {
+    font-size: 18px;
+  }
+  .technique-content,
+  .technique-editor {
+    padding: 12px;
+  }
+}

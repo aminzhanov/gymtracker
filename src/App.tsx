@@ -28,6 +28,8 @@ import type {
   Template,
   Profile,
   CoachMessages,
+  TechniqueVideos,
+  Exercise,
 } from "./types";
 import {
   supabase,
@@ -37,6 +39,8 @@ import {
   loadLocal,
   loadLocalMessages,
   saveCoachMessages,
+  loadLocalTechniqueVideos,
+  saveTechniqueVideo,
   DEMO_PROFILES,
 } from "./backend";
 import {
@@ -72,6 +76,7 @@ import {
 } from "./components";
 import { SessionEditor } from "./SessionEditor";
 import { WorkoutExerciseCard } from "./WorkoutExerciseCard";
+import { TechniqueVideo, TechniqueVideoEditor } from "./TechniqueVideo";
 import { CoachMessageEditor } from "./CoachMessages";
 import { DEFAULT_MESSAGES } from "./messages";
 import { Analytics } from "./Analytics";
@@ -198,6 +203,8 @@ export default function App() {
   const [messages, setMessages] = useState<CoachMessages>(DEFAULT_MESSAGES);
   const [messagesReady, setMessagesReady] = useState(!supabase);
   const [appNameReady, setAppNameReady] = useState(!supabase);
+  const [techniqueVideos, setTechniqueVideos] = useState<TechniqueVideos>({});
+  const [techniqueVideosReady, setTechniqueVideosReady] = useState(!supabase);
   useEffect(() => {
     const name = (demo || authId) && data ? messages.appName : "LiftLog";
     document.title = `${name} · Train together`;
@@ -300,6 +307,8 @@ export default function App() {
     setMessages(DEFAULT_MESSAGES);
     setMessagesReady(false);
     setAppNameReady(false);
+    setTechniqueVideos({});
+    setTechniqueVideosReady(false);
     dataRef.current = null;
     blocked.current = false;
     setSaveState("saved");
@@ -312,6 +321,8 @@ export default function App() {
           messages: loadLocalMessages(owner),
           messagesReady: true,
           appNameReady: true,
+          techniqueVideos: loadLocalTechniqueVideos(owner),
+          techniqueVideosReady: true,
         }))
       : loadCloud(owner);
     load
@@ -322,6 +333,8 @@ export default function App() {
         setMessages(result.messages);
         setMessagesReady(result.messagesReady);
         setAppNameReady(result.appNameReady);
+        setTechniqueVideos(result.techniqueVideos);
+        setTechniqueVideosReady(result.techniqueVideosReady);
         dataRef.current = result.data;
         setData(result.data);
       })
@@ -348,6 +361,26 @@ export default function App() {
   const me = demo ? DEMO_PROFILES[0] : profiles.find((p) => p.id === authId);
   const viewing = profiles.find((p) => p.id === owner);
   const coach = me?.role === "coach";
+  const saveTechnique = async (exerciseId: string, url: string) => {
+    if (!coach || !techniqueVideosReady)
+      throw new Error("Coach access required");
+    if (demo) {
+      const next = { ...loadLocalTechniqueVideos(owner) };
+      if (url) next[exerciseId] = url;
+      else delete next[exerciseId];
+      localStorage.setItem(
+        `liftlog-technique-videos-${owner}`,
+        JSON.stringify(next),
+      );
+    } else await saveTechniqueVideo(owner, exerciseId, url);
+    if (messageOwner.current === owner)
+      setTechniqueVideos((old) => {
+        const next = { ...old };
+        if (url) next[exerciseId] = url;
+        else delete next[exerciseId];
+        return next;
+      });
+  };
   const change = (next: AppData) => {
     dataRef.current = next;
     setData(next);
@@ -798,6 +831,16 @@ export default function App() {
                                 sessions={data.sessions}
                                 isTemplate={false}
                                 canSave={Boolean(s.name.trim())}
+                                techniqueUrl={
+                                  techniqueVideos[exercise.exerciseId]
+                                }
+                                techniqueReady={techniqueVideosReady}
+                                onSaveTechnique={
+                                  coach
+                                    ? (url) =>
+                                        saveTechnique(exercise.exerciseId, url)
+                                    : undefined
+                                }
                                 onChange={(updated) =>
                                   saveSession(updateSessionExercise(s, updated))
                                 }
@@ -1280,7 +1323,14 @@ export default function App() {
                       />
                     </Panel>
                   </div>
-                  <ExerciseLibrary data={data} onChange={change} />
+                  <ExerciseLibrary
+                    key={owner}
+                    data={data}
+                    onChange={change}
+                    techniqueVideos={techniqueVideos}
+                    techniqueReady={techniqueVideosReady}
+                    onSaveTechnique={coach ? saveTechnique : undefined}
+                  />
                   <Panel title="Account">
                     <p>
                       {demo
@@ -1349,6 +1399,9 @@ export default function App() {
           initial={editor}
           data={data}
           onSave={saveSession}
+          techniqueVideos={techniqueVideos}
+          techniqueReady={techniqueVideosReady}
+          onSaveTechnique={coach ? saveTechnique : undefined}
           onClose={() => setEditor(null)}
           onDelete={
             data.sessions.some((s) => s.id === editor.id)
@@ -1374,6 +1427,9 @@ export default function App() {
         <SessionEditor
           key={templateEditor.id}
           isTemplate
+          techniqueVideos={techniqueVideos}
+          techniqueReady={techniqueVideosReady}
+          onSaveTechnique={coach ? saveTechnique : undefined}
           initial={{
             ...templateEditor,
             date: today,
@@ -1773,11 +1829,18 @@ function Training({
 function ExerciseLibrary({
   data,
   onChange,
+  techniqueVideos,
+  techniqueReady,
+  onSaveTechnique,
 }: {
   data: AppData;
   onChange: (d: AppData) => void;
+  techniqueVideos: TechniqueVideos;
+  techniqueReady: boolean;
+  onSaveTechnique?: (exerciseId: string, url: string) => Promise<void>;
 }) {
   const [name, setName] = useState("");
+  const [videoExercise, setVideoExercise] = useState<Exercise | null>(null);
   return (
     <Panel title="Exercise library">
       <form
@@ -1812,7 +1875,21 @@ function ExerciseLibrary({
       <div className="library-grid">
         {data.exercises.map((e) => (
           <div className="library-item" key={e.id}>
-            <span>{e.name}</span>
+            <span className="grow">{e.name}</span>
+            {(onSaveTechnique || techniqueVideos[e.id]) && (
+              <button
+                type="button"
+                className="text-button library-video-button"
+                aria-label={`${onSaveTechnique ? "Manage" : "Watch"} technique for ${e.name}`}
+                onClick={() => setVideoExercise(e)}
+              >
+                {onSaveTechnique
+                  ? techniqueVideos[e.id]
+                    ? "Edit video"
+                    : "Add video"
+                  : "Watch technique"}
+              </button>
+            )}
             {e.custom ? (
               <button
                 className="icon-button"
@@ -1836,6 +1913,25 @@ function ExerciseLibrary({
         Removing a custom exercise from the library preserves its logged
         history.
       </p>
+      {videoExercise && (
+        <Modal
+          title={`Technique · ${videoExercise.name}`}
+          onClose={() => setVideoExercise(null)}
+        >
+          {onSaveTechnique && (
+            <TechniqueVideoEditor
+              name={videoExercise.name}
+              url={techniqueVideos[videoExercise.id]}
+              ready={techniqueReady}
+              onSave={(url) => onSaveTechnique(videoExercise.id, url)}
+            />
+          )}
+          <TechniqueVideo
+            name={videoExercise.name}
+            url={techniqueVideos[videoExercise.id]}
+          />
+        </Modal>
+      )}
     </Panel>
   );
 }

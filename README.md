@@ -134,6 +134,18 @@ Sign in to the athlete's account in Safari before using Share → Add to Home Sc
 
 In Analytics, Growth (%) supports All history as well as individual months. All history starts each exercise at 0% from its first completed daily best across the full selected history. Monthly mode uses that month's first completed daily best. Incomplete and zero-weight records do not supply a baseline.
 
+### Technique videos, exercise notes and order
+
+On an existing LiftLog database, run only [`supabase/migrations/005_technique_videos.sql`](supabase/migrations/005_technique_videos.sql) in SQL Editor, then refresh the app. It adds the coach-managed video table/RPC without changing training data, messages, app names or training revisions; it is safe to rerun. Migration 001 must already be installed. This video upgrade is independent of migrations 003 and 004. Notes and exercise ordering use the existing training schema and do not require this upgrade.
+
+As a coach, select the athlete, then open **Settings → Exercise library → Add video/Edit video**, or expand an exercise in the session editor. Upload the demonstration to Google Drive, give the athlete viewing access, paste the file's sharing link and click **Save video**. A link is reused for the same exercise ID throughout that athlete's sessions and templates. Recovery exercises can have links added in the session editor. Athletes can watch videos but cannot add, replace or remove the coach's links, including through forged training backups. Links survive ordinary training saves, template cloning and removal of a custom exercise from the library, preserving access from its logged history. Links are not included in training JSON backups.
+
+**Watch technique** toggles a lazy-loaded Drive iframe inside a responsive 9:16 player; hiding it unloads the iframe. **Open in Google Drive** is a fallback for permissions, processing or playback issues. Drive permissions remain separate from LiftLog authentication: “Anyone with the link → Viewer” allows anyone holding that link to view it; restricted sharing requires the corresponding Google access. Only Google Drive file links are accepted and normalized, retaining optional resource keys. No binary videos are stored in Supabase and no Google account connection/API key is needed.
+
+Drag an exercise's grip in the session/template editor with a mouse or touch pointer, or use the up/down buttons (including with a keyboard). The grip alone disables touch scrolling, and dragging near the modal edge scrolls the list. Save the exercise or session/template to persist its new order. IDs, set values, completion and notes stay attached to the moved exercise. **Exercise notes** are editable on every strength and recovery exercise. Saved notes appear in the collapsed overview and remain visible to the assigned coach after completion; long notes can be expanded with **Read note**.
+
+The shared modal focuses itself only on opening, so typing in invitation fields, exercise notes and technique-link fields retains input focus. Browser verification should include continuous typing, changing exercise order, saving/reopening notes and toggling the portrait player. Real Drive playback and touch gestures in an installed iPhone app require a physical-device check.
+
 ## Cloud saves and backups
 
 Cloud edits are queued and saved transactionally. Each selected athlete has a database revision. If another device or the coach changed that athlete's data, a stale save stops rather than silently overwriting newer data. Export unsaved local edits first, then reload saved data and reconcile. The app warns before navigating away while edits are pending or unsaved. It is online-first: offline cloud editing is not a supported sync workflow.
