@@ -6,6 +6,7 @@ import type {
   Week,
   Bodyweight,
 } from "./types.ts";
+import { suggestedProgramWeek, suggestTrainingWeek } from "./trainingWeeks.ts";
 export const id = () => crypto.randomUUID();
 export const dateKey = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -173,14 +174,22 @@ export function newSession(
   date = dateKey(),
   template?: Template,
 ): Session {
+  const week = data.settings.useABSplit
+    ? template?.week ||
+      suggestedProgramWeek(data.sessions, date, currentWeek(data, date))
+    : "A";
   return {
     id: id(),
     date,
     name: template?.name || "New workout",
     icon: template?.icon || "🏋️",
-    week: data.settings.useABSplit
-      ? template?.week || currentWeek(data, date)
-      : "A",
+    week,
+    ...(data.settings.useABSplit
+      ? {
+          trainingWeek:
+            suggestTrainingWeek(data.sessions, date, week)?.key || id(),
+        }
+      : {}),
     status: "planned",
     difficulty: "",
     notes: template?.notes || "",
@@ -668,6 +677,10 @@ export function validateBackup(value: unknown): AppData {
       (s) =>
         base(s) &&
         validDate(s.date) &&
+        (s.trainingWeek == null ||
+          (text(s.trainingWeek) &&
+            s.trainingWeek.trim().length > 0 &&
+            s.trainingWeek.length <= 600)) &&
         ["planned", "done"].includes(s.status) &&
         ["", "easy", "solid", "hard", "brutal"].includes(s.difficulty),
     ) ||

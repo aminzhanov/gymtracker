@@ -21,6 +21,7 @@ import {
 } from "./model";
 import { WorkoutExerciseCard } from "./WorkoutExerciseCard";
 import { ExerciseReorderList } from "./ExerciseReorder";
+import { trainingWeeks } from "./trainingWeeks";
 const icons = [
   "🏋️",
   "💪",
@@ -67,6 +68,7 @@ export function SessionEditor({
   onTemplate,
   onClose,
   isTemplate = false,
+  trainingWeeksReady = true,
   onCustom,
   techniqueVideos,
   techniqueReady,
@@ -79,6 +81,7 @@ export function SessionEditor({
   onTemplate?: (t: Template) => void;
   onClose: () => void;
   isTemplate?: boolean;
+  trainingWeeksReady?: boolean;
   onCustom: (name: string) => Promise<string>;
   techniqueVideos: TechniqueVideos;
   techniqueReady: boolean;
@@ -94,6 +97,10 @@ export function SessionEditor({
   const [savedTemplate, setSavedTemplate] = useState(false);
   const [customBusy, setCustomBusy] = useState(false);
   const [customError, setCustomError] = useState("");
+  const weekGroups = trainingWeeks([
+    ...data.sessions.filter((session) => session.id !== s.id),
+    s,
+  ]).filter((group) => group.week === s.week);
   const patch = (change: Partial<Session>) =>
     setS((old) => ({ ...old, ...change }));
   const changeExercise = (e: WorkoutExercise) =>
@@ -328,12 +335,55 @@ export function SessionEditor({
                 Program week
                 <select
                   value={s.week}
-                  onChange={(e) => patch({ week: e.target.value as "A" | "B" })}
+                  onChange={(e) =>
+                    patch({
+                      week: e.target.value as "A" | "B",
+                      ...(!isTemplate ? { trainingWeek: id() } : {}),
+                    })
+                  }
                 >
                   <option value="A">Week A</option>
                   <option value="B">Week B</option>
                 </select>
               </label>
+              {!isTemplate && (
+                <>
+                  <label>
+                    Training week
+                    <select
+                      aria-label="Training week"
+                      disabled={!trainingWeeksReady}
+                      value={
+                        s.trainingWeek ||
+                        weekGroups.find((group) =>
+                          group.sessions.some((session) => session.id === s.id),
+                        )?.key
+                      }
+                      onChange={(event) =>
+                        patch({
+                          trainingWeek:
+                            event.target.value === "new"
+                              ? id()
+                              : event.target.value,
+                        })
+                      }
+                    >
+                      {weekGroups.map((group) => (
+                        <option key={group.key} value={group.key}>
+                          {group.label} · {group.sessions.length}{" "}
+                          {group.sessions.length === 1 ? "session" : "sessions"}
+                        </option>
+                      ))}
+                      <option value="new">Start a new Week {s.week}</option>
+                    </select>
+                  </label>
+                  <p className="footnote">
+                    {trainingWeeksReady
+                      ? "Group sessions regardless of dates. Three sessions is the default suggestion; add more or fewer as needed."
+                      : "Your coach needs to run database upgrade 007 to save custom training-week assignments. The chart uses suggested groups meanwhile."}
+                  </p>
+                </>
+              )}
             </>
           )}
           {!isTemplate && (

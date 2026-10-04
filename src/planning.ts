@@ -1,5 +1,34 @@
 import type { Session } from "./types.ts";
 import { addDays, dateKey, monday, parseDate, volume } from "./model.ts";
+import { trainingWeeks } from "./trainingWeeks.ts";
+
+export function trainingWeekVolume(sessions: Session[], month: string) {
+  return trainingWeeks(sessions)
+    .filter((group) =>
+      group.sessions.some((session) => session.date.slice(0, 7) === month),
+    )
+    .map((group) => {
+      let done = 0,
+        planned = 0;
+      for (const session of group.sessions) {
+        if (session.status === "done") done += volume(session);
+        else
+          planned += session.exercises
+            .filter((e) => e.kind === "strength")
+            .flatMap((e) => e.sets)
+            .reduce((sum, set) => sum + set.weight * set.reps, 0);
+      }
+      const bucket = { done, planned };
+      return {
+        ...group,
+        done,
+        planned,
+        total: done + planned,
+        a: group.week === "A" ? bucket : { done: 0, planned: 0 },
+        b: group.week === "B" ? bucket : { done: 0, planned: 0 },
+      };
+    });
+}
 
 export const monthLabel = (month: string) =>
   parseDate(`${month}-01`).toLocaleDateString(undefined, {

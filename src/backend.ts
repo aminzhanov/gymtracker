@@ -52,6 +52,7 @@ export async function loadCloud(owner: string) {
     revision: Number(data.revision),
     programPreferenceReady:
       typeof data.data?.settings?.useABSplit === "boolean",
+    trainingWeeksReady: data.trainingWeeksReady === true,
     messages: messages
       ? {
           appName: nameResult.data?.app_name || DEFAULT_MESSAGES.appName,

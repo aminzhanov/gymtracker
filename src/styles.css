@@ -2515,8 +2515,13 @@ summary {
 }
 .calendar-session {
   width: 100%;
+  color: #202139;
   padding: 10px;
   gap: 7px;
+}
+.calendar-day.other-month .calendar-session {
+  color: #202139;
+  opacity: 1;
 }
 .calendar-session span {
   overflow: visible;
@@ -3509,4 +3514,16 @@ summary {
   .technique-editor {
     padding: 12px;
   }
+}
+
+.volume-grouping {
+  width: fit-content;
+  margin-bottom: 18px;
+}
+.volume-chart-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.volume-chart-scroll > svg {
+  display: block;
 }

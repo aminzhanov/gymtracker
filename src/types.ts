@@ -28,6 +28,7 @@ export interface Session {
   name: string;
   icon: string;
   week: Week;
+  trainingWeek?: string | null;
   status: "planned" | "done";
   difficulty: Difficulty;
   notes: string;

@@ -186,3 +186,28 @@ The responsive update has model and PostgreSQL integration coverage for sparse e
 The output is a static Vite build in `dist/` with relative asset URLs and no client routing requirement. Cloudflare Pages can use build command `npm run build`, output directory `dist`, and the same two public environment variables. Configure the actual host URL in Supabase redirects and the function's `SITE_URL`.
 
 Official references: [GitHub Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages), [Supabase RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Auth](https://supabase.com/docs/guides/auth), [invitations](https://supabase.com/docs/reference/javascript/auth-admin-inviteuserbyemail).
+
+## Training-week volume groups
+
+For A/B split users, Calendar → Volume outlook defaults to **Training weeks**.
+Consecutive unassigned sessions are suggested in groups of up to three with the
+same A/B tag. In the session editor, choose **Training week** to join a group or
+start another; explicit groups can contain more or fewer sessions and survive
+moving dates. New sessions suggest the current group while it has fewer than
+three sessions, then the next program week (templates keep their A/B tag).
+
+Run `supabase/migrations/007_training_weeks.sql` in the Supabase SQL Editor after
+002 and 004, then reload the app to enable saved group assignments. Before this
+upgrade, the graph uses suggested groups and the custom assignment control is
+disabled. Demo mode supports assignments immediately. Existing sessions are
+assigned on load and saved with the next ordinary training change. Old clients
+that omit this field preserve saved assignments.
+
+A month shows whole training groups containing a session in that month, including
+sessions across a month boundary, with their actual date ranges. Summary totals
+are therefore training-group totals, and a group may appear in both months.
+Completed volume uses checked sets; lighter planned volume uses prescribed sets.
+The Calendar weeks toggle retains the old month-clipped Monday–Sunday view.
+Turning A/B split off hides training-group controls and uses calendar weeks;
+saved assignments remain available when the split is enabled again. Analytics
+outside Calendar continue using their existing calendar-week calculations.

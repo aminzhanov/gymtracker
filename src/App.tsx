@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { assignTrainingWeeks } from "./trainingWeeks";
 import {
   Home,
   Dumbbell,
@@ -210,6 +211,7 @@ export default function App() {
   const [profiles, setProfiles] = useState<Profile[]>(DEMO_PROFILES);
   const [owner, setOwner] = useState("demo-self");
   const [data, setData] = useState<AppData | null>(null);
+  const [trainingWeeksReady, setTrainingWeeksReady] = useState(!supabase);
   const [programPreferenceReady, setProgramPreferenceReady] =
     useState(!supabase);
   const [messages, setMessages] = useState<CoachMessages>(DEFAULT_MESSAGES);
@@ -338,6 +340,7 @@ export default function App() {
           sharedLibraryReady: true,
           revision: 0,
           programPreferenceReady: true,
+          trainingWeeksReady: true,
           messages: loadLocalMessages(owner),
           messagesReady: true,
           appNameReady: true,
@@ -350,14 +353,19 @@ export default function App() {
         if (!active) return;
         revision.current = result.revision;
         setProgramPreferenceReady(result.programPreferenceReady);
+        setTrainingWeeksReady(result.trainingWeeksReady);
         setMessages(result.messages);
         setMessagesReady(result.messagesReady);
         setAppNameReady(result.appNameReady);
         setTechniqueVideos(result.techniqueVideos);
         setTechniqueVideosReady(result.techniqueVideosReady);
         setSharedLibraryReady(result.sharedLibraryReady);
-        dataRef.current = result.data;
-        setData(result.data);
+        const loaded = {
+          ...result.data,
+          sessions: assignTrainingWeeks(result.data.sessions),
+        };
+        dataRef.current = loaded;
+        setData(loaded);
       })
       .catch((e) => {
         if (active) setError(`Could not load training data: ${e.message}`);
@@ -461,6 +469,8 @@ export default function App() {
       });
   };
   const change = (next: AppData) => {
+    if (next.settings.useABSplit)
+      next = { ...next, sessions: assignTrainingWeeks(next.sessions) };
     dataRef.current = next;
     setData(next);
     setPeopleStats({});
@@ -1513,6 +1523,7 @@ export default function App() {
         <SessionEditor
           key={editor.id}
           initial={editor}
+          trainingWeeksReady={trainingWeeksReady}
           data={data}
           onSave={saveSession}
           techniqueVideos={techniqueVideos}
