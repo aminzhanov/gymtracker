@@ -563,4 +563,8 @@ export const ru: Record<string, string> = {
   template: "шаблон",
   "Language is saved separately for each demo athlete on this device.":
     "Язык сохраняется отдельно для каждого демопрофиля на этом устройстве.",
+  planned: "запланировано",
+  done: "завершено",
+  coach: "тренер",
+  athlete: "спортсмен",
 };
