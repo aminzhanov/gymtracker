@@ -3527,3 +3527,210 @@ summary {
 .volume-chart-scroll > svg {
   display: block;
 }
+
+.completed-workout {
+  margin-top: 16px;
+  padding: 22px;
+  border: 1px solid #afd7c5;
+  border-radius: 18px;
+  background: #edf8f2;
+  color: #202139;
+}
+.completed-workout-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 18px;
+}
+.completion-check {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  flex: none;
+  border-radius: 50%;
+  background: #167451;
+  color: #fff;
+}
+.completed-workout-heading h3 {
+  font-size: 21px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+  margin-bottom: 8px;
+}
+.completion-badge {
+  display: inline-block;
+  border-radius: 7px;
+  padding: 5px 10px;
+  color: #115c40;
+  background: #ccebd9;
+  font-size: 14px;
+  font-weight: 700;
+}
+.completed-workout-date {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 9px;
+  color: #50645b;
+  font-size: 14px;
+}
+.completed-workout .exercise-preview {
+  font-size: 14px;
+  color: #40544b;
+}
+.completed-workout-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 36px;
+  padding-top: 18px;
+  margin: 18px 0;
+  border-top: 1px solid #cee3d7;
+}
+.completed-workout-totals dt {
+  color: #50645b;
+  font-size: 14px;
+}
+.completed-workout-totals dd {
+  margin: 5px 0 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+.completed-workout-totals dd span {
+  font-size: 17px;
+  font-weight: 500;
+}
+.completed-workout-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.completion-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #115c40;
+  font-size: 14px;
+}
+.completion-save.error {
+  color: #a52b38;
+}
+.completed-workout-footer .button {
+  min-height: 44px;
+  font-size: 14px;
+}
+.just-completed {
+  animation: workout-reveal 350ms ease-out;
+}
+.just-completed .completion-check svg {
+  animation: workout-check-pop 500ms ease-out;
+}
+.just-completed .completion-check polyline {
+  stroke-dasharray: 60;
+  animation: workout-check-draw 500ms ease-out;
+}
+@keyframes workout-reveal {
+  from {
+    transform: translateY(7px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes workout-check-pop {
+  0% {
+    transform: scale(0.65);
+  }
+  65% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes workout-check-draw {
+  from {
+    stroke-dashoffset: 60;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.completion-toast {
+  position: fixed;
+  z-index: 120;
+  left: 50%;
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 15px 16px;
+  border: 1px solid #a2cdb8;
+  border-radius: 15px;
+  background: #f1fcf5;
+  color: #115c40;
+  box-shadow: 0 8px 30px #184e3526;
+}
+.completion-toast-icon {
+  display: flex;
+  flex: none;
+}
+.completion-toast strong {
+  display: block;
+  font-size: 16px;
+}
+.completion-toast div > span {
+  display: block;
+  margin-top: 4px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.completion-toast .icon-button {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+}
+@media (max-width: 850px) {
+  .completion-toast {
+    bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 640px) {
+  .completed-workout {
+    padding: 17px;
+  }
+  .completed-workout-heading {
+    gap: 12px;
+  }
+  .completed-workout-heading h3 {
+    font-size: 20px;
+  }
+  .completion-check {
+    width: 48px;
+    height: 48px;
+  }
+  .completed-workout-footer .button {
+    font-size: 16px;
+  }
+  .completion-toast {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    padding: 12px;
+    gap: 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .just-completed,
+  .just-completed .completion-check svg,
+  .just-completed .completion-check polyline {
+    animation: none;
+  }
+}

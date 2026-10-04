@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { assignTrainingWeeks } from "./trainingWeeks";
+import { CompletedWorkout, CompletionToast } from "./CompletedWorkout";
 import {
   Home,
   Dumbbell,
@@ -241,6 +242,16 @@ export default function App() {
   const [saveState, setSaveState] = useState<"saved" | "saving" | "error">(
     "saved",
   );
+  const [completion, setCompletion] = useState<{
+    sessionId: string;
+    name: string;
+    owner: string;
+  } | null>(null);
+  useEffect(() => {
+    if (!completion || saveState === "saving") return;
+    const timer = window.setTimeout(() => setCompletion(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [completion, saveState]);
   const [confirm, setConfirm] = useState<"demo" | "clear" | "import" | null>(
     null,
   );
@@ -330,6 +341,7 @@ export default function App() {
     dataRef.current = null;
     blocked.current = false;
     setSaveState("saved");
+    setCompletion(null);
     const p = profiles.find((x) => x.id === owner);
     const load = demo
       ? Promise.resolve().then(() => ({
@@ -522,6 +534,11 @@ export default function App() {
   };
   const saveSession = (s: Session) => {
     const d = dataRef.current!;
+    const previous = d.sessions.find((session) => session.id === s.id);
+    if (s.status === "done" && previous?.status !== "done")
+      setCompletion({ sessionId: s.id, name: s.name, owner });
+    else if (s.status !== "done" && completion?.sessionId === s.id)
+      setCompletion(null);
     change({ ...d, sessions: [...d.sessions.filter((x) => x.id !== s.id), s] });
   };
   const addCustom = async (name: string) => {
@@ -924,65 +941,82 @@ export default function App() {
                       }
                     >
                       {todaySessions.length ? (
-                        todaySessions.map((s) => (
-                          <div className="today-session" key={s.id}>
-                            <button
-                              className="today-heading"
-                              onClick={() => setEditor(s)}
-                            >
-                              <span className="session-icon tint-yellow">
-                                {s.icon}
-                              </span>
-                              <div>
-                                <strong>{s.name}</strong>
-                                <span>
-                                  {data.settings.useABSplit && (
-                                    <>
-                                      <WeekBadge week={s.week} /> ·{" "}
-                                    </>
-                                  )}
-                                  {s.status}
-                                </span>
-                              </div>
-                              <ArrowRight size={18} />
-                            </button>
-                            {s.exercises.map((exercise) => (
-                              <WorkoutExerciseCard
-                                key={exercise.id}
-                                exercise={exercise}
-                                session={s}
-                                sessions={data.sessions}
-                                isTemplate={false}
-                                canSave={Boolean(s.name.trim())}
-                                techniqueUrl={
-                                  techniqueVideos[exercise.exerciseId]
-                                }
-                                techniqueReady={techniqueVideosReady}
-                                onSaveTechnique={
-                                  coach
-                                    ? (url) =>
-                                        saveTechnique(exercise.exerciseId, url)
-                                    : undefined
-                                }
-                                onChange={(updated) =>
-                                  saveSession(updateSessionExercise(s, updated))
-                                }
-                                onSave={() => {}}
-                              />
-                            ))}
-                            {!s.exercises.length && (
-                              <p className="muted">
-                                Open the session to add your exercises.
-                              </p>
-                            )}
-                            <div className="today-actions">
+                        todaySessions.map((s) =>
+                          s.status === "done" ? (
+                            <CompletedWorkout
+                              key={s.id}
+                              session={s}
+                              showWeek={data.settings.useABSplit}
+                              saveState={saveState}
+                              celebrate={
+                                completion?.owner === owner &&
+                                completion.sessionId === s.id
+                              }
+                              onEdit={() => setEditor(s)}
+                            />
+                          ) : (
+                            <div className="today-session" key={s.id}>
                               <button
-                                className="button secondary"
+                                className="today-heading"
                                 onClick={() => setEditor(s)}
                               >
-                                Open editor
+                                <span className="session-icon tint-yellow">
+                                  {s.icon}
+                                </span>
+                                <div>
+                                  <strong>{s.name}</strong>
+                                  <span>
+                                    {data.settings.useABSplit && (
+                                      <>
+                                        <WeekBadge week={s.week} /> ·{" "}
+                                      </>
+                                    )}
+                                    {s.status}
+                                  </span>
+                                </div>
+                                <ArrowRight size={18} />
                               </button>
-                              {s.status !== "done" && (
+                              {s.exercises.map((exercise) => (
+                                <WorkoutExerciseCard
+                                  key={exercise.id}
+                                  exercise={exercise}
+                                  session={s}
+                                  sessions={data.sessions}
+                                  isTemplate={false}
+                                  canSave={Boolean(s.name.trim())}
+                                  techniqueUrl={
+                                    techniqueVideos[exercise.exerciseId]
+                                  }
+                                  techniqueReady={techniqueVideosReady}
+                                  onSaveTechnique={
+                                    coach
+                                      ? (url) =>
+                                          saveTechnique(
+                                            exercise.exerciseId,
+                                            url,
+                                          )
+                                      : undefined
+                                  }
+                                  onChange={(updated) =>
+                                    saveSession(
+                                      updateSessionExercise(s, updated),
+                                    )
+                                  }
+                                  onSave={() => {}}
+                                />
+                              ))}
+                              {!s.exercises.length && (
+                                <p className="muted">
+                                  Open the session to add your exercises.
+                                </p>
+                              )}
+                              <div className="today-actions">
+                                <button
+                                  className="button secondary"
+                                  onClick={() => setEditor(s)}
+                                >
+                                  Open editor
+                                </button>
                                 <button
                                   className="button primary"
                                   onClick={() =>
@@ -991,10 +1025,10 @@ export default function App() {
                                 >
                                   <Check size={16} /> Complete session
                                 </button>
-                              )}
+                              </div>
                             </div>
-                          </div>
-                        ))
+                          ),
+                        )
                       ) : (
                         <Empty
                           title="A fresh page for today"
@@ -1494,6 +1528,17 @@ export default function App() {
             </>
           )}
         </main>
+        {completion?.owner === owner &&
+          data?.sessions.some(
+            (session) =>
+              session.id === completion.sessionId && session.status === "done",
+          ) && (
+            <CompletionToast
+              name={completion.name}
+              saveState={saveState}
+              onDismiss={() => setCompletion(null)}
+            />
+          )}
         <nav className="bottom-nav">
           {pages
             .filter((p) => p.name !== "People" && p.name !== "Settings")
