@@ -1,3 +1,4 @@
+import { t, exerciseName } from "./i18n";
 import { useState } from "react";
 import { Plus, Trash2, Save, Check, Dumbbell, ChevronDown } from "lucide-react";
 import type {
@@ -121,7 +122,7 @@ export function SessionEditor({
   };
   return (
     <Modal
-      title={isTemplate ? "Edit template" : "Your workout"}
+      title={isTemplate ? t("Edit template") : t("Your workout")}
       onClose={onClose}
       wide
     >
@@ -131,14 +132,14 @@ export function SessionEditor({
             <button
               className="big-icon tint-yellow"
               onClick={() => setPicker(!picker)}
-              aria-label="Choose emoji"
+              aria-label={t("Choose emoji")}
             >
               {s.icon}
             </button>
             <div>
               <input
                 className="title-input"
-                aria-label="Session name"
+                aria-label={t("Session name")}
                 value={s.name}
                 maxLength={100}
                 onChange={(e) => patch({ name: e.target.value })}
@@ -147,22 +148,22 @@ export function SessionEditor({
                 {data.settings.useABSplit && <WeekBadge week={s.week} />}
                 <span className="muted">
                   {isTemplate
-                    ? "Reusable training plan"
+                    ? t("Reusable training plan")
                     : s.status === "done"
-                      ? "Completed · nice work!"
-                      : "Planned · ready when you are"}
+                      ? t("Completed · nice work!")
+                      : t("Planned · ready when you are")}
                 </span>
               </div>
             </div>
           </div>
           {picker && (
             <div className="emoji-picker">
-              <strong>Choose your energy</strong>
+              <strong>{t("Choose your energy")}</strong>
               <div className="emoji-grid">
                 {icons.map((icon) => (
                   <button
                     key={icon}
-                    aria-label={`Choose ${icon}`}
+                    aria-label={t(`Choose ${icon}`)}
                     onClick={() => {
                       patch({ icon });
                       setPicker(false);
@@ -173,7 +174,7 @@ export function SessionEditor({
                 ))}
               </div>
               <label>
-                Or enter an icon
+                {t("Or enter an icon")}
                 <input
                   value={s.icon}
                   maxLength={16}
@@ -183,12 +184,13 @@ export function SessionEditor({
             </div>
           )}
           <div className="section-label">
-            <Dumbbell size={17} /> Exercises & sets
+            <Dumbbell size={17} />
+            {t(" Exercises & sets")}
           </div>
           {s.exercises.length === 0 && (
             <Empty
-              title="Let's build your session"
-              detail="Add strength work, a warm-up or a cool-down."
+              title={t("Let's build your session")}
+              detail={t("Add strength work, a warm-up or a cool-down.")}
             />
           )}
           <ExerciseReorderList
@@ -227,7 +229,9 @@ export function SessionEditor({
             className="button secondary full"
             onClick={() => setAdding(!adding)}
           >
-            <Plus size={17} /> Add exercise <ChevronDown size={15} />
+            <Plus size={17} />
+            {t(" Add exercise ")}
+            <ChevronDown size={15} />
           </button>
           {adding && (
             <div className="exercise-picker">
@@ -239,10 +243,10 @@ export function SessionEditor({
                     onClick={() => setKind(k)}
                   >
                     {k === "strength"
-                      ? "Strength"
+                      ? t("Strength")
                       : k === "warmup"
-                        ? "Warm-up"
-                        : "Cool-down"}
+                        ? t("Warm-up")
+                        : t("Cool-down")}
                   </button>
                 ))}
               </div>
@@ -250,10 +254,10 @@ export function SessionEditor({
                 autoFocus
                 placeholder={
                   kind === "strength"
-                    ? "Find an exercise…"
-                    : "Name this activity…"
+                    ? t("Find an exercise…")
+                    : t("Name this activity…")
                 }
-                aria-label="Search or name exercise"
+                aria-label={t("Search or name exercise")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -261,11 +265,13 @@ export function SessionEditor({
                 {kind === "strength" ? (
                   data.exercises
                     .filter((e) =>
-                      e.name.toLowerCase().includes(search.toLowerCase()),
+                      exerciseName(e.name, e.id)
+                        .toLowerCase()
+                        .includes(search.toLowerCase()),
                     )
                     .map((e) => (
                       <button key={e.id} onClick={() => add(e.id, e.name)}>
-                        {e.name}
+                        {exerciseName(e.name, e.id)}
                         <Plus size={15} />
                       </button>
                     ))
@@ -281,7 +287,8 @@ export function SessionEditor({
                       )
                     }
                   >
-                    Add {search || kind}
+                    {t("Add ")}
+                    {search || kind}
                     <Plus size={15} />
                   </button>
                 )}
@@ -308,8 +315,8 @@ export function SessionEditor({
                     }}
                   >
                     {customBusy
-                      ? "Adding exercise…"
-                      : `Create custom exercise: ${search}`}
+                      ? t("Adding exercise…")
+                      : t(`Create custom exercise: ${search}`)}
                   </button>
                 )}
               {customError && (
@@ -321,10 +328,10 @@ export function SessionEditor({
           )}
         </div>
         <aside className="editor-details">
-          <h3>{isTemplate ? "Template details" : "Session details"}</h3>
+          <h3>{isTemplate ? t("Template details") : t("Session details")}</h3>
           {!isTemplate && (
             <DateField
-              label="Move to date"
+              label={t("Move to date")}
               value={s.date}
               onChange={(date) => patch({ date })}
             />
@@ -332,7 +339,7 @@ export function SessionEditor({
           {data.settings.useABSplit && (
             <>
               <label>
-                Program week
+                {t("Program week")}
                 <select
                   value={s.week}
                   onChange={(e) =>
@@ -342,16 +349,16 @@ export function SessionEditor({
                     })
                   }
                 >
-                  <option value="A">Week A</option>
-                  <option value="B">Week B</option>
+                  <option value="A">{t("Week A")}</option>
+                  <option value="B">{t("Week B")}</option>
                 </select>
               </label>
               {!isTemplate && (
                 <>
                   <label>
-                    Training week
+                    {t("Training week")}
                     <select
-                      aria-label="Training week"
+                      aria-label={t("Training week")}
                       disabled={!trainingWeeksReady}
                       value={
                         s.trainingWeek ||
@@ -371,16 +378,27 @@ export function SessionEditor({
                       {weekGroups.map((group) => (
                         <option key={group.key} value={group.key}>
                           {group.label} · {group.sessions.length}{" "}
-                          {group.sessions.length === 1 ? "session" : "sessions"}
+                          {t(
+                            group.sessions.length === 1
+                              ? "session"
+                              : "sessions",
+                          )}
                         </option>
                       ))}
-                      <option value="new">Start a new Week {s.week}</option>
+                      <option value="new">
+                        {t("Start a new Week ")}
+                        {s.week}
+                      </option>
                     </select>
                   </label>
                   <p className="footnote">
                     {trainingWeeksReady
-                      ? "Group sessions regardless of dates. Three sessions is the default suggestion; add more or fewer as needed."
-                      : "Your coach needs to run database upgrade 007 to save custom training-week assignments. The chart uses suggested groups meanwhile."}
+                      ? t(
+                          "Group sessions regardless of dates. Three sessions is the default suggestion; add more or fewer as needed.",
+                        )
+                      : t(
+                          "Your coach needs to run database upgrade 007 to save custom training-week assignments. The chart uses suggested groups meanwhile.",
+                        )}
                   </p>
                 </>
               )}
@@ -389,7 +407,7 @@ export function SessionEditor({
           {!isTemplate && (
             <>
               <label>
-                Status
+                {t("Status")}
                 <select
                   value={s.status}
                   onChange={(e) =>
@@ -398,12 +416,12 @@ export function SessionEditor({
                       : patch({ status: "planned" })
                   }
                 >
-                  <option value="planned">Planned</option>
-                  <option value="done">Done</option>
+                  <option value="planned">{t("Planned")}</option>
+                  <option value="done">{t("Done")}</option>
                 </select>
               </label>
               <label>
-                How did it feel?
+                {t("How did it feel?")}
                 <select
                   value={s.difficulty}
                   onChange={(e) =>
@@ -412,20 +430,20 @@ export function SessionEditor({
                     })
                   }
                 >
-                  <option value="">Not rated</option>
-                  <option value="easy">😌 Easy</option>
-                  <option value="solid">🙂 Solid</option>
-                  <option value="hard">😤 Hard</option>
-                  <option value="brutal">🔥 Brutal</option>
+                  <option value="">{t("Not rated")}</option>
+                  <option value="easy">{t("😌 Easy")}</option>
+                  <option value="solid">{t("🙂 Solid")}</option>
+                  <option value="hard">{t("😤 Hard")}</option>
+                  <option value="brutal">{t("🔥 Brutal")}</option>
                 </select>
               </label>
             </>
           )}
           <label>
-            Notes
+            {t("Notes")}
             <textarea
               rows={4}
-              placeholder="Form cues, goals, how you felt…"
+              placeholder={t("Form cues, goals, how you felt…")}
               value={s.notes}
               onChange={(e) => patch({ notes: e.target.value })}
             />
@@ -433,16 +451,22 @@ export function SessionEditor({
           {!isTemplate && (
             <div className="session-totals">
               <div>
-                <span>Completed sets</span>
+                <span>{t("Completed sets")}</span>
                 <strong>{doneSets(s).length}</strong>
               </div>
               <div>
-                <span>Volume</span>
-                <strong>{number(volume(s))} kg</strong>
+                <span>{t("Volume")}</span>
+                <strong>
+                  {number(volume(s))}
+                  {t(" kg")}
+                </strong>
               </div>
               <div>
-                <span>Best e1RM</span>
-                <strong>{number(bestMax(s), 1)} kg</strong>
+                <span>{t("Best e1RM")}</span>
+                <strong>
+                  {number(bestMax(s), 1)}
+                  {t(" kg")}
+                </strong>
               </div>
             </div>
           )}
@@ -451,7 +475,9 @@ export function SessionEditor({
             disabled={!s.name.trim()}
             onClick={save}
           >
-            <Save size={16} /> Save {isTemplate ? "template" : "session"}
+            <Save size={16} />
+            {t(" Save ")}
+            {t(isTemplate ? "template" : "session")}
           </button>
           {!isTemplate && (
             <button
@@ -461,7 +487,8 @@ export function SessionEditor({
                 onClose();
               }}
             >
-              <Check size={17} /> Complete session
+              <Check size={17} />
+              {t(" Complete session")}
             </button>
           )}
           {onTemplate && (
@@ -479,13 +506,16 @@ export function SessionEditor({
                 setSavedTemplate(true);
               }}
             >
-              {savedTemplate ? "✓ Template saved" : "Save as template"}
+              {savedTemplate ? t("✓ Template saved") : t("Save as template")}
             </button>
           )}
           {onDelete &&
             (confirmDelete ? (
               <div className="confirm">
-                <p>Delete this {isTemplate ? "template" : "session"}?</p>
+                <p>
+                  {t("Delete this ")}
+                  {t(isTemplate ? "template" : "session")}?
+                </p>
                 <button
                   className="button danger"
                   onClick={() => {
@@ -493,13 +523,13 @@ export function SessionEditor({
                     onClose();
                   }}
                 >
-                  Yes, delete
+                  {t("Yes, delete")}
                 </button>
                 <button
                   className="text-button"
                   onClick={() => setConfirmDelete(false)}
                 >
-                  Cancel
+                  {t("Cancel")}
                 </button>
               </div>
             ) : (
@@ -507,8 +537,8 @@ export function SessionEditor({
                 className="text-button danger-text"
                 onClick={() => setConfirmDelete(true)}
               >
-                <Trash2 size={15} /> Delete{" "}
-                {isTemplate ? "template" : "session"}
+                <Trash2 size={15} />
+                {t(" Delete")} {t(isTemplate ? "template" : "session")}
               </button>
             ))}
         </aside>

@@ -1,3 +1,5 @@
+import { t } from "./i18n";
+import { chartLabelIndices } from "./chartDomain";
 import { number } from "./model";
 import { useMediaQuery } from "./components";
 import type { VolumeRow } from "./analyticsVolume";
@@ -24,7 +26,6 @@ export function VolumePlot({
   training,
   title,
   range,
-  caption,
 }: {
   rows: PlotRow[];
   view: "bars" | "line";
@@ -32,32 +33,46 @@ export function VolumePlot({
   training: boolean;
   title: string;
   range: (row: PlotRow) => string;
-  caption: string;
 }) {
   const compact = useMediaQuery("(max-width: 640px)");
-  const width = Math.max(compact ? 360 : 760, rows.length * 105 + 70),
+  const width = compact ? 360 : 760,
     height = 260;
   const left = 55,
     right = 15,
     top = 18,
-    bottom = training ? 63 : 43;
+    bottom = 30;
   const plotWidth = width - left - right,
     plotHeight = height - top - bottom;
+  const visibleLabels = chartLabelIndices(
+    rows.length,
+    compact ? (training ? 6 : 4) : training ? 10 : 8,
+  );
+  const label = (row: PlotRow) =>
+    training ? row.label.replace(/^Week /, "").replace(" · ", "") : range(row);
   const max = Math.max(1, ...rows.map((row) => row.total)) * 1.1;
   const x = (index: number) => left + ((index + 0.5) * plotWidth) / rows.length;
   const y = (value: number) => top + (1 - value / max) * plotHeight;
   const path = (field: "done" | "total") =>
     rows
-      .map((row, index) => `${index ? "L" : "M"}${x(index)},${y(row[field])}`)
+      .map((row, index) => {
+        if (field === "done" && row.done === 0 && row.planned > 0) return "";
+        const previous = rows[index - 1];
+        const gap =
+          !previous ||
+          (field === "done" && previous.done === 0 && previous.planned > 0);
+        return `${gap ? "M" : "L"}${x(index)},${y(row[field])}`;
+      })
       .join(" ");
   return (
     <div className="chart-wrap calendar-volume-chart">
       <div className="volume-chart-scroll">
         <svg
-          style={{ minWidth: width, width: "100%" }}
+          style={{ width: "100%", display: "block" }}
           viewBox={`0 0 ${width} ${height}`}
           role="img"
-          aria-label={`${title} completed and planned training volume in kg, ${view}`}
+          aria-label={t(
+            `${title} completed and planned training volume in kg, ${view}`,
+          )}
         >
           <title>{title}</title>
           {[0, 0.5, 1].map((t) => (
@@ -114,7 +129,7 @@ export function VolumePlot({
                   {buckets.map((bucket, bi) => {
                     const bx =
                       x(index) +
-                      (bi - (buckets.length - 1) / 2) * (barWidth + 4) -
+                      (bi - (buckets.length - 1) / 2) * (barWidth * 1.15) -
                       barWidth / 2;
                     return (
                       <g key={bucket.name}>
@@ -126,8 +141,9 @@ export function VolumePlot({
                           fill={bucket.color}
                         >
                           <title>
-                            {range(row)} · {bucket.name} completed:{" "}
-                            {number(bucket.done)} kg
+                            {range(row)} · {bucket.name}
+                            {t(" completed:")} {number(bucket.done)}
+                            {t(" kg")}
                           </title>
                         </rect>
                         <rect
@@ -144,9 +160,11 @@ export function VolumePlot({
                           strokeDasharray="3 3"
                         >
                           <title>
-                            {range(row)} · {bucket.name} planned:{" "}
-                            {number(bucket.planned)} kg; projection:{" "}
-                            {number(bucket.done + bucket.planned)} kg
+                            {range(row)} · {bucket.name}
+                            {t(" planned:")} {number(bucket.planned)}
+                            {t(" kg; projection:")}{" "}
+                            {number(bucket.done + bucket.planned)}
+                            {t(" kg")}
                           </title>
                         </rect>
                       </g>
@@ -182,57 +200,46 @@ export function VolumePlot({
                     strokeWidth="2"
                   >
                     <title>
-                      {range(row)} projection: {number(row.total)} kg
+                      {range(row)}
+                      {t(" projection: ")}
+                      {number(row.total)}
+                      {t(" kg")}
                     </title>
                   </circle>
-                  <circle
-                    cx={x(index)}
-                    cy={y(row.done)}
-                    r="3.5"
-                    fill={training ? (row.week === "B" ? B : A) : DONE}
-                  >
-                    <title>
-                      {range(row)} completed: {number(row.done)} kg
-                    </title>
-                  </circle>
+                  {(row.done > 0 || row.planned === 0) && (
+                    <circle
+                      cx={x(index)}
+                      cy={y(row.done)}
+                      r="3.5"
+                      fill={training ? (row.week === "B" ? B : A) : DONE}
+                    >
+                      <title>
+                        {range(row)}
+                        {t(" completed: ")}
+                        {number(row.done)}
+                        {t(" kg")}
+                      </title>
+                    </circle>
+                  )}
                 </g>
               ))}
             </>
           )}
-          {rows.map((row, index) => (
-            <text
-              key={row.key}
-              x={x(index)}
-              y={height - 21}
-              textAnchor="middle"
-              fontSize={compact ? 14 : 12}
-              fill="#767184"
-            >
-              {training ? (
-                <>
-                  <tspan x={x(index)} dy={-18}>
-                    {row.label}
-                  </tspan>
-                  <tspan x={x(index)} dy={18}>
-                    {range(row)}
-                  </tspan>
-                </>
-              ) : (
-                range(row)
-              )}
-            </text>
-          ))}
-          <text
-            x={width / 2}
-            y={height - 3}
-            textAnchor="middle"
-            fontSize="11"
-            fill="#767184"
-          >
-            {training
-              ? "Assigned training weeks · whole-group volume · kg"
-              : caption}
-          </text>
+          {rows.map(
+            (row, index) =>
+              visibleLabels.has(index) && (
+                <text
+                  key={row.key}
+                  x={x(index)}
+                  y={height - 7}
+                  textAnchor="middle"
+                  fontSize={compact ? 12 : 11}
+                  fill="#767184"
+                >
+                  {label(row)}
+                </text>
+              ),
+          )}
         </svg>
       </div>
       <div className="chart-legend">
@@ -240,32 +247,32 @@ export function VolumePlot({
           <>
             <span>
               <i style={{ background: A }} />
-              {split ? "Week A" : "Sessions"}
+              {split ? t("Week A") : t("Sessions")}
             </span>
             {split && (
               <span>
                 <i style={{ background: B }} />
-                Week B
+                {t("Week B")}
               </span>
             )}
             <span>
               <i style={{ background: "#767184" }} />
-              Completed · solid
+              {t("Completed")}
             </span>
             <span>
               <i className="planned-legend" />
-              Planned · lighter
+              {t("Planned")}
             </span>
           </>
         ) : (
           <>
             <span>
               <i style={{ background: DONE }} />
-              Completed
+              {t("Completed")}
             </span>
             <span>
               <i className="projection-legend" />
-              Completed + planned · dashed
+              {t("Projection")}
             </span>
           </>
         )}

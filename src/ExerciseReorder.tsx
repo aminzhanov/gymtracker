@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import {
   useEffect,
   useRef,
@@ -136,7 +137,7 @@ export function ExerciseReorderList({
     <div ref={list} className="exercise-sort-list">
       {exercises.length > 1 && (
         <p className="footnote reorder-hint">
-          Drag the grip to rearrange exercises, or use the arrows.
+          {t("Drag the grip to rearrange exercises, or use the arrows.")}
         </p>
       )}
       {exercises.map((exercise, index) => (
@@ -151,7 +152,7 @@ export function ExerciseReorderList({
               <button
                 type="button"
                 className="icon-button exercise-drag-handle"
-                aria-label={`Drag to reorder ${exercise.name}`}
+                aria-label={t(`Drag to reorder ${exercise.name}`)}
                 disabled={exercises.length < 2}
                 onPointerDown={(event) => start(event, exercise.id)}
                 onPointerMove={pointerMove}
@@ -168,12 +169,15 @@ export function ExerciseReorderList({
                 <GripVertical size={19} />
               </button>
               <span>
-                Exercise {index + 1} of {exercises.length}
+                {t("Exercise ")}
+                {index + 1}
+                {t(" of ")}
+                {exercises.length}
               </span>
               <button
                 type="button"
                 className="icon-button"
-                aria-label={`Move ${exercise.name} up`}
+                aria-label={t(`Move ${exercise.name} up`)}
                 disabled={index === 0 || Boolean(active)}
                 onClick={() => move(exercise.id, exercises[index - 1].id)}
               >
@@ -182,7 +186,7 @@ export function ExerciseReorderList({
               <button
                 type="button"
                 className="icon-button"
-                aria-label={`Move ${exercise.name} down`}
+                aria-label={t(`Move ${exercise.name} down`)}
                 disabled={index === exercises.length - 1 || Boolean(active)}
                 onClick={() => move(exercise.id, exercises[index + 1].id)}
               >

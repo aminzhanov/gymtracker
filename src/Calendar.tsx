@@ -1,3 +1,5 @@
+import { appLocale } from "./i18n";
+import { t } from "./i18n";
 import { useState } from "react";
 import { Plus, ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import type { AppData, Session } from "./types";
@@ -33,7 +35,7 @@ export function Calendar({
   const title =
     activeView === "week"
       ? `${shortDate(weekStart)} – ${shortDate(addDays(weekStart, 6))}, ${parseDate(addDays(weekStart, 6)).getFullYear()}`
-      : parseDate(first).toLocaleDateString(undefined, {
+      : parseDate(first).toLocaleDateString(appLocale(), {
           month: "long",
           year: "numeric",
         });
@@ -49,14 +51,16 @@ export function Calendar({
     <>
       <div className="page-head">
         <div>
-          <span className="eyebrow">PLAN. TRAIN. PROGRESS.</span>
+          <span className="eyebrow">{t("PLAN. TRAIN. PROGRESS.")}</span>
           <h1>
-            Your training calendar <span>↗</span>
+            {t("Your training calendar ")}
+            <span>↗</span>
           </h1>
-          <p>Make a little space for getting stronger.</p>
+          <p>{t("Make a little space for getting stronger.")}</p>
         </div>
         <button className="button primary" onClick={() => onCreate(dateKey())}>
-          <Plus size={17} /> Add session
+          <Plus size={17} />
+          {t(" Add session")}
         </button>
       </div>
       <Panel
@@ -64,26 +68,26 @@ export function Calendar({
         className="calendar-panel"
         action={
           <div className="calendar-controls">
-            <div className="segmented" aria-label="Calendar view">
+            <div className="segmented" aria-label={t("Calendar view")}>
               <button
                 aria-pressed={activeView === "week"}
                 className={activeView === "week" ? "active" : ""}
                 onClick={() => setView("week")}
               >
-                Week
+                {t("Week")}
               </button>
               <button
                 aria-pressed={activeView === "month"}
                 className={activeView === "month" ? "active" : ""}
                 onClick={() => setView("month")}
               >
-                Month
+                {t("Month")}
               </button>
             </div>
             <div className="flex">
               <button
                 className="icon-button"
-                aria-label={`Previous ${activeView}`}
+                aria-label={t(`Previous ${activeView}`)}
                 onClick={() => move(-1)}
               >
                 <ChevronLeft size={20} />
@@ -92,11 +96,11 @@ export function Calendar({
                 className="button secondary compact"
                 onClick={() => setFocusDate(dateKey())}
               >
-                Today
+                {t("Today")}
               </button>
               <button
                 className="icon-button"
-                aria-label={`Next ${activeView}`}
+                aria-label={t(`Next ${activeView}`)}
                 onClick={() => move(1)}
               >
                 <ChevronRight size={20} />
@@ -114,9 +118,17 @@ export function Calendar({
             }
           >
             {activeView === "month" &&
-              ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                <div className="calendar-label" key={day}>
-                  {day}
+              [
+                t("Mon"),
+                t("Tue"),
+                t("Wed"),
+                t("Thu"),
+                t("Fri"),
+                t("Sat"),
+                t("Sun"),
+              ].map((day) => (
+                <div className="calendar-label" key={t(day)}>
+                  {t(day)}
                 </div>
               ))}
             {days.map((date) => {
@@ -139,18 +151,18 @@ export function Calendar({
                   <div className="calendar-date">
                     <button
                       className="day-number"
-                      aria-label={`Create session on ${date}`}
+                      aria-label={t(`Create session on ${date}`)}
                       onClick={() => onCreate(date)}
                     >
                       {parseDate(date).getDate()}
                     </button>
                     {activeView === "week" && (
                       <span>
-                        {parseDate(date).toLocaleDateString(undefined, {
+                        {parseDate(date).toLocaleDateString(appLocale(), {
                           weekday: "long",
                           month: "short",
                         })}
-                        {date === dateKey() && <small>Today</small>}
+                        {date === dateKey() && <small>{t("Today")}</small>}
                       </span>
                     )}
                   </div>
@@ -174,14 +186,18 @@ export function Calendar({
                           </span>
                           <small>
                             {showWeek && `Week ${session.week} · `}
-                            {session.status === "done" ? "✓ Done" : "Planned"}
+                            {session.status === "done"
+                              ? t("✓ Done")
+                              : t("Planned")}
                           </small>
                           <ExerciseNames exercises={session.exercises} />
                         </button>
                         <button
                           className="duplicate-session-button"
-                          aria-label={`Duplicate ${session.name} on ${session.date}`}
-                          title="Duplicate session"
+                          aria-label={t(
+                            `Duplicate ${session.name} on ${session.date}`,
+                          )}
+                          title={t("Duplicate session")}
                           onClick={() => onDuplicate(session)}
                         >
                           <Copy size={16} />
@@ -189,12 +205,14 @@ export function Calendar({
                       </div>
                     ))}
                     {activeView === "week" && !sessions.length && (
-                      <span className="calendar-rest">No session planned</span>
+                      <span className="calendar-rest">
+                        {t("No session planned")}
+                      </span>
                     )}
                   </div>
                   <button
                     className="day-add"
-                    aria-label={`Add session on ${date}`}
+                    aria-label={t(`Add session on ${date}`)}
                     onClick={() => onCreate(date)}
                   >
                     <Plus size={17} />
@@ -205,8 +223,9 @@ export function Calendar({
           </div>
         </div>
         <p className="footnote">
-          Tap a date to plan, or a session to open it. Drag a session to
-          reschedule on desktop. Use “Move to date” in the editor on mobile.
+          {t(
+            "Tap a date to plan, or a session to open it. Drag a session to reschedule on desktop. Use “Move to date” in the editor on mobile.",
+          )}
         </p>
       </Panel>
       <CalendarVolume data={data} month={month} />

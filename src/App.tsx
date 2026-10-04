@@ -1,3 +1,11 @@
+import {
+  t,
+  exerciseName,
+  setAppLanguage,
+  readLanguage,
+  rememberLanguage,
+  type Language,
+} from "./i18n";
 import { DashboardOverview } from "./DashboardOverview";
 import { DuplicateSession } from "./DuplicateSession";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -129,8 +137,8 @@ function Auth({ onDemo }: { onDemo: () => void }) {
         <div className="auth-art">
           <DumbbellArt />
         </div>
-        <h1>Welcome back, strong friend.</h1>
-        <p>Your next session is waiting.</p>
+        <h1>{t("Welcome back, strong friend.")}</h1>
+        <p>{t("Your next session is waiting.")}</p>
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -150,7 +158,7 @@ function Auth({ onDemo }: { onDemo: () => void }) {
           }}
         >
           <label>
-            Email
+            {t("Email")}
             <input
               type="email"
               required
@@ -160,7 +168,7 @@ function Auth({ onDemo }: { onDemo: () => void }) {
             />
           </label>
           <label>
-            Password
+            {t("Password")}
             <input
               type="password"
               required
@@ -171,7 +179,7 @@ function Auth({ onDemo }: { onDemo: () => void }) {
             />
           </label>
           <button className="button primary full" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in"}
+            {busy ? t("Signing in…") : t("Sign in")}
           </button>
         </form>
         <button
@@ -191,18 +199,21 @@ function Auth({ onDemo }: { onDemo: () => void }) {
             );
           }}
         >
-          Forgot password?
+          {t("Forgot password?")}
         </button>
         {message && (
           <p role="status" className="notice">
-            {message}
+            {t(message)}
           </p>
         )}
         <hr />
         <button className="button secondary full" onClick={onDemo}>
-          <FlaskConical size={16} /> Try the demo
+          <FlaskConical size={16} />
+          {t(" Try the demo")}
         </button>
-        <p className="footnote">Real accounts are invited by your coach.</p>
+        <p className="footnote">
+          {t("Real accounts are invited by your coach.")}
+        </p>
       </div>
     </div>
   );
@@ -219,6 +230,7 @@ export default function App() {
     useState(!supabase);
   const [messages, setMessages] = useState<CoachMessages>(DEFAULT_MESSAGES);
   const [messagesReady, setMessagesReady] = useState(!supabase);
+  const [languageReady, setLanguageReady] = useState(!supabase);
   const [appNameReady, setAppNameReady] = useState(!supabase);
   const [techniqueVideos, setTechniqueVideos] = useState<TechniqueVideos>({});
   const [techniqueVideosReady, setTechniqueVideosReady] = useState(!supabase);
@@ -226,7 +238,7 @@ export default function App() {
   const libraryRequest = useRef(0);
   useEffect(() => {
     const name = (demo || authId) && data ? messages.appName : "LiftLog";
-    document.title = `${name} · Train together`;
+    document.title = `${name} · ${t("train together")}`;
     for (const metaName of ["apple-mobile-web-app-title", "application-name"])
       document
         .querySelector<HTMLMetaElement>(`meta[name="${metaName}"]`)
@@ -336,6 +348,7 @@ export default function App() {
     setData(null);
     setMessages(DEFAULT_MESSAGES);
     setMessagesReady(false);
+    setLanguageReady(false);
     setAppNameReady(false);
     setTechniqueVideos({});
     setTechniqueVideosReady(false);
@@ -354,6 +367,7 @@ export default function App() {
           },
           sharedLibraryReady: true,
           revision: 0,
+          languageReady: true,
           programPreferenceReady: true,
           trainingWeeksReady: true,
           messages: loadLocalMessages(owner),
@@ -372,6 +386,7 @@ export default function App() {
         setMessages(result.messages);
         setMessagesReady(result.messagesReady);
         setAppNameReady(result.appNameReady);
+        setLanguageReady(result.languageReady);
         setTechniqueVideos(result.techniqueVideos);
         setTechniqueVideosReady(result.techniqueVideosReady);
         setSharedLibraryReady(result.sharedLibraryReady);
@@ -484,6 +499,7 @@ export default function App() {
       });
   };
   const change = (next: AppData) => {
+    rememberLanguage(next.settings.language ?? "en", owner);
     if (next.settings.useABSplit)
       next = { ...next, sessions: assignTrainingWeeks(next.sessions) };
     dataRef.current = next;
@@ -617,6 +633,12 @@ export default function App() {
       active = false;
     };
   }, [page, profiles, demo, owner]);
+  const language = data?.settings.language ?? readLanguage();
+  setAppLanguage(language);
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title = `${messages.appName} · ${t("train together")}`;
+  }, [language, messages.appName]);
   const today = dateKey();
   const thisMonday = monday(today);
   const todaySessions = data?.sessions.filter((s) => s.date === today) || [];
@@ -628,7 +650,7 @@ export default function App() {
     data?.sessions
       .filter((s) => s.status === "done")
       .sort((a, b) => b.date.localeCompare(a.date)) || [];
-  if (!authReady) return <div className="loading">Opening LiftLog…</div>;
+  if (!authReady) return <div className="loading">{t("Opening LiftLog…")}</div>;
   if (!demo && !authId) return <Auth onDemo={() => setDemo(true)} />;
   return (
     <div className="app-shell">
@@ -639,7 +661,7 @@ export default function App() {
             .filter((p) => p.name !== "People" || coach)
             .map((p) => (
               <button
-                key={p.name}
+                key={t(p.name)}
                 className={page === p.name ? "active" : ""}
                 onClick={() => {
                   setPage(p.name);
@@ -648,24 +670,29 @@ export default function App() {
                 }}
               >
                 <p.icon size={21} />
-                <span>{p.name}</span>
+                <span>{t(p.name)}</span>
               </button>
             ))}
         </nav>
         <div className="sidebar-cheer">
           <span>✦</span>
-          <strong className="personal-message">{messages.sidebar}</strong>
-          <small>One rep at a time.</small>
+          <strong className="personal-message">
+            {messages.sidebar === DEFAULT_MESSAGES.sidebar
+              ? t(messages.sidebar)
+              : messages.sidebar}
+          </strong>
+          <small>{t("One rep at a time.")}</small>
         </div>
         <div className="sidebar-foot">
-          Made for showing up <span>↗</span>
+          {t("Made for showing up ")}
+          <span>↗</span>
         </div>
       </aside>
       <div className="main-shell">
         <header className="topbar">
           <button
             className="icon-button mobile-menu"
-            aria-label="Open navigation"
+            aria-label={t("Open navigation")}
             onClick={() => setMenu(!menu)}
           >
             {menu ? <X /> : <Menu />}
@@ -676,8 +703,8 @@ export default function App() {
           <div className="search-field">
             <Search size={18} />
             <input
-              aria-label="Search sessions"
-              placeholder="Find a session…"
+              aria-label={t("Search sessions")}
+              placeholder={t("Find a session…")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -689,25 +716,27 @@ export default function App() {
             <span className={`save-status ${saveState}`} aria-live="polite">
               {demo ? <FlaskConical size={14} /> : <Cloud size={14} />}{" "}
               {demo
-                ? "Local demo"
+                ? t("Local demo")
                 : saveState === "saving"
-                  ? "Saving…"
+                  ? t("Saving…")
                   : saveState === "error"
-                    ? "Unsaved changes"
-                    : "All saved"}
+                    ? t("Unsaved changes")
+                    : t("All saved")}
             </span>
             {coach && (
               <select
                 className="athlete-select"
-                aria-label="Switch athlete"
+                aria-label={t("Switch athlete")}
                 value={owner}
                 onChange={(e) => switchOwner(e.target.value)}
               >
                 {profiles.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
-                    {p.id === (demo ? "demo-self" : authId) ? " · You" : ""}
-                    {p.active ? "" : " · inactive"}
+                    {p.id === (demo ? "demo-self" : authId)
+                      ? ` · ${t("You")}`
+                      : ""}
+                    {p.active ? "" : ` · ${t("inactive")}`}
                   </option>
                 ))}
               </select>
@@ -716,7 +745,7 @@ export default function App() {
             {!demo && (
               <button
                 className="icon-button"
-                aria-label="Sign out"
+                aria-label={t("Sign out")}
                 onClick={async () => {
                   if (pending.current || blocked.current) {
                     setError("Export unsaved data before signing out.");
@@ -735,8 +764,8 @@ export default function App() {
           {demo && (
             <div className="demo-banner">
               <span>
-                <FlaskConical size={15} /> Demo mode · profiles and workouts
-                stay in this browser
+                <FlaskConical size={15} />
+                {t(" Demo mode · profiles and workouts stay in this browser")}
               </span>
               {supabase ? (
                 <button
@@ -744,7 +773,7 @@ export default function App() {
                     if (saveState === "saved") setDemo(false);
                   }}
                 >
-                  Use real account →
+                  {t("Use real account →")}
                 </button>
               ) : (
                 <a
@@ -752,7 +781,7 @@ export default function App() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Connect accounts →
+                  {t("Connect accounts →")}
                 </a>
               )}
             </div>
@@ -760,15 +789,21 @@ export default function App() {
           {coach && owner !== (demo ? "demo-self" : authId) && (
             <div className="viewing-banner">
               <ShieldCheck size={17} />
-              <strong>Viewing {viewing?.name}'s training</strong>
-              <span>You are editing as their coach.</span>
+              <strong>
+                {t("Viewing ")}
+                {viewing?.name}
+                {t("'s training")}
+              </strong>
+              <span>{t("You are editing as their coach.")}</span>
             </div>
           )}
           {error && (
             <div className="error-banner" role="alert">
               <AlertCircle size={18} />
-              <span>{error}</span>
-              {data && <button onClick={() => exportData(data)}>Export</button>}
+              <span>{t(error)}</span>
+              {data && (
+                <button onClick={() => exportData(data)}>{t("Export")}</button>
+              )}
               <button
                 onClick={() => {
                   if (pending.current) return;
@@ -787,15 +822,15 @@ export default function App() {
                   }
                 }}
               >
-                Reload
+                {t("Reload")}
               </button>
             </div>
           )}
           {loading || !data ? (
             <div className="loading">
               {error
-                ? "Resolve the loading error above to continue."
-                : "Loading your training…"}
+                ? t("Resolve the loading error above to continue.")
+                : t("Loading your training…")}
             </div>
           ) : (
             <>
@@ -804,14 +839,15 @@ export default function App() {
                   <DashboardOverview data={data} message={messages.dashboard} />
                   <div className="dashboard-grid">
                     <Panel
-                      title="Today's workout"
+                      title={t("Today's workout")}
                       className="today-panel"
                       action={
                         <button
                           className="text-button"
                           onClick={() => setCreateDate(today)}
                         >
-                          <Plus size={15} /> Plan
+                          <Plus size={15} />
+                          {t(" Plan")}
                         </button>
                       }
                     >
@@ -882,7 +918,7 @@ export default function App() {
                               ))}
                               {!s.exercises.length && (
                                 <p className="muted">
-                                  Open the session to add your exercises.
+                                  {t("Open the session to add your exercises.")}
                                 </p>
                               )}
                               <div className="today-actions">
@@ -890,7 +926,7 @@ export default function App() {
                                   className="button secondary"
                                   onClick={() => setEditor(s)}
                                 >
-                                  Open editor
+                                  {t("Open editor")}
                                 </button>
                                 <button
                                   className="button primary"
@@ -898,7 +934,8 @@ export default function App() {
                                     saveSession(completeSession(s))
                                   }
                                 >
-                                  <Check size={16} /> Complete session
+                                  <Check size={16} />
+                                  {t(" Complete session")}
                                 </button>
                               </div>
                             </div>
@@ -906,14 +943,17 @@ export default function App() {
                         )
                       ) : (
                         <Empty
-                          title="A fresh page for today"
-                          detail="Plan a session, or enjoy your recovery day."
+                          title={t("A fresh page for today")}
+                          detail={t(
+                            "Plan a session, or enjoy your recovery day.",
+                          )}
                           action={
                             <button
                               className="button primary"
                               onClick={() => setCreateDate(today)}
                             >
-                              <Plus size={16} /> Plan today's session
+                              <Plus size={16} />
+                              {t(" Plan today's session")}
                             </button>
                           }
                         />
@@ -921,13 +961,14 @@ export default function App() {
                     </Panel>
                     <div className="dashboard-side">
                       <Panel
-                        title="Coming up"
+                        title={t("Coming up")}
                         action={
                           <button
                             className="text-button"
                             onClick={() => setPage("Calendar")}
                           >
-                            Calendar <ArrowRight size={15} />
+                            {t("Calendar ")}
+                            <ArrowRight size={15} />
                           </button>
                         }
                       >
@@ -944,19 +985,20 @@ export default function App() {
                             ))
                         ) : (
                           <Empty
-                            title="Room for your next goal"
-                            detail="Plan your next training day."
+                            title={t("Room for your next goal")}
+                            detail={t("Plan your next training day.")}
                           />
                         )}
                       </Panel>
                       <Panel
-                        title="Recently completed"
+                        title={t("Recently completed")}
                         action={
                           <button
                             className="text-button"
                             onClick={() => setPage("Training")}
                           >
-                            View all <ArrowRight size={15} />
+                            {t("View all ")}
+                            <ArrowRight size={15} />
                           </button>
                         }
                       >
@@ -973,15 +1015,15 @@ export default function App() {
                             ))
                         ) : (
                           <Empty
-                            title="Your history starts here"
-                            detail="Complete your first session."
+                            title={t("Your history starts here")}
+                            detail={t("Complete your first session.")}
                           />
                         )}
                       </Panel>
                       <div className="cheer-card">
                         <div>
-                          <strong>Keep showing up!</strong>
-                          <p>Every rep is a little vote for you.</p>
+                          <strong>{t("Keep showing up!")}</strong>
+                          <p>{t("Every rep is a little vote for you.")}</p>
                         </div>
                         <span>☻</span>
                       </div>
@@ -1038,17 +1080,21 @@ export default function App() {
                 <>
                   <div className="page-head">
                     <div>
-                      <span className="eyebrow">STRONGER TOGETHER</span>
+                      <span className="eyebrow">{t("STRONGER TOGETHER")}</span>
                       <h1>
-                        Your training crew <span>✦</span>
+                        {t("Your training crew ")}
+                        <span>✦</span>
                       </h1>
-                      <p>Plan their sessions. Celebrate their progress.</p>
+                      <p>
+                        {t("Plan their sessions. Celebrate their progress.")}
+                      </p>
                     </div>
                     <button
                       className="button primary"
                       onClick={() => setInvite(true)}
                     >
-                      <Plus size={17} /> Invite athlete
+                      <Plus size={17} />
+                      {t(" Invite athlete")}
                     </button>
                   </div>
                   <div className="people-grid">
@@ -1083,25 +1129,29 @@ export default function App() {
                               <span
                                 className={`badge ${p.active ? "tint-mint" : "tint-pink"}`}
                               >
-                                {p.active ? "Active" : "Inactive"}
+                                {p.active ? t("Active") : t("Inactive")}
                               </span>
                             </div>
                             <p>
                               {d
-                                ? `${wk.filter((s) => s.status === "done").length} completed this week · ${number(wk.reduce((n, s) => n + volume(s), 0))} kg`
-                                : "Loading training summary…"}
+                                ? t(
+                                    `${wk.filter((s) => s.status === "done").length} completed this week · ${number(wk.reduce((n, s) => n + volume(s), 0))} kg`,
+                                  )
+                                : t("Loading training summary…")}
                             </p>
                             <p className="muted">
-                              Next:{" "}
+                              {t("Next:")}{" "}
                               {next
-                                ? `${next.name} · ${shortDate(next.date)}`
-                                : "Nothing planned yet"}
+                                ? t(`${next.name} · ${shortDate(next.date)}`)
+                                : t("Nothing planned yet")}
                             </p>
                             <p className="muted">
-                              Last:{" "}
+                              {t("Last:")}{" "}
                               {completed
-                                ? `${completed.name} · ${shortDate(completed.date)}`
-                                : "No completed session"}
+                                ? t(
+                                    `${completed.name} · ${shortDate(completed.date)}`,
+                                  )
+                                : t("No completed session")}
                             </p>
                             <button
                               className="button primary full"
@@ -1122,8 +1172,8 @@ export default function App() {
                                 }}
                               >
                                 {p.active
-                                  ? "Deactivate access"
-                                  : "Reactivate access"}
+                                  ? t("Deactivate access")
+                                  : t("Reactivate access")}
                               </button>
                             )}
                           </Panel>
@@ -1132,8 +1182,10 @@ export default function App() {
                   </div>
                   {profiles.length <= 1 && (
                     <Empty
-                      title="Build your crew"
-                      detail="Invite your first athlete to plan training together."
+                      title={t("Build your crew")}
+                      detail={t(
+                        "Invite your first athlete to plan training together.",
+                      )}
                     />
                   )}
                 </>
@@ -1142,20 +1194,26 @@ export default function App() {
                 <>
                   <div className="page-head">
                     <div>
-                      <span className="eyebrow">YOUR DATA, YOUR JOURNEY</span>
+                      <span className="eyebrow">
+                        {t("YOUR DATA, YOUR JOURNEY")}
+                      </span>
                       <h1>
-                        Make it yours <span>✦</span>
+                        {t("Make it yours ")}
+                        <span>✦</span>
                       </h1>
-                      <p>Training preferences and backups.</p>
+                      <p>{t("Training preferences and backups.")}</p>
                     </div>
                   </div>
                   {coach && (
                     <Panel
-                      title={`Personal app for ${viewing?.name || data.settings.name}`}
+                      title={t(
+                        `Personal app for ${viewing?.name || data.settings.name}`,
+                      )}
                     >
                       <p className="muted">
-                        Choose an athlete at the top to personalize their app
-                        name, dashboard and menu.
+                        {t(
+                          "Choose an athlete at the top to personalize their app name, dashboard and menu.",
+                        )}
                       </p>
                       <CoachMessageEditor
                         key={owner}
@@ -1176,9 +1234,37 @@ export default function App() {
                     </Panel>
                   )}
                   <div className="two-col">
-                    <Panel title="Program & workload">
+                    <Panel title={t("Program & workload")}>
                       <label>
-                        Display name
+                        {t("Language")}
+                        <select
+                          aria-label={t("Language")}
+                          value={data.settings.language || "en"}
+                          onChange={(e) => {
+                            const nextLanguage = e.target.value as Language;
+                            rememberLanguage(nextLanguage, owner);
+                            change({
+                              ...data,
+                              settings: {
+                                ...data.settings,
+                                language: nextLanguage,
+                              },
+                            });
+                          }}
+                        >
+                          <option value="en">{t("English")}</option>
+                          <option value="ru">{t("Русский")}</option>
+                        </select>
+                      </label>
+                      <p className="footnote">
+                        {t(
+                          languageReady
+                            ? "Language is synced with this athlete's account."
+                            : "Language is saved on this device until the account language update is applied.",
+                        )}
+                      </p>
+                      <label>
+                        {t("Display name")}
                         <input
                           value={data.settings.name}
                           onChange={(e) =>
@@ -1194,13 +1280,15 @@ export default function App() {
                       </label>
                       <label className="program-switch">
                         <span>
-                          <strong>Use A/B split</strong>
-                          <small>Alternate between Week A and Week B.</small>
+                          <strong>{t("Use A/B split")}</strong>
+                          <small>
+                            {t("Alternate between Week A and Week B.")}
+                          </small>
                         </span>
                         <input
                           type="checkbox"
                           role="switch"
-                          aria-label="Use A/B split"
+                          aria-label={t("Use A/B split")}
                           checked={data.settings.useABSplit}
                           disabled={!programPreferenceReady}
                           onChange={(event) =>
@@ -1216,20 +1304,22 @@ export default function App() {
                       </label>
                       {!programPreferenceReady && (
                         <p className="footnote">
-                          This preference needs an account settings update
-                          before it can be changed.
+                          {t(
+                            "This preference needs an account settings update before it can be changed.",
+                          )}
                         </p>
                       )}
                       {!data.settings.useABSplit && (
                         <p className="muted">
-                          Plan freely, with all sessions in one program. Your
-                          existing workouts are kept.
+                          {t(
+                            "Plan freely, with all sessions in one program. Your existing workouts are kept.",
+                          )}
                         </p>
                       )}
                       {data.settings.useABSplit && (
                         <>
                           <label>
-                            Week A/B anchor date
+                            {t("Week A/B anchor date")}
                             <input
                               type="date"
                               value={data.settings.anchorDate}
@@ -1246,7 +1336,7 @@ export default function App() {
                             />
                           </label>
                           <label>
-                            Anchor program week
+                            {t("Anchor program week")}
                             <select
                               value={data.settings.anchorWeek}
                               onChange={(e) =>
@@ -1264,14 +1354,14 @@ export default function App() {
                             </select>
                           </label>
                           <p className="footnote">
-                            Your dashboard alternates A/B from this date's
-                            Monday. Existing sessions retain their assigned
-                            week.
+                            {t(
+                              "Your dashboard alternates A/B from this date's Monday. Existing sessions retain their assigned week.",
+                            )}
                           </p>
                         </>
                       )}
                       <label>
-                        Workload spike threshold (%)
+                        {t("Workload spike threshold (%)")}
                         <input
                           type="number"
                           min="0"
@@ -1292,21 +1382,23 @@ export default function App() {
                         />
                       </label>
                       <p className="footnote">
-                        Flag weekly volume increases above this threshold.
-                        Default: 30%.
+                        {t(
+                          "Flag weekly volume increases above this threshold. Default: 30%.",
+                        )}
                       </p>
                     </Panel>
-                    <Panel title="Data & backups">
+                    <Panel title={t("Data & backups")}>
                       <div className="data-actions">
                         <button onClick={() => exportData(data)}>
                           <span className="data-icon tint-mint">
                             <Download size={20} />
                           </span>
                           <span>
-                            <strong>Export all data</strong>
+                            <strong>{t("Export all data")}</strong>
                             <small>
-                              Sessions, templates, exercises, bodyweight &
-                              settings
+                              {t(
+                                "Sessions, templates, exercises, bodyweight & settings",
+                              )}
                             </small>
                           </span>
                           <ArrowRight size={17} />
@@ -1316,9 +1408,10 @@ export default function App() {
                             <Upload size={20} />
                           </span>
                           <span>
-                            <strong>Import JSON backup</strong>
+                            <strong>{t("Import JSON backup")}</strong>
                             <small>
-                              Restore everything for {viewing?.name}
+                              {t("Restore everything for ")}
+                              {viewing?.name}
                             </small>
                           </span>
                           <ArrowRight size={17} />
@@ -1328,9 +1421,9 @@ export default function App() {
                             <FlaskConical size={20} />
                           </span>
                           <span>
-                            <strong>Load demo data</strong>
+                            <strong>{t("Load demo data")}</strong>
                             <small>
-                              Eight weeks of A/B workouts & progress
+                              {t("Eight weeks of A/B workouts & progress")}
                             </small>
                           </span>
                           <ArrowRight size={17} />
@@ -1341,9 +1434,11 @@ export default function App() {
                           </span>
                           <span>
                             <strong className="danger-text">
-                              Clear all training data
+                              {t("Clear all training data")}
                             </strong>
-                            <small>Only the selected athlete's data</small>
+                            <small>
+                              {t("Only the selected athlete's data")}
+                            </small>
                           </span>
                           <ArrowRight size={17} />
                         </button>
@@ -1373,11 +1468,13 @@ export default function App() {
                       />
                     </Panel>
                   </div>
-                  <Panel title="Account">
+                  <Panel title={t("Account")}>
                     <p>
                       {demo
-                        ? "You are using a local demo. These are simulated profiles; no invitations are sent."
-                        : `Signed in as ${me?.name}. Role: ${me?.role}.`}
+                        ? t(
+                            "You are using a local demo. These are simulated profiles; no invitations are sent.",
+                          )
+                        : t(`Signed in as ${me?.name}. Role: ${me?.role}.`)}
                     </p>
                     {supabase && (
                       <button
@@ -1395,13 +1492,15 @@ export default function App() {
                           await supabase!.auth.signOut();
                         }}
                       >
-                        <LogOut size={16} /> {demo ? "Leave demo" : "Sign out"}
+                        <LogOut size={16} />{" "}
+                        {demo ? t("Leave demo") : t("Sign out")}
                       </button>
                     )}
                     {!supabase && (
                       <p className="muted">
-                        See the repository README to connect Supabase for real
-                        accounts.
+                        {t(
+                          "See the repository README to connect Supabase for real accounts.",
+                        )}
                       </p>
                     )}
                   </Panel>
@@ -1426,7 +1525,7 @@ export default function App() {
             .filter((p) => p.name !== "People" && p.name !== "Settings")
             .map((p) => (
               <button
-                key={p.name}
+                key={t(p.name)}
                 className={page === p.name ? "active" : ""}
                 onClick={() => {
                   setPage(p.name);
@@ -1434,7 +1533,7 @@ export default function App() {
                 }}
               >
                 <p.icon size={20} />
-                <span>{p.name}</span>
+                <span>{t(p.name)}</span>
               </button>
             ))}
           <button
@@ -1442,7 +1541,7 @@ export default function App() {
             onClick={() => setMenu(!menu)}
           >
             <Menu size={20} />
-            <span>More</span>
+            <span>{t("More")}</span>
           </button>
         </nav>
       </div>
@@ -1537,9 +1636,9 @@ export default function App() {
         />
       )}
       {createDate && data && (
-        <Modal title="Plan a session" onClose={() => setCreateDate(null)}>
+        <Modal title={t("Plan a session")} onClose={() => setCreateDate(null)}>
           <label>
-            Date
+            {t("Date")}
             <input
               type="date"
               value={createDate}
@@ -1555,11 +1654,12 @@ export default function App() {
               setCreateDate(null);
             }}
           >
-            <Plus size={17} /> Start a blank session
+            <Plus size={17} />
+            {t(" Start a blank session")}
           </button>
           {data.templates.length > 0 && (
             <>
-              <h3>Or use a template</h3>
+              <h3>{t("Or use a template")}</h3>
               {data.templates.map((t) => (
                 <button
                   key={t.id}
@@ -1583,26 +1683,28 @@ export default function App() {
         <Modal
           title={
             confirm === "clear"
-              ? "Clear training data?"
+              ? t("Clear training data?")
               : confirm === "import"
-                ? "Restore this backup?"
-                : "Load demo data?"
+                ? t("Restore this backup?")
+                : t("Load demo data?")
           }
           onClose={() => setConfirm(null)}
         >
           <p>
-            This replaces all training data for <strong>{viewing?.name}</strong>
-            . Other athletes are unaffected.
+            {t("This replaces all training data for ")}
+            <strong>{viewing?.name}</strong>
+            {t(". Other athletes are unaffected.")}
           </p>
           <p className="muted">
-            Export a backup first if you want to keep the current data.
+            {t("Export a backup first if you want to keep the current data.")}
           </p>
           <div className="flex">
             <button
               className="button secondary"
               onClick={() => exportData(data)}
             >
-              <Download size={16} /> Export first
+              <Download size={16} />
+              {t(" Export first")}
             </button>
             <button
               className={`button ${confirm === "clear" ? "danger" : "primary"}`}
@@ -1618,18 +1720,19 @@ export default function App() {
                 setImported(null);
               }}
             >
-              Replace data
+              {t("Replace data")}
             </button>
           </div>
         </Modal>
       )}
       {invite && (
-        <Modal title="Invite an athlete" onClose={() => setInvite(false)}>
+        <Modal title={t("Invite an athlete")} onClose={() => setInvite(false)}>
           {demo ? (
             <>
               <p>
-                Invitations need a connected Supabase project and your Coach
-                account. Demo profiles are browser-only simulations.
+                {t(
+                  "Invitations need a connected Supabase project and your Coach account. Demo profiles are browser-only simulations.",
+                )}
               </p>
               <a
                 className="button primary"
@@ -1637,7 +1740,8 @@ export default function App() {
                 target="_blank"
                 rel="noreferrer"
               >
-                Open setup instructions <ArrowRight size={16} />
+                {t("Open setup instructions ")}
+                <ArrowRight size={16} />
               </a>
             </>
           ) : (
@@ -1664,7 +1768,7 @@ export default function App() {
               }}
             >
               <label>
-                Name
+                {t("Name")}
                 <input
                   required
                   value={inviteName}
@@ -1673,7 +1777,7 @@ export default function App() {
                 />
               </label>
               <label>
-                Email
+                {t("Email")}
                 <input
                   required
                   type="email"
@@ -1682,17 +1786,20 @@ export default function App() {
                 />
               </label>
               <p className="muted">
-                They'll receive a secure link to set their password.
+                {t("They'll receive a secure link to set their password.")}
               </p>
               <button className="button primary full" disabled={inviteBusy}>
-                {inviteBusy ? "Sending…" : "Send invitation"}
+                {inviteBusy ? t("Sending…") : t("Send invitation")}
               </button>
             </form>
           )}
         </Modal>
       )}
       {passwordMode && supabase && (
-        <Modal title="Set your password" onClose={() => setPasswordMode(false)}>
+        <Modal
+          title={t("Set your password")}
+          onClose={() => setPasswordMode(false)}
+        >
           <form
             onSubmit={async (e) => {
               e.preventDefault();
@@ -1708,7 +1815,7 @@ export default function App() {
             }}
           >
             <label>
-              New password
+              {t("New password")}
               <input
                 type="password"
                 required
@@ -1718,7 +1825,9 @@ export default function App() {
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </label>
-            <button className="button primary full">Save password</button>
+            <button className="button primary full">
+              {t("Save password")}
+            </button>
           </form>
         </Modal>
       )}
@@ -1770,14 +1879,16 @@ function Training({
     <>
       <div className="page-head">
         <div>
-          <span className="eyebrow">SHOW UP. LIFT. REPEAT.</span>
+          <span className="eyebrow">{t("SHOW UP. LIFT. REPEAT.")}</span>
           <h1>
-            Your training <span>✦</span>
+            {t("Your training ")}
+            <span>✦</span>
           </h1>
-          <p>A place for every session and every small win.</p>
+          <p>{t("A place for every session and every small win.")}</p>
         </div>
         <button className="button primary" onClick={onCreate}>
-          <Plus size={17} /> Create session
+          <Plus size={17} />
+          {t(" Create session")}
         </button>
       </div>
       <div className="training-toolbar">
@@ -1787,43 +1898,43 @@ function Training({
             className={tab === "sessions" ? "active" : ""}
             onClick={() => setTab("sessions")}
           >
-            Sessions
+            {t("Sessions")}
           </button>
           <button
             aria-pressed={tab === "templates"}
             className={tab === "templates" ? "active" : ""}
             onClick={() => setTab("templates")}
           >
-            Templates
+            {t("Templates")}
           </button>
           <button
             aria-pressed={tab === "library"}
             className={tab === "library" ? "active" : ""}
             onClick={() => setTab("library")}
           >
-            Exercise library
+            {t("Exercise library")}
           </button>
         </div>
         {tab === "sessions" && (
           <select
-            aria-label="Session status filter"
+            aria-label={t("Session status filter")}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
           >
-            <option value="all">All sessions</option>
-            <option value="planned">Planned</option>
-            <option value="done">Completed</option>
+            <option value="all">{t("All sessions")}</option>
+            <option value="planned">{t("Planned")}</option>
+            <option value="done">{t("Completed")}</option>
           </select>
         )}
       </div>
       {tab === "sessions" && (
         <div className="training-period-toolbar">
-          <div className="segmented" aria-label="Training history period">
+          <div className="segmented" aria-label={t("Training history period")}>
             {(
               [
-                ["current", "This month"],
-                ["past", "Past months"],
-                ["all", "All history"],
+                ["current", t("This month")],
+                ["past", t("Past months")],
+                ["all", t("All history")],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -1835,20 +1946,20 @@ function Training({
                   setSelectedMonth("all");
                 }}
               >
-                {label}
+                {t(label)}
               </button>
             ))}
           </div>
           {scope !== "current" && (
             <label className="training-month-filter">
-              Month
+              {t("Month")}
               <select
-                aria-label="Training month filter"
+                aria-label={t("Training month filter")}
                 value={monthFilter}
                 onChange={(e) => setSelectedMonth(e.target.value)}
               >
                 <option value="all">
-                  {scope === "past" ? "All past months" : "All months"}
+                  {scope === "past" ? t("All past months") : t("All months")}
                 </option>
                 {availableMonths.map((month) => (
                   <option key={month} value={month}>
@@ -1873,7 +1984,7 @@ function Training({
                   <h2>{monthLabel(group.month)}</h2>
                   <span>
                     {group.sessions.length}{" "}
-                    {group.sessions.length === 1 ? "session" : "sessions"}
+                    {t(group.sessions.length === 1 ? "session" : "sessions")}
                   </span>
                 </div>
                 <div className="training-list">
@@ -1891,25 +2002,30 @@ function Training({
             ))}
           </div>
         ) : (
-          <Panel title="Sessions">
+          <Panel title={t("Sessions")}>
             <Empty
               title={
                 search
-                  ? "No matching sessions"
+                  ? t("No matching sessions")
                   : data.sessions.length
-                    ? "No sessions in this view"
-                    : "Your next chapter starts here"
+                    ? t("No sessions in this view")
+                    : t("Your next chapter starts here")
               }
               detail={
                 search
-                  ? "Try another session name or switch the month or history period."
+                  ? t(
+                      "Try another session name or switch the month or history period.",
+                    )
                   : data.sessions.length
-                    ? "Choose another month, All history, or a different status filter. You can also plan a new session."
-                    : "Create a session or load demo data from Settings."
+                    ? t(
+                        "Choose another month, All history, or a different status filter. You can also plan a new session.",
+                      )
+                    : t("Create a session or load demo data from Settings.")
               }
               action={
                 <button className="button primary" onClick={onCreate}>
-                  <Plus size={16} /> Create session
+                  <Plus size={16} />
+                  {t(" Create session")}
                 </button>
               }
             />
@@ -1933,42 +2049,47 @@ function Training({
                 })
               }
             >
-              <Plus size={16} /> Create template
+              <Plus size={16} />
+              {t(" Create template")}
             </button>
           </div>
           {data.templates.length ? (
             <div className="template-grid">
-              {data.templates.map((t) => (
+              {data.templates.map((template) => (
                 <Panel
-                  key={t.id}
-                  title={`${t.icon} ${t.name}`}
+                  key={template.id}
+                  title={t(`${template.icon} ${template.name}`)}
                   action={
                     data.settings.useABSplit ? (
-                      <WeekBadge week={t.week} />
+                      <WeekBadge week={template.week} />
                     ) : undefined
                   }
                 >
                   <p className="muted">
-                    {t.exercises.filter((e) => e.kind === "strength").length}{" "}
-                    exercises ·{" "}
-                    {t.exercises
+                    {
+                      template.exercises.filter((e) => e.kind === "strength")
+                        .length
+                    }{" "}
+                    {t("exercises ·")}{" "}
+                    {template.exercises
                       .filter((e) => e.kind === "strength")
                       .reduce((n, e) => n + e.sets.length, 0)}{" "}
-                    sets
+                    {t("sets")}
                   </p>
-                  <p>{t.notes || "Ready for your next session."}</p>
+                  <p>{template.notes || "Ready for your next session."}</p>
                   <div className="flex">
                     <button
                       className="button primary"
-                      onClick={() => onUseTemplate(t)}
+                      onClick={() => onUseTemplate(template)}
                     >
-                      Start session <ArrowRight size={16} />
+                      {t("Start session ")}
+                      <ArrowRight size={16} />
                     </button>
                     <button
                       className="button secondary"
-                      onClick={() => onTemplateEdit(t)}
+                      onClick={() => onTemplateEdit(template)}
                     >
-                      Edit
+                      {t("Edit")}
                     </button>
                   </div>
                 </Panel>
@@ -1976,8 +2097,8 @@ function Training({
             </div>
           ) : (
             <Empty
-              title="Your routine, ready to repeat"
-              detail="Create a template or save one from any session."
+              title={t("Your routine, ready to repeat")}
+              detail={t("Create a template or save one from any session.")}
             />
           )}
         </>
@@ -2010,11 +2131,15 @@ function ExerciseLibrary({
   const [failed, setFailed] = useState(false);
   const [videoExercise, setVideoExercise] = useState<Exercise | null>(null);
   return (
-    <Panel title="Exercise library">
+    <Panel title={t("Exercise library")}>
       <p className="library-sharing-note">
         {sharedReady
-          ? "Shared with your coach and their athletes. Everyone can add exercises; your coach manages videos and removes exercises."
-          : "Shared exercises will be available after your coach enables the library update. Your current library still works."}
+          ? t(
+              "Shared with your coach and their athletes. Everyone can add exercises; your coach manages videos and removes exercises.",
+            )
+          : t(
+              "Shared exercises will be available after your coach enables the library update. Your current library still works.",
+            )}
       </p>
       <form
         className="flex"
@@ -2039,15 +2164,15 @@ function ExerciseLibrary({
       >
         <input
           className="grow"
-          placeholder="Add your own exercise…"
-          aria-label="Custom exercise name"
+          placeholder={t("Add your own exercise…")}
+          aria-label={t("Custom exercise name")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={100}
           disabled={busy}
         />
         <button className="button primary" disabled={!name.trim() || busy}>
-          <Plus size={16} /> {busy ? "Saving…" : "Add"}
+          <Plus size={16} /> {busy ? t("Saving…") : t("Add")}
         </button>
       </form>
       {feedback && (
@@ -2061,25 +2186,27 @@ function ExerciseLibrary({
       <div className="library-grid">
         {data.exercises.map((e) => (
           <div className="library-item" key={e.id}>
-            <span className="grow">{e.name}</span>
+            <span className="grow">{exerciseName(e.name, e.id)}</span>
             {(onSaveTechnique || techniqueVideos[e.id]) && (
               <button
                 type="button"
                 className="text-button library-video-button"
-                aria-label={`${onSaveTechnique ? "Manage" : "Watch"} technique for ${e.name}`}
+                aria-label={t(
+                  `${onSaveTechnique ? "Manage" : "Watch"} technique for ${e.name}`,
+                )}
                 onClick={() => setVideoExercise(e)}
               >
                 {onSaveTechnique
                   ? techniqueVideos[e.id]
-                    ? "Edit video"
-                    : "Add video"
-                  : "Watch technique"}
+                    ? t("Edit video")
+                    : t("Add video")
+                  : t("Watch technique")}
               </button>
             )}
             {e.custom && canRemove ? (
               <button
                 className="icon-button"
-                aria-label={`Delete custom exercise ${e.name}`}
+                aria-label={t(`Delete custom exercise ${e.name}`)}
                 disabled={busy}
                 onClick={async () => {
                   setBusy(true);
@@ -2101,19 +2228,19 @@ function ExerciseLibrary({
                 <Trash2 size={15} />
               </button>
             ) : (
-              <small>{e.custom ? "Shared" : "Built-in"}</small>
+              <small>{e.custom ? t("Shared") : t("Built-in")}</small>
             )}
           </div>
         ))}
       </div>
       <p className="footnote">
-        Removing a custom exercise preserves its logged history.{" "}
+        {t("Removing a custom exercise preserves its logged history.")}{" "}
         {sharedReady &&
           "It removes the entry for the coach’s group. Your coach can re-add the same name to restore it."}
       </p>
       {videoExercise && (
         <Modal
-          title={`Technique · ${videoExercise.name}`}
+          title={t(`Technique · ${videoExercise.name}`)}
           onClose={() => setVideoExercise(null)}
         >
           {onSaveTechnique && (

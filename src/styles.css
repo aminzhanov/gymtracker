@@ -3892,3 +3892,133 @@ summary {
     width: 18px;
   }
 }
+
+.dashboard-welcome {
+  align-items: center;
+  gap: 18px;
+}
+.welcome-content {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+.dashboard-welcome > .dumbbell-art {
+  width: 210px;
+  margin-left: 0;
+}
+.welcome-stat-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.welcome-stat-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  border: 1.5px solid #53405a;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.7);
+  color: #302336;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.welcome-stat-tag strong {
+  font-weight: 900;
+}
+.analytics-top {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.volume-range-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.volume-range-label select {
+  margin: 0;
+  width: auto;
+}
+.volume-chart-scroll {
+  overflow: visible;
+}
+.calendar-volume-chart svg {
+  min-width: 0 !important;
+  max-width: 100%;
+}
+.recovery-summary {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  color: #625d70;
+}
+.recovery-summary strong {
+  color: #282335;
+}
+.recovery-box-chart svg {
+  width: 100%;
+  display: block;
+  margin: 8px 0;
+}
+.recovery-chart-box {
+  cursor: pointer;
+}
+.recovery-chart-box:focus-visible {
+  outline: none;
+}
+.recovery-chart-box:focus-visible rect:not(:first-child) {
+  stroke: #1369df;
+  stroke-width: 3px;
+}
+.volume-breakdown > summary {
+  cursor: pointer;
+  padding: 12px 0;
+  font-weight: 600;
+}
+@media (max-width: 850px) {
+  .dashboard-welcome > .dumbbell-art {
+    width: 140px;
+  }
+}
+@media (max-width: 640px) {
+  .dashboard-welcome {
+    display: block;
+    padding: 22px 18px;
+  }
+  .dashboard-welcome > .dumbbell-art {
+    position: absolute;
+    width: 105px;
+    top: 16px;
+    right: 8px;
+    opacity: 0.7;
+    z-index: 0;
+  }
+  .dashboard-welcome h1 {
+    padding-right: 66px;
+    font-size: 29px;
+  }
+  .dashboard-welcome .eyebrow {
+    max-width: 200px;
+    display: block;
+  }
+  .dashboard-welcome .personal-message {
+    font-size: 20px;
+    margin-top: 8px;
+  }
+  .welcome-stat-tags {
+    gap: 8px;
+  }
+  .welcome-stat-tag {
+    font-size: 13px;
+    padding: 9px 12px;
+  }
+  .analytics-top {
+    grid-template-columns: 1fr;
+  }
+  .recovery-summary {
+    font-size: 14px;
+  }
+}

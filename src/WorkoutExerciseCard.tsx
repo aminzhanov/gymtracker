@@ -1,3 +1,4 @@
+import { t, exerciseName } from "./i18n";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Check,
@@ -85,7 +86,7 @@ export function WorkoutExerciseCard({
           <button
             className="exercise-overview"
             ref={overview}
-            aria-label={`Edit ${exercise.name}`}
+            aria-label={t(`Edit ${exercise.name}`)}
             aria-expanded={false}
             onClick={() => setExpanded(true)}
           >
@@ -99,7 +100,9 @@ export function WorkoutExerciseCard({
               )}
             </span>
             <span className="exercise-overview-copy">
-              <strong>{exercise.name}</strong>
+              <strong>
+                {exerciseName(exercise.name, exercise.exerciseId)}
+              </strong>
               <span className="exercise-prescription">
                 {exerciseSummary(exercise)}
               </span>
@@ -108,15 +111,15 @@ export function WorkoutExerciseCard({
                   className={`exercise-completion ${completed === total && total > 0 ? "positive" : ""}`}
                 >
                   {exercise.kind === "strength"
-                    ? `${completed}/${total} sets done`
+                    ? t(`${completed}/${total} sets done`)
                     : exercise.done
-                      ? "Completed"
-                      : "Planned"}{" "}
-                  · Tap to edit
+                      ? t("Completed")
+                      : t("Planned")}{" "}
+                  {t("· Tap to edit")}
                 </span>
               )}
               {isTemplate && (
-                <span className="exercise-completion">Tap to edit</span>
+                <span className="exercise-completion">{t("Tap to edit")}</span>
               )}
             </span>
             <ChevronDown size={20} />
@@ -124,7 +127,9 @@ export function WorkoutExerciseCard({
           {!isTemplate && (
             <button
               className={`done-button exercise-quick-complete ${exerciseComplete(exercise) ? "checked" : ""}`}
-              aria-label={`${exerciseComplete(exercise) ? "Reopen" : "Complete"} ${exercise.name}`}
+              aria-label={t(
+                `${exerciseComplete(exercise) ? t("Reopen") : t("Complete")} ${exercise.name}`,
+              )}
               aria-pressed={exerciseComplete(exercise)}
               disabled={exercise.kind === "strength" && total === 0}
               onClick={() =>
@@ -151,9 +156,9 @@ export function WorkoutExerciseCard({
             </span>
             <div className="grow">
               <label className="exercise-name-label">
-                Exercise name
+                {t("Exercise name")}
                 <input
-                  aria-label="Exercise name"
+                  aria-label={t("Exercise name")}
                   className="exercise-name"
                   value={exercise.name}
                   maxLength={100}
@@ -173,18 +178,18 @@ export function WorkoutExerciseCard({
             <button
               type="button"
               className="exercise-collapse-toggle"
-              aria-label={`Close ${exercise.name} and save`}
+              aria-label={t(`Close ${exercise.name} and save`)}
               aria-expanded={true}
               disabled={!canSave || !exercise.name.trim()}
               onClick={collapse}
             >
               <ChevronDown size={20} className="rotated" />
-              <span>Close</span>
+              <span>{t("Close")}</span>
             </button>
             {onRemove && (
               <button
                 className="icon-button danger-text"
-                aria-label={`Remove ${exercise.name}`}
+                aria-label={t(`Remove ${exercise.name}`)}
                 onClick={onRemove}
               >
                 <Trash2 size={18} />
@@ -194,10 +199,10 @@ export function WorkoutExerciseCard({
           {exercise.kind === "strength" ? (
             <>
               <div className="set-labels">
-                <span>Set</span>
-                <span>Weight (kg)</span>
-                <span>Reps</span>
-                <span>Done</span>
+                <span>{t("Set")}</span>
+                <span>{t("Weight (kg)")}</span>
+                <span>{t("Reps")}</span>
+                <span>{t("Done")}</span>
               </div>
               {exercise.sets.map((set, index) => (
                 <SetRow
@@ -237,13 +242,14 @@ export function WorkoutExerciseCard({
                   })
                 }
               >
-                <Plus size={17} /> Add set
+                <Plus size={17} />
+                {t(" Add set")}
               </button>
             </>
           ) : (
             <div className="recovery-fields">
               <label>
-                Duration (minutes)
+                {t("Duration (minutes)")}
                 <input
                   type="number"
                   min="0"
@@ -263,7 +269,7 @@ export function WorkoutExerciseCard({
               {!isTemplate && (
                 <button
                   className={`done-button ${exercise.done ? "checked" : ""}`}
-                  aria-label={`${exercise.name} complete`}
+                  aria-label={t(`${exercise.name} complete`)}
                   aria-pressed={exercise.done}
                   onClick={() =>
                     onChange({ ...exercise, done: !exercise.done })
@@ -275,15 +281,15 @@ export function WorkoutExerciseCard({
             </div>
           )}
           <label className="exercise-notes-label">
-            Exercise notes
+            {t("Exercise notes")}
             <textarea
-              aria-label={`Notes for ${exercise.name}`}
+              aria-label={t(`Notes for ${exercise.name}`)}
               rows={3}
               maxLength={4000}
               placeholder={
                 isTemplate
-                  ? "Form cues or instructions…"
-                  : "How it felt, technique, what to adjust next time…"
+                  ? t("Form cues or instructions…")
+                  : t("How it felt, technique, what to adjust next time…")
               }
               value={exercise.notes}
               onChange={(event) =>
@@ -305,7 +311,8 @@ export function WorkoutExerciseCard({
               disabled={!canSave || !exercise.name.trim()}
               onClick={collapse}
             >
-              <Save size={17} /> Save exercise
+              <Save size={17} />
+              {t(" Save exercise")}
             </button>
           </div>
         </>
@@ -315,15 +322,17 @@ export function WorkoutExerciseCard({
           className={`exercise-note-preview ${notesOpen ? "notes-open" : ""}`}
         >
           <div className="flex">
-            <strong>Exercise notes</strong>
+            <strong>{t("Exercise notes")}</strong>
             <button
               type="button"
               className="text-button"
-              aria-label={`${notesOpen ? "Hide" : "Read"} notes for ${exercise.name}`}
+              aria-label={t(
+                `${notesOpen ? t("Hide") : t("Read")} notes for ${exercise.name}`,
+              )}
               aria-expanded={notesOpen}
               onClick={() => setNotesOpen(!notesOpen)}
             >
-              {notesOpen ? "Show less" : "Read note"}
+              {notesOpen ? t("Show less") : t("Read note")}
             </button>
           </div>
           <p>{exercise.notes}</p>

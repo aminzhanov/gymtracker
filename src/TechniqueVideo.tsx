@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { useEffect, useId, useState } from "react";
 import { Play, ChevronDown, ExternalLink, Save, Trash2 } from "lucide-react";
 import { driveVideoLink } from "./technique";
@@ -18,12 +19,12 @@ export function TechniqueVideo({ name, url }: { name: string; url?: string }) {
       <button
         type="button"
         className="technique-toggle"
-        aria-label={`Watch technique for ${name}`}
+        aria-label={t(`Watch technique for ${name}`)}
         aria-expanded={open}
         aria-controls={playerId}
         onClick={() => setOpen(!open)}
       >
-        <Play size={17} /> {open ? "Hide technique" : "Watch technique"}{" "}
+        <Play size={17} /> {open ? t("Hide technique") : t("Watch technique")}{" "}
         <ChevronDown size={17} className={open ? "rotated" : ""} />
       </button>
       {open && (
@@ -31,7 +32,7 @@ export function TechniqueVideo({ name, url }: { name: string; url?: string }) {
           <div className="technique-player">
             <iframe
               src={video.embedUrl}
-              title={`${name} technique video`}
+              title={t(`${name} technique video`)}
               allow="fullscreen; picture-in-picture"
               allowFullScreen
               loading="lazy"
@@ -44,11 +45,13 @@ export function TechniqueVideo({ name, url }: { name: string; url?: string }) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <ExternalLink size={16} /> Open in Google Drive
+            <ExternalLink size={16} />
+            {t(" Open in Google Drive")}
           </a>
           <p className="footnote">
-            If playback is unavailable, open the video in Drive. Your coach may
-            need to update sharing access.
+            {t(
+              "If playback is unavailable, open the video in Drive. Your coach may need to update sharing access.",
+            )}
           </p>
         </div>
       )}
@@ -97,13 +100,13 @@ export function TechniqueVideoEditor({
   return (
     <div className="technique-editor">
       <label>
-        Technique video (Google Drive)
+        {t("Technique video (Google Drive)")}
         <input
-          aria-label={`Technique video link for ${name}`}
+          aria-label={t(`Technique video link for ${name}`)}
           type="url"
           inputMode="url"
           maxLength={2000}
-          placeholder="Paste your Google Drive video link…"
+          placeholder={t("Paste your Google Drive video link…")}
           value={draft}
           disabled={!ready || busy}
           onChange={(event) => {
@@ -119,9 +122,9 @@ export function TechniqueVideoEditor({
         />
       </label>
       <p className="footnote">
-        Upload your demonstration to Drive and give your athlete access. “Anyone
-        with the link → Viewer” lets anyone holding the link view it. This link
-        is reused for this exercise across their workouts.
+        {t(
+          "Upload your demonstration to Drive and give your athlete access. “Anyone with the link → Viewer” lets anyone holding the link view it. This link is reused for this exercise across their workouts.",
+        )}
       </p>
       <div className="flex wrap">
         <button
@@ -130,7 +133,7 @@ export function TechniqueVideoEditor({
           disabled={!ready || busy}
           onClick={() => void save(draft)}
         >
-          <Save size={16} /> {busy ? "Saving…" : "Save video"}
+          <Save size={16} /> {busy ? t("Saving…") : t("Save video")}
         </button>
         {url && (
           <button
@@ -139,13 +142,14 @@ export function TechniqueVideoEditor({
             disabled={!ready || busy}
             onClick={() => void save("")}
           >
-            <Trash2 size={16} /> Remove video
+            <Trash2 size={16} />
+            {t(" Remove video")}
           </button>
         )}
       </div>
       {!ready && (
         <p className="muted">
-          Technique videos will be available after the account update.
+          {t("Technique videos will be available after the account update.")}
         </p>
       )}
       {feedback && (

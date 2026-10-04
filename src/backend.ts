@@ -1,3 +1,4 @@
+import { readLanguage } from "./i18n";
 import { createClient } from "@supabase/supabase-js";
 import type { AppData, Profile, CoachMessages, TechniqueVideos } from "./types";
 import { DEFAULT_MESSAGES, validateMessages } from "./messages";
@@ -43,11 +44,19 @@ export async function loadCloud(owner: string) {
     loadSharedLibrary(owner),
   ]);
   const { data: messages, error: messagesError } = messageResult;
+  const validated = validateBackup(data.data);
   return {
     data: {
-      ...validateBackup(data.data),
+      ...validated,
+      settings: {
+        ...validated.settings,
+        language:
+          data.data?.settings?.language ??
+          readLanguage(`liftlog-language:${owner}`),
+      },
       ...(library ? { exercises: library.exercises } : {}),
     },
+    languageReady: data.languageReady === true,
     sharedLibraryReady: Boolean(library),
     revision: Number(data.revision),
     programPreferenceReady:

@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { useState } from "react";
 import { Save } from "lucide-react";
 import type { CoachMessages } from "./types";
@@ -42,9 +43,9 @@ export function CoachMessageEditor({
     >
       <fieldset className="message-fields" disabled={!ready || busy}>
         <label>
-          App name
+          {t("App name")}
           <input
-            aria-label="App name"
+            aria-label={t("App name")}
             maxLength={40}
             value={draft.appName}
             disabled={!appNameReady}
@@ -56,11 +57,13 @@ export function CoachMessageEditor({
         </label>
         {!appNameReady && ready && (
           <p className="muted">
-            Personal app names will be available after the account update.
+            {t(
+              "Personal app names will be available after the account update.",
+            )}
           </p>
         )}
         <label>
-          Dashboard message
+          {t("Dashboard message")}
           <textarea
             maxLength={180}
             rows={2}
@@ -72,7 +75,7 @@ export function CoachMessageEditor({
           />
         </label>
         <label>
-          Menu message
+          {t("Menu message")}
           <textarea
             maxLength={120}
             rows={3}
@@ -85,12 +88,12 @@ export function CoachMessageEditor({
         </label>
         <button className="button primary" type="submit">
           <Save size={17} />
-          {busy ? "Saving…" : "Save personalization"}
+          {busy ? t("Saving…") : t("Save personalization")}
         </button>
       </fieldset>
       {!ready && (
         <p className="muted">
-          Personal messages will be available after the account update.
+          {t("Personal messages will be available after the account update.")}
         </p>
       )}
       {feedback && (

@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import { useEffect, useRef } from "react";
 import { Check, Cloud, AlertCircle, Pencil, X } from "lucide-react";
 import type { Session } from "./types";
@@ -44,7 +45,7 @@ export function CompletedWorkout({
     <article
       ref={card}
       className={`completed-workout ${celebrate ? "just-completed" : ""}`}
-      aria-label={`${session.name} · Workout complete`}
+      aria-label={t(`${session.name} · Workout complete`)}
     >
       <div className="completed-workout-heading">
         <span className="completion-check" aria-hidden="true">
@@ -54,7 +55,7 @@ export function CompletedWorkout({
           <h3>
             <span aria-hidden="true">{session.icon}</span> {session.name}
           </h3>
-          <span className="completion-badge">Workout complete</span>
+          <span className="completion-badge">{t("Workout complete")}</span>
           <div className="completed-workout-date">
             <span>{shortDate(session.date)}</span>
             {showWeek && <WeekBadge week={session.week} />}
@@ -64,13 +65,13 @@ export function CompletedWorkout({
       <ExerciseNames exercises={session.exercises} />
       <dl className="completed-workout-totals">
         <div>
-          <dt>Completed sets</dt>
+          <dt>{t("Completed sets")}</dt>
           <dd>{doneSets(session).length}</dd>
         </div>
         <div>
-          <dt>Total volume</dt>
+          <dt>{t("Total volume")}</dt>
           <dd>
-            {number(volume(session))} <span>kg</span>
+            {number(volume(session))} <span>{t("kg")}</span>
           </dd>
         </div>
       </dl>
@@ -83,15 +84,16 @@ export function CompletedWorkout({
           ) : (
             <Check size={16} />
           )}
-          {saveLabel(saveState)}
+          {t(saveLabel(saveState))}
         </span>
         <button
           ref={edit}
           className="button secondary"
           onClick={onEdit}
-          aria-label={`Edit workout: ${session.name}`}
+          aria-label={t(`Edit workout: ${session.name}`)}
         >
-          <Pencil size={16} /> Edit workout
+          <Pencil size={16} />
+          {t(" Edit workout")}
         </button>
       </div>
     </article>
@@ -113,14 +115,14 @@ export function CompletionToast({
         <Check size={23} />
       </span>
       <div role="status" aria-live="polite" aria-atomic="true">
-        <strong>Nice work! Workout complete.</strong>
+        <strong>{t("Nice work! Workout complete.")}</strong>
         <span>
-          {name} · {saveLabel(saveState)}
+          {name} · {t(saveLabel(saveState))}
         </span>
       </div>
       <button
         className="icon-button"
-        aria-label="Dismiss workout confirmation"
+        aria-label={t("Dismiss workout confirmation")}
         onClick={onDismiss}
       >
         <X size={18} />

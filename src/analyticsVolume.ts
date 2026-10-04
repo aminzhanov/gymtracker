@@ -1,3 +1,4 @@
+import { appLocale } from "./i18n.ts";
 import type { Session, Week } from "./types.ts";
 import {
   addDays,
@@ -7,6 +8,8 @@ import {
   dateKey,
   shortDate,
   volume,
+  exerciseHistory,
+  doneSets,
 } from "./model.ts";
 import { trainingWeeks } from "./trainingWeeks.ts";
 
@@ -85,7 +88,7 @@ export function volumeRows(
                     ? `${shortDate(from)} · ${session.name}`
                     : period === "week"
                       ? `${shortDate(from)}–${shortDate(to)}`
-                      : parseDate(from).toLocaleDateString(undefined, {
+                      : parseDate(from).toLocaleDateString(appLocale(), {
                           month: "short",
                           year: "numeric",
                         }),
@@ -136,6 +139,50 @@ export function volumeRows(
       baselines.set(baselineKey, row);
     return row;
   });
+}
+export function strengthTrend(sessions: Session[], today = dateKey()) {
+  const from = addDays(today, -29);
+  const actual = sessions.filter((s) => s.date >= from && s.date <= today);
+  const ids = [
+    ...new Set(actual.flatMap((s) => doneSets(s).map((set) => set.exerciseId))),
+  ];
+  const exercises = ids.flatMap((id) => {
+    const history = exerciseHistory(actual, id, "e1rm");
+    if (history.length < 2) return [];
+    const first = history[0],
+      last = history.at(-1)!;
+    const change = changePercent(last.value, first.value);
+    return change === null
+      ? []
+      : [{ id, change, first: first.value, latest: last.value }];
+  });
+  return {
+    value: exercises.length
+      ? exercises.reduce((sum, e) => sum + e.change, 0) / exercises.length
+      : null,
+    count: exercises.length,
+    exercises,
+    from,
+    to: today,
+  };
+}
+
+export function filterVolumeRange<T extends { from: string; to: string }>(
+  rows: T[],
+  range: "month" | "three" | "all",
+  today = dateKey(),
+): T[] {
+  if (range === "all") return rows;
+  const date = parseDate(today);
+  const from = dateKey(
+    new Date(
+      date.getFullYear(),
+      date.getMonth() - (range === "three" ? 2 : 0),
+      1,
+    ),
+  );
+  const to = dateKey(new Date(date.getFullYear(), date.getMonth() + 1, 0));
+  return rows.filter((row) => row.to >= from && row.from <= to);
 }
 
 export function trainingAverages(sessions: Session[]) {

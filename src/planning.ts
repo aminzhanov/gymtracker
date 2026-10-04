@@ -1,3 +1,4 @@
+import { appLocale } from "./i18n.ts";
 import type { Session } from "./types.ts";
 import { addDays, dateKey, monday, parseDate, volume } from "./model.ts";
 import { trainingWeeks } from "./trainingWeeks.ts";
@@ -31,7 +32,7 @@ export function trainingWeekVolume(sessions: Session[], month: string) {
 }
 
 export const monthLabel = (month: string) =>
-  parseDate(`${month}-01`).toLocaleDateString(undefined, {
+  parseDate(`${month}-01`).toLocaleDateString(appLocale(), {
     month: "long",
     year: "numeric",
   });

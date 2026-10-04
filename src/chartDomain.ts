@@ -6,6 +6,15 @@ export function bodyweightDomain(values: number[]): [number, number] {
   const padding = Math.max((high - low) * 0.25, high * 0.015, 0.5);
   return [Math.max(0.01, low - padding), high + padding];
 }
+export function chartLabelIndices(count: number, limit: number): Set<number> {
+  const labels = Math.min(count, Math.max(2, limit));
+  if (labels <= 1) return new Set(count ? [0] : []);
+  return new Set(
+    Array.from({ length: labels }, (_, i) =>
+      Math.round((i * (count - 1)) / (labels - 1)),
+    ),
+  );
+}
 
 export function readExerciseSelection(
   storage: Pick<Storage, "getItem">,

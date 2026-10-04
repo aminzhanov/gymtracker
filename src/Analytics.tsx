@@ -1,4 +1,11 @@
-import { volumeRows, trainingAverages } from "./analyticsVolume";
+import { appLocale } from "./i18n";
+import { t, exerciseName } from "./i18n";
+import {
+  volumeRows,
+  trainingAverages,
+  strengthTrend,
+  filterVolumeRange,
+} from "./analyticsVolume";
 import { readExerciseSelection } from "./chartDomain";
 import { VolumePlot } from "./VolumePlot";
 import { useEffect, useState } from "react";
@@ -20,7 +27,7 @@ import {
 import { RecoveryChecklist } from "./RecoveryChecklist";
 const colors = ["#1673ff", "#f17bb4", "#16b895", "#ad80ed", "#f2ad32"];
 const pct = (n: number | null) =>
-  n === null ? "No previous data" : `${n >= 0 ? "+" : ""}${number(n, 1)}%`;
+  n === null ? t("No previous data") : `${n >= 0 ? "+" : ""}${number(n, 1)}%`;
 export function Analytics({
   data,
   onChange,
@@ -54,7 +61,14 @@ export function Analytics({
   const [bodyDate, setBodyDate] = useState(dateKey());
   const [bodyValue, setBodyValue] = useState("");
   const sessions = filterSessions(data, effectiveWeek);
-  const rows = volumeRows(sessions, period, useABSplit);
+  const [volumeRange, setVolumeRange] = useState<"month" | "three" | "all">(
+    "all",
+  );
+  const rows = filterVolumeRange(
+    volumeRows(sessions, period, useABSplit),
+    volumeRange,
+  );
+  const trend = strengthTrend(sessions);
   const comp = trainingAverages(data.sessions);
   const prs = records(sessions);
   const allRecords = records(data.sessions);
@@ -81,20 +95,16 @@ export function Analytics({
     .reverse();
   const histories = selected.map((eid) => ({
     id: eid,
-    name: exerciseOptions.find((e) => e.id === eid)?.name || eid,
+    name: exerciseName(
+      exerciseOptions.find((e) => e.id === eid)?.name || eid,
+      eid,
+    ),
     ...exerciseProgress(sessions, eid, metric, scale, progressMonth),
   }));
   const dates = [
     ...new Set(histories.flatMap((h) => h.rows.map((r) => r.date))),
   ].sort();
-  const latest = rows.filter((row) => row.done > 0).at(-1);
   const recovery = recoveryHistory(sessions);
-  const recoveryChecks = recovery
-    .flatMap((row) => [row.warmup, row.cooldown])
-    .filter((check) => check.status !== "unplanned");
-  const recoveryDone = recoveryChecks.filter(
-    (check) => check.status === "done",
-  ).length;
   const saveBody = () => {
     const weight = Number(bodyValue);
     if (!(weight > 0 && weight <= 600)) return;
@@ -111,31 +121,33 @@ export function Analytics({
     <>
       <div className="page-head">
         <div>
-          <span className="eyebrow">THE BIGGER PICTURE</span>
+          <span className="eyebrow">{t("THE BIGGER PICTURE")}</span>
           <h1>
-            Small steps. Stronger you <span>↗</span>
+            {t("Small steps. Stronger you ")}
+            <span>↗</span>
           </h1>
-          <p>Your progress, from every rep to every week.</p>
+          <p>{t("Your progress, from every rep to every week.")}</p>
         </div>
         {useABSplit && (
           <select
-            aria-label="Analytics week filter"
+            aria-label={t("Analytics week filter")}
             value={week}
             onChange={(e) => setWeek(e.target.value as "All" | Week)}
           >
-            <option value="All">All weeks</option>
-            <option value="A">Week A</option>
-            <option value="B">Week B</option>
+            <option value="All">{t("All weeks")}</option>
+            <option value="A">{t("Week A")}</option>
+            <option value="B">{t("Week B")}</option>
           </select>
         )}
       </div>
       <div className="analytics-top">
         <div className="metric-card tint-blue">
           <span className="metric-label">
-            Completed lifting volume{" "}
-            <InfoButton title="Completed lifting volume">
-              Total weight × reps for completed strength sets, respecting the
-              program-week filter.
+            {t("Completed lifting volume")}{" "}
+            <InfoButton title={t("Completed lifting volume")}>
+              {t(
+                "Total weight × reps for completed strength sets, respecting the program-week filter.",
+              )}
             </InfoButton>
           </span>
           <strong>
@@ -151,61 +163,38 @@ export function Analytics({
                 0,
               ),
             )}
-            <small> kg</small>
+            <small>{t(" kg")}</small>
           </strong>
           <p>
             {effectiveWeek === "All"
-              ? "All training weeks"
-              : `Week ${effectiveWeek} only`}
+              ? t("All training weeks")
+              : t(`Week ${effectiveWeek} only`)}
           </p>
         </div>
         <div className="metric-card tint-mint">
           <span className="metric-label">
-            Latest {period} change{" "}
-            <InfoButton title="Latest training change">
-              Completed volume compared with the previous completed period. In
-              A/B week view, A compares with A and B with B; unfinished training
-              weeks never become the next baseline. Planned sets are excluded.
+            {t("Strength trend")}{" "}
+            <InfoButton title={t("Strength trend")}>
+              {t(
+                "Average percentage change in daily best estimated 1RM from each exercise's first to latest log within the last 30 days. Each exercise needs at least two different logged days and receives equal weight. Checked strength sets only; plans and zero-weight sets are excluded. This is an estimate from your logs, not a measured change in maximal strength.",
+              )}
             </InfoButton>
           </span>
-          <strong>{pct(latest?.change ?? null)}</strong>
+          <strong>{trend.value === null ? "—" : pct(trend.value)}</strong>
           <p>
-            {latest
-              ? `${latest.label}${latest.baseline ? ` vs ${latest.baseline}` : ""}`
-              : "Log a completed set to begin"}
+            {t("Last 30 days · ")}
+            {trend.count}
+            {t(" comparable exercises")}
           </p>
-        </div>
-        <div className="metric-card tint-yellow">
-          <span className="metric-label">
-            Recovery completed{" "}
-            <InfoButton title="Recovery completed">
-              The number of fully completed warm-up and cool-down routines out
-              of planned routines in sessions you have started. See the
-              checklist for skipped and partial routines.
-            </InfoButton>
-          </span>
-          <strong>
-            {recoveryDone}
-            <small> / {recoveryChecks.length}</small>
-          </strong>
-          <p>Warm-ups & cool-downs</p>
         </div>
       </div>
       <Panel
-        title="Training volume"
+        title={t("Training volume")}
         info={
           <p>
-            Solid bars show checked strength sets. Lighter bars show remaining
-            planned sets; the dashed line shows the combined projection. Planned
-            sets affect only this chart. A/B week view uses assigned training
-            groups across weekdays and month boundaries. Changes and spikes use
-            actual volume, comparing A with the previous completed A group and B
-            with the previous completed B group. An unfinished group can show a
-            provisional change. Averages include only fully completed training
-            groups, always showing both A and B averages.
-            {rows.length > 24
-              ? " Chart shows the latest 24 periods; the table contains every period."
-              : ""}
+            {t(
+              "Solid bars show checked strength sets. Lighter bars show remaining planned sets; the dashed line shows the combined projection. Planned sets affect only this chart. A/B week view uses assigned training groups across weekdays and month boundaries. Changes and spikes use actual volume, comparing A with the previous completed A group and B with the previous completed B group. An unfinished group can show a provisional change. Averages include only fully completed training groups, always showing both A and B averages.",
+            )}
           </p>
         }
         action={
@@ -216,47 +205,65 @@ export function Analytics({
                 className={period === p ? "active" : ""}
                 onClick={() => setPeriod(p)}
               >
-                {p[0].toUpperCase() + p.slice(1)}
+                {t(p[0].toUpperCase() + p.slice(1))}
               </button>
             ))}
           </div>
         }
       >
         <div className="volume-controls">
-          <div className="segmented" aria-label="Analytics volume chart view">
+          <label className="volume-range-label">
+            {t("Range")}
+            <select
+              aria-label={t("Training volume range")}
+              value={volumeRange}
+              onChange={(e) =>
+                setVolumeRange(e.target.value as "month" | "three" | "all")
+              }
+            >
+              <option value="month">{t("This month")}</option>
+              <option value="three">{t("Last 3 months")}</option>
+              <option value="all">{t("All history")}</option>
+            </select>
+          </label>
+          <div
+            className="segmented"
+            aria-label={t("Analytics volume chart view")}
+          >
             <button
               className={volumeView === "bars" ? "active" : ""}
               aria-pressed={volumeView === "bars"}
               onClick={() => setVolumeView("bars")}
             >
-              Bars
+              {t("Bars")}
             </button>
             <button
               className={volumeView === "line" ? "active" : ""}
               aria-pressed={volumeView === "line"}
               onClick={() => setVolumeView("line")}
             >
-              Line
+              {t("Line")}
             </button>
           </div>
           {period === "week" && useABSplit && (
             <div className="volume-week-averages">
               <span>
-                Week A avg{" "}
+                {t("Week A avg")}{" "}
                 <strong>
-                  {comp.a === null ? "—" : `${number(comp.a)} kg`}
+                  {comp.a === null ? "—" : t(`${number(comp.a)} kg`)}
                 </strong>
               </span>
               <span>
-                Week B avg{" "}
+                {t("Week B avg")}{" "}
                 <strong>
-                  {comp.b === null ? "—" : `${number(comp.b)} kg`}
+                  {comp.b === null ? "—" : t(`${number(comp.b)} kg`)}
                 </strong>
               </span>
               {comp.difference !== null && (
                 <span>
-                  Week A <strong>{pct(comp.difference)}</strong> compared with
-                  Week B
+                  {t("Week A ")}
+                  <strong>{pct(comp.difference)}</strong>
+                  {t(" compared with Week B")}
                 </span>
               )}
             </div>
@@ -265,11 +272,11 @@ export function Analytics({
         {rows.length ? (
           <>
             <VolumePlot
-              rows={rows.slice(-24)}
+              rows={rows}
               view={volumeView}
               split={useABSplit}
               training={period === "week" && useABSplit}
-              title="Training volume"
+              title={t("Training volume")}
               range={(row) =>
                 period === "week" && useABSplit
                   ? `${shortDate(row.from)}–${shortDate(row.to)}`
@@ -277,84 +284,93 @@ export function Analytics({
                     ? shortDate(row.from)
                     : row.label
               }
-              caption={
-                period === "week"
-                  ? useABSplit
-                    ? "Assigned training weeks · kg"
-                    : "Monday–Sunday weeks · kg"
-                  : `${period} volume · kg`
-              }
             />
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Period</th>
-                    <th>Completed</th>
-                    <th>Planned</th>
-                    <th>Projection</th>
-                    <th>Change</th>
-                    <th>Workload</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...rows].reverse().map((r) => (
-                    <tr key={r.key}>
-                      <td>{r.label}</td>
-                      <td>{number(r.done)} kg</td>
-                      <td>{number(r.planned)} kg</td>
-                      <td>{number(r.total)} kg</td>
-                      <td>
-                        {pct(r.change)}
-                        {r.done > 0 &&
-                          !r.closed &&
-                          period === "week" &&
-                          useABSplit && (
-                            <small className="muted"> · In progress</small>
-                          )}
-                      </td>
-                      <td>
-                        {period === "week" &&
-                        r.change !== null &&
-                        r.change > data.settings.spikeThreshold ? (
-                          <span className="badge alert">↑ Workload spike</span>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
+            <details className="volume-breakdown">
+              <summary>{t("Show breakdown")}</summary>
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t("Period")}</th>
+                      <th>{t("Completed")}</th>
+                      <th>{t("Planned")}</th>
+                      <th>{t("Projection")}</th>
+                      <th>{t("Change")}</th>
+                      <th>{t("Workload")}</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {[...rows].reverse().map((r) => (
+                      <tr key={r.key}>
+                        <td>{t(r.label)}</td>
+                        <td>
+                          {number(r.done)}
+                          {t(" kg")}
+                        </td>
+                        <td>
+                          {number(r.planned)}
+                          {t(" kg")}
+                        </td>
+                        <td>
+                          {number(r.total)}
+                          {t(" kg")}
+                        </td>
+                        <td>
+                          {pct(r.change)}
+                          {r.done > 0 &&
+                            !r.closed &&
+                            period === "week" &&
+                            useABSplit && (
+                              <small className="muted">
+                                {t(" · In progress")}
+                              </small>
+                            )}
+                        </td>
+                        <td>
+                          {period === "week" &&
+                          r.change !== null &&
+                          r.change > data.settings.spikeThreshold ? (
+                            <span className="badge alert">
+                              {t("↑ Workload spike")}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
           </>
         ) : (
           <Empty
-            title="Your progress starts with a rep"
-            detail="Complete a lifting set to populate volume history."
+            title={t("Your progress starts with a rep")}
+            detail={t("Complete a lifting set to populate volume history.")}
           />
         )}
       </Panel>
       <div className="two-col">
         <Panel
-          title="Recovery checklist"
+          title={t("Warm-up checklist")}
           className="span-full"
           info={
             <>
               <p>
-                Shows warm-ups and cool-downs for sessions with completed sets
-                or activities. Future plans that have not started are excluded.
+                {t(
+                  "Each column is one session: warm-up on top and cool-down below. Tap a box for details. Green means done, amber means partial, gray means skipped, pending or not planned. Shows warm-ups and cool-downs for sessions with completed sets or activities. Future plans that have not started are excluded.",
+                )}
               </p>
               <p>
-                Done means every activity in that routine was marked complete.
-                Partial means only some were completed. Skipped means it was not
-                marked complete in a finished or past training session. Pending
-                means today’s session is still in progress. Not planned means
-                the session contains no activity of that kind.
+                {t(
+                  "Done means every activity in that routine was marked complete. Partial means only some were completed. Skipped means it was not marked complete in a finished or past training session. Pending means today’s session is still in progress. Not planned means the session contains no activity of that kind.",
+                )}
               </p>
               <p>
-                Recovery completion stays separate from lifting volume,
-                estimated 1RM and records.
+                {t(
+                  "Recovery completion stays separate from lifting volume, estimated 1RM and records.",
+                )}
               </p>
             </>
           }
@@ -363,25 +379,27 @@ export function Analytics({
         </Panel>
       </div>
       <Panel
-        title="Exercise progress"
+        title={t("Exercise progress")}
         info={
           <>
             <p>
-              Lines connect recorded training days. An exercise with one
-              recorded day has one point; missing days are not treated as zero.
+              {t(
+                "Lines connect recorded training days. An exercise with one recorded day has one point; missing days are not treated as zero.",
+              )}
             </p>
             <p>
-              Epley estimate: weight × (1 + reps ÷ 30). Bodyweight movements
-              need a entered lifting weight to produce a weight-based estimate.
+              {t(
+                "Epley estimate: weight × (1 + reps ÷ 30). Bodyweight movements need a entered lifting weight to produce a weight-based estimate.",
+              )}
             </p>{" "}
             {scale === "percent" && (
               <div className="progress-baselines">
                 <p className="muted">
-                  0% is each exercise’s first completed{" "}
-                  {metric === "weight" ? "top weight" : "estimated 1RM"}{" "}
+                  {t("0% is each exercise’s first completed")}{" "}
+                  {metric === "weight" ? t("top weight") : t("estimated 1RM")}{" "}
                   {progressMonth
-                    ? "in the selected month"
-                    : "across all recorded history"}
+                    ? t("in the selected month")
+                    : t("across all recorded history")}
                   .
                 </p>
                 {histories
@@ -396,8 +414,8 @@ export function Analytics({
                             ],
                         }}
                       />
-                      {history.name}: {number(history.baseline.value, 1)} kg on{" "}
-                      {shortDate(history.baseline.date)}
+                      {history.name}: {number(history.baseline.value, 1)}
+                      {t(" kg on")} {shortDate(history.baseline.date)}
                     </span>
                   ))}
               </div>
@@ -406,41 +424,41 @@ export function Analytics({
         }
         action={
           <select
-            aria-label="Exercise progress metric"
+            aria-label={t("Exercise progress metric")}
             value={metric}
             onChange={(e) => setMetric(e.target.value as "e1rm" | "weight")}
           >
-            <option value="e1rm">Estimated 1RM</option>
-            <option value="weight">Top weight</option>
+            <option value="e1rm">{t("Estimated 1RM")}</option>
+            <option value="weight">{t("Top weight")}</option>
           </select>
         }
       >
         <div className="progress-controls">
           <label>
-            Display
+            {t("Display")}
             <select
-              aria-label="Exercise progress scale"
+              aria-label={t("Exercise progress scale")}
               value={scale}
               onChange={(event) => {
                 const next = event.target.value as "kg" | "percent";
                 setScale(next);
               }}
             >
-              <option value="kg">Weight (kg)</option>
-              <option value="percent">Growth (%)</option>
+              <option value="kg">{t("Weight (kg)")}</option>
+              <option value="percent">{t("Growth (%)")}</option>
             </select>
           </label>
           <label>
-            Period
+            {t("Period")}
             <select
-              aria-label="Exercise progress period"
+              aria-label={t("Exercise progress period")}
               value={progressMonth}
               onChange={(event) => setProgressMonth(event.target.value)}
             >
-              <option value="">All history</option>
+              <option value="">{t("All history")}</option>
               {months.map((month) => (
                 <option key={month} value={month}>
-                  {parseDate(`${month}-01`).toLocaleDateString(undefined, {
+                  {parseDate(`${month}-01`).toLocaleDateString(appLocale(), {
                     month: "long",
                     year: "numeric",
                   })}
@@ -463,7 +481,7 @@ export function Analytics({
                 )
               }
             >
-              {e.name}
+              {exerciseName(e.name, e.id)}
             </button>
           ))}
         </div>
@@ -471,7 +489,7 @@ export function Analytics({
           <>
             <Chart
               connectGaps
-              unit={scale === "percent" ? "%" : "kg"}
+              unit={scale === "percent" ? "%" : t("kg")}
               labels={dates.map(shortDate)}
               series={histories.map((h, i) => ({
                 name: h.name,
@@ -485,7 +503,7 @@ export function Analytics({
               <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
+                    <th>{t("Date")}</th>
                     {histories.map((h) => (
                       <th key={h.id}>{h.name}</th>
                     ))}
@@ -500,7 +518,9 @@ export function Analytics({
                           {h.rows.find((r) => r.date === date)
                             ? scale === "percent"
                               ? pct(h.rows.find((r) => r.date === date)!.value)
-                              : `${number(h.rows.find((r) => r.date === date)!.value, 1)} kg`
+                              : t(
+                                  `${number(h.rows.find((r) => r.date === date)!.value, 1)} kg`,
+                                )
                             : "—"}
                         </td>
                       ))}
@@ -514,19 +534,22 @@ export function Analytics({
           <Empty
             title={
               selected.length
-                ? "No completed history for this selection"
-                : "Pick your exercises"
+                ? t("No completed history for this selection")
+                : t("Pick your exercises")
             }
-            detail="Select one or more exercises to compare completed performance."
+            detail={t(
+              "Select one or more exercises to compare completed performance.",
+            )}
           />
         )}
       </Panel>
       <Panel
-        title="Personal records"
+        title={t("Personal records")}
         info={
           <p>
-            The first five exercises are ranked by completed-set frequency.
-            Records respect the week filter.
+            {t(
+              "The first five exercises are ranked by completed-set frequency. Records respect the week filter.",
+            )}
           </p>
         }
         action={
@@ -535,7 +558,7 @@ export function Analytics({
               className="text-button"
               onClick={() => setExpanded(!expanded)}
             >
-              {expanded ? "Show less" : "More exercises"}
+              {expanded ? t("Show less") : t("More exercises")}
               <ChevronDown size={15} />
             </button>
           ) : undefined
@@ -546,11 +569,11 @@ export function Analytics({
             <table>
               <thead>
                 <tr>
-                  <th>Exercise</th>
-                  <th>Best e1RM</th>
-                  <th>Heaviest</th>
-                  <th>Best set</th>
-                  <th>Date</th>
+                  <th>{t("Exercise")}</th>
+                  <th>{t("Best e1RM")}</th>
+                  <th>{t("Heaviest")}</th>
+                  <th>{t("Best set")}</th>
+                  <th>{t("Date")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -559,8 +582,14 @@ export function Analytics({
                     <td>
                       <strong>{r.name}</strong>
                     </td>
-                    <td>{number(r.best, 1)} kg</td>
-                    <td>{number(r.heaviest, 1)} kg</td>
+                    <td>
+                      {number(r.best, 1)}
+                      {t(" kg")}
+                    </td>
+                    <td>
+                      {number(r.heaviest, 1)}
+                      {t(" kg")}
+                    </td>
                     <td>
                       {number(r.weight, 1)} × {r.reps}
                     </td>
@@ -572,18 +601,18 @@ export function Analytics({
           </div>
         ) : (
           <Empty
-            title="Your first record is waiting"
-            detail="Finish a set with weight and reps to get started."
+            title={t("Your first record is waiting")}
+            detail={t("Finish a set with weight and reps to get started.")}
           />
         )}
       </Panel>
       <Panel
-        title="Bodyweight"
+        title={t("Bodyweight")}
         info={
           <p>
-            Average of measurements in the preceding seven calendar days,
-            including the entry date. Bodyweight is independent of the
-            program-week filter.
+            {t(
+              "Average of measurements in the preceding seven calendar days, including the entry date. Bodyweight is independent of the program-week filter.",
+            )}
           </p>
         }
         action={
@@ -600,7 +629,8 @@ export function Analytics({
               setBodyModal(true);
             }}
           >
-            <Plus size={16} /> Log bodyweight
+            <Plus size={16} />
+            {t(" Log bodyweight")}
           </button>
         }
       >
@@ -608,11 +638,13 @@ export function Analytics({
           <>
             <div className="body-summary">
               <strong>
-                {number(bw.at(-1)!.weight, 1)} <small>kg</small>
+                {number(bw.at(-1)!.weight, 1)} <small>{t("kg")}</small>
               </strong>
               <span className="muted">
-                Latest · {shortDate(bw.at(-1)!.date)} · 7-day average{" "}
-                {number(bw.at(-1)!.average, 1)} kg
+                {t("Latest · ")}
+                {shortDate(bw.at(-1)!.date)}
+                {t(" · 7-day average")} {number(bw.at(-1)!.average, 1)}
+                {t(" kg")}
               </span>
             </div>
             <Chart
@@ -621,25 +653,25 @@ export function Analytics({
               labels={bw.map((e) => shortDate(e.date))}
               series={[
                 {
-                  name: "Bodyweight",
+                  name: t("Bodyweight"),
                   color: "#bfa0ef",
                   values: bw.map((e) => e.weight),
                 },
                 {
-                  name: "7-day moving average",
+                  name: t("7-day moving average"),
                   color: "#7552bb",
                   values: bw.map((e) => e.average),
                 },
               ]}
             />
             <details>
-              <summary>Bodyweight entries</summary>
+              <summary>{t("Bodyweight entries")}</summary>
               <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Weight</th>
-                    <th>7-day average</th>
+                    <th>{t("Date")}</th>
+                    <th>{t("Weight")}</th>
+                    <th>{t("7-day average")}</th>
                     <th />
                   </tr>
                 </thead>
@@ -647,12 +679,18 @@ export function Analytics({
                   {[...bw].reverse().map((e) => (
                     <tr key={e.date}>
                       <td>{shortDate(e.date)}</td>
-                      <td>{number(e.weight, 1)} kg</td>
-                      <td>{number(e.average, 1)} kg</td>
+                      <td>
+                        {number(e.weight, 1)}
+                        {t(" kg")}
+                      </td>
+                      <td>
+                        {number(e.average, 1)}
+                        {t(" kg")}
+                      </td>
                       <td>
                         <button
                           className="icon-button"
-                          aria-label={`Delete bodyweight on ${e.date}`}
+                          aria-label={t(`Delete bodyweight on ${e.date}`)}
                           onClick={() =>
                             onChange({
                               ...data,
@@ -673,15 +711,17 @@ export function Analytics({
           </>
         ) : (
           <Empty
-            title="A little more context"
-            detail="Log your bodyweight to see its history and 7-day trend."
+            title={t("A little more context")}
+            detail={t(
+              "Log your bodyweight to see its history and 7-day trend.",
+            )}
           />
         )}
       </Panel>
       {bodyModal && (
-        <Modal title="Log bodyweight" onClose={() => setBodyModal(false)}>
+        <Modal title={t("Log bodyweight")} onClose={() => setBodyModal(false)}>
           <label>
-            Date
+            {t("Date")}
             <input
               type="date"
               value={bodyDate}
@@ -697,7 +737,7 @@ export function Analytics({
             />
           </label>
           <label>
-            Bodyweight (kg)
+            {t("Bodyweight (kg)")}
             <input
               type="number"
               autoFocus
@@ -709,7 +749,7 @@ export function Analytics({
             />
           </label>
           <p className="muted">
-            An existing entry on this date will be updated.
+            {t("An existing entry on this date will be updated.")}
           </p>
           <button
             className="button primary full"
@@ -718,7 +758,7 @@ export function Analytics({
             }
             onClick={saveBody}
           >
-            Save bodyweight
+            {t("Save bodyweight")}
           </button>
         </Modal>
       )}

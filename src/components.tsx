@@ -1,4 +1,5 @@
-import { bodyweightDomain } from "./chartDomain";
+import { t, exerciseName } from "./i18n";
+import { bodyweightDomain, chartLabelIndices } from "./chartDomain";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -36,13 +37,13 @@ export function InfoButton({
       <button
         type="button"
         className="metric-info"
-        aria-label={`About ${title}`}
+        aria-label={t(`About ${title}`)}
         onClick={() => setOpen(true)}
       >
         <Info size={17} />
       </button>
       {open && (
-        <Modal title={`About ${title}`} onClose={() => setOpen(false)}>
+        <Modal title={t(`About ${title}`)} onClose={() => setOpen(false)}>
           <div className="metric-explanation">{children}</div>
         </Modal>
       )}
@@ -149,8 +150,12 @@ export function Modal({
         ref={ref}
       >
         <div className="modal-head">
-          <h2>{title}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="Close">
+          <h2>{t(title)}</h2>
+          <button
+            className="icon-button"
+            onClick={onClose}
+            aria-label={t("Close")}
+          >
             <X size={22} />
           </button>
         </div>
@@ -174,15 +179,18 @@ export function Empty({
       <div className="empty-icon">
         <Sparkles size={28} />
       </div>
-      <h3>{title}</h3>
-      {detail && <p>{detail}</p>}
+      <h3>{t(title)}</h3>
+      {detail && <p>{t(detail)}</p>}
       {action}
     </div>
   );
 }
 export function WeekBadge({ week }: { week: string }) {
   return (
-    <span className={`badge week-${week.toLowerCase()}`}>Week {week}</span>
+    <span className={`badge week-${week.toLowerCase()}`}>
+      {t("Week ")}
+      {week}
+    </span>
   );
 }
 export function SessionCard({
@@ -208,8 +216,10 @@ export function SessionCard({
         <span>
           {shortDate(session.date)} ·{" "}
           {session.status === "done"
-            ? `${doneSets(session).length} sets · ${number(volume(session))} kg`
-            : "Planned"}
+            ? t(
+                `${doneSets(session).length} sets · ${number(volume(session))} kg`,
+              )
+            : t("Planned")}
         </span>
       </span>
       {showWeek && <WeekBadge week={session.week} />}
@@ -228,8 +238,8 @@ export function SessionCard({
       {card}
       <button
         className="duplicate-session-button"
-        aria-label={`Duplicate ${session.name}`}
-        title="Duplicate session"
+        aria-label={t(`Duplicate ${session.name}`)}
+        title={t("Duplicate session")}
         onClick={() => onDuplicate(session)}
       >
         <Copy size={18} />
@@ -244,10 +254,12 @@ export function ExerciseNames({ exercises }: { exercises: WorkoutExercise[] }) {
     <span className="exercise-preview">
       {exercises.length ? (
         exercises.map((exercise) => (
-          <span key={exercise.id}>{exercise.name}</span>
+          <span key={exercise.id}>
+            {exerciseName(exercise.name, exercise.exerciseId)}
+          </span>
         ))
       ) : (
-        <span className="muted">No exercises planned yet</span>
+        <span className="muted">{t("No exercises planned yet")}</span>
       )}
     </span>
   );
@@ -276,7 +288,7 @@ export function Counter({
   return (
     <div className="counter">
       <button
-        aria-label={`Decrease ${label}`}
+        aria-label={t(`Decrease ${label}`)}
         onClick={() =>
           onChange(Math.max(0, Math.round((value - step) * 100) / 100))
         }
@@ -297,9 +309,9 @@ export function Counter({
           if (e.key === "Enter") e.currentTarget.blur();
         }}
       />
-      <span className="counter-unit">{step === 1 ? "reps" : "kg"}</span>
+      <span className="counter-unit">{step === 1 ? "reps" : t("kg")}</span>
       <button
-        aria-label={`Increase ${label}`}
+        aria-label={t(`Increase ${label}`)}
         onClick={() =>
           onChange(Math.min(max, Math.round((value + step) * 100) / 100))
         }
@@ -327,20 +339,22 @@ export function SetRow({
         value={set.weight}
         step={2.5}
         max={2000}
-        label={`Set ${index + 1} weight in kg`}
+        label={t(`Set ${index + 1} weight in kg`)}
         onChange={(weight) => onChange({ ...set, weight })}
       />
-      <span className="unit">kg ×</span>
+      <span className="unit">{t("kg ×")}</span>
       <Counter
         value={set.reps}
         step={1}
         max={1000}
-        label={`Set ${index + 1} reps`}
+        label={t(`Set ${index + 1} reps`)}
         onChange={(reps) => onChange({ ...set, reps })}
       />
       <button
         className={`done-button ${set.done ? "checked" : ""}`}
-        aria-label={`Set ${index + 1} ${set.done ? "completed" : "not completed"}`}
+        aria-label={t(
+          `Set ${index + 1} ${set.done ? "completed" : "not completed"}`,
+        )}
         aria-pressed={set.done}
         onClick={() => onChange({ ...set, done: !set.done })}
       >
@@ -349,7 +363,7 @@ export function SetRow({
       {onRemove && (
         <button
           className="icon-button subtle"
-          aria-label={`Remove set ${index + 1}`}
+          aria-label={t(`Remove set ${index + 1}`)}
           onClick={onRemove}
         >
           <X size={15} />
@@ -369,13 +383,16 @@ export function LastTime({
 }) {
   const last = lastPerformance(sessions, exercise.exerciseId, session);
   if (!last)
-    return <div className="last-time">First time here. Make it count!</div>;
+    return (
+      <div className="last-time">{t("First time here. Make it count!")}</div>
+    );
   const sets = doneSets(last).filter(
     (x) => x.exerciseId === exercise.exerciseId,
   );
   return (
     <div className="last-time">
-      Last · {shortDate(last.date)} ·{" "}
+      {t("Last · ")}
+      {shortDate(last.date)} ·{" "}
       {sets.map((s) => `${number(s.weight, 1)} kg × ${s.reps}`).join(" / ")}
     </div>
   );
@@ -446,6 +463,7 @@ export function Chart({
     top = 15;
   const plotW = width - left - right,
     plotH = height - bottom - top;
+  const visibleLabels = chartLabelIndices(labels.length, compact ? 4 : 7);
   const x = (i: number) =>
     left + ((i + 0.5) * plotW) / Math.max(labels.length, 1);
   const y = (v: number) => top + (1 - (v - min) / (max - min)) * plotH;
@@ -454,7 +472,7 @@ export function Chart({
       <svg
         viewBox={`0 0 ${width} ${height}`}
         role="img"
-        aria-label={`${series.map((s) => s.name).join(" and ")} in ${unit}`}
+        aria-label={t(`${series.map((s) => s.name).join(" and ")} in ${unit}`)}
       >
         <title>
           {series.map((s) => s.name).join(" and ")} ({unit})
@@ -545,10 +563,7 @@ export function Chart({
         )}
         {labels.map(
           (l, i) =>
-            (i === 0 ||
-              i === labels.length - 1 ||
-              i % Math.max(1, Math.ceil(labels.length / (compact ? 3 : 6))) ===
-                0) && (
+            visibleLabels.has(i) && (
               <text
                 key={i}
                 x={x(i)}
@@ -590,7 +605,7 @@ export function Panel({
     <section className={`panel ${className}`}>
       <div className="panel-title">
         <div className="panel-heading">
-          <h2>{title}</h2>
+          <h2>{t(title)}</h2>
           {info && <InfoButton title={title}>{info}</InfoButton>}
         </div>
         {action}
@@ -604,7 +619,7 @@ export function Logo({ name = "LiftLog" }: { name?: string }) {
     <div className={`logo ${name !== "LiftLog" ? "custom-name" : ""}`}>
       <span className="logo-name">{name}</span>
       <span className="logo-spark">✦</span>
-      <small>train together</small>
+      <small>{t("train together")}</small>
     </div>
   );
 }

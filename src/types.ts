@@ -48,6 +48,7 @@ export interface Bodyweight {
   weight: number;
 }
 export interface Settings {
+  language?: "en" | "ru";
   useABSplit: boolean;
   spikeThreshold: number;
   anchorDate: string;

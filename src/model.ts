@@ -7,12 +7,20 @@ import type {
   Bodyweight,
 } from "./types.ts";
 import { suggestedProgramWeek, suggestTrainingWeek } from "./trainingWeeks.ts";
+import { t, appLocale } from "./i18n.ts";
 export const id = () => crypto.randomUUID();
 export const dateKey = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const parseDate = (s: string) => new Date(`${s}T12:00:00`);
 export const fullDate = (s: string) => {
   const date = parseDate(s);
+  if (appLocale() === "ru-RU")
+    return date.toLocaleDateString("ru-RU", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
   return `${date.toLocaleDateString("en-GB", { weekday: "long" })} ${date.getDate()}, ${date.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`;
 };
 export function exerciseComplete(exercise: WorkoutExercise) {
@@ -112,12 +120,12 @@ export const monday = (s: string) => {
   return addDays(s, -((d.getDay() + 6) % 7));
 };
 export const shortDate = (s: string) =>
-  parseDate(s).toLocaleDateString(undefined, {
+  parseDate(s).toLocaleDateString(appLocale(), {
     month: "short",
     day: "numeric",
   });
 export const number = (n: number, digits = 0) =>
-  n.toLocaleString(undefined, { maximumFractionDigits: digits });
+  n.toLocaleString(appLocale(), { maximumFractionDigits: digits });
 export const defaults = [
   "Bench Press",
   "Incline Dumbbell Press",
@@ -148,6 +156,7 @@ export function emptyData(name = "Aleksei"): AppData {
     })),
     bodyweight: [],
     settings: {
+      language: "en",
       useABSplit: true,
       spikeThreshold: 30,
       anchorDate: monday(dateKey()),
@@ -279,8 +288,8 @@ export function filterSessions(data: AppData, week: "All" | Week) {
 }
 export function exerciseSummary(exercise: WorkoutExercise) {
   if (exercise.kind !== "strength")
-    return `${number(exercise.duration)} min · ${exercise.kind === "warmup" ? "Warm-up" : "Cool-down"}`;
-  if (!exercise.sets.length) return "No sets planned";
+    return `${number(exercise.duration)} ${appLocale() === "ru-RU" ? "мин" : "min"} · ${exercise.kind === "warmup" ? t("Warm-up") : t("Cool-down")}`;
+  if (!exercise.sets.length) return t("No sets planned");
   const groups: { count: number; weight: number; reps: number }[] = [];
   for (const set of exercise.sets) {
     const last = groups.at(-1);
@@ -291,7 +300,7 @@ export function exerciseSummary(exercise: WorkoutExercise) {
   return groups
     .map(
       (g) =>
-        `${g.count} ${g.count === 1 ? "set" : "sets"} × ${g.reps} reps · ${number(g.weight, 2)} kg`,
+        `${g.count} ${g.count === 1 ? t("set") : t("sets")} × ${g.reps} ${t("Reps").toLowerCase()} · ${number(g.weight, 2)} ${t("kg")}`,
     )
     .join(" / ");
 }
@@ -415,7 +424,7 @@ export function volumeHistory(
       label:
         period === "week"
           ? shortDate(cursor)
-          : parseDate(`${cursor}-01`).toLocaleDateString(undefined, {
+          : parseDate(`${cursor}-01`).toLocaleDateString(appLocale(), {
               month: "short",
               year: "numeric",
             }),
@@ -713,10 +722,13 @@ export function validateBackup(value: unknown): AppData {
     !["A", "B"].includes(d.settings.anchorWeek) ||
     (d.settings.useABSplit !== undefined &&
       typeof d.settings.useABSplit !== "boolean") ||
+    (d.settings.language !== undefined &&
+      !["en", "ru"].includes(d.settings.language)) ||
     !text(d.settings.name)
   )
     return fail();
   const normalized = structuredClone(d);
   normalized.settings.useABSplit ??= true;
+  normalized.settings.language ??= "en";
   return normalized;
 }

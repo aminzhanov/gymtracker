@@ -1,3 +1,4 @@
+import { t } from "./i18n";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
@@ -13,10 +14,10 @@ class ErrorBoundary extends React.Component<
   render() {
     return this.state.error ? (
       <main className="auth-card">
-        <h1>LiftLog hit a snag</h1>
-        <p>Your saved data is still available. Reload to try again.</p>
+        <h1>{t("LiftLog hit a snag")}</h1>
+        <p>{t("Your saved data is still available. Reload to try again.")}</p>
         <button className="button primary" onClick={() => location.reload()}>
-          Reload
+          {t("Reload")}
         </button>
       </main>
     ) : (
