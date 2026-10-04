@@ -100,7 +100,10 @@ export function SessionEditor({
     setS(updateSessionExercise(s, e));
   const add = (exerciseId: string, name: string) => {
     const exercise = newExercise(exerciseId, name, kind);
-    patch({ exercises: [...s.exercises, exercise] });
+    setS((current) => ({
+      ...current,
+      exercises: [...current.exercises, exercise],
+    }));
     setAddedExercise(exercise.id);
     setAdding(false);
     setSearch("");
