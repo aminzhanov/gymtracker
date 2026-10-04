@@ -3915,6 +3915,7 @@ summary {
 }
 .welcome-stat-tag {
   display: inline-flex;
+  min-height: 52px;
   align-items: center;
   gap: 7px;
   padding: 10px 14px;
@@ -3925,21 +3926,62 @@ summary {
   font-size: 13px;
   line-height: 1.4;
 }
-.welcome-stat-tag strong {
+.welcome-stat-tag > svg {
+  flex: none;
+}
+.welcome-stat-copy {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+.welcome-stat-copy strong {
   font-weight: 900;
+  white-space: nowrap;
+}
+.welcome-stat-tag .metric-info {
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+}
+.welcome-stat-sets {
+  background: #dceaff;
+  border-color: #526ea2;
+}
+.welcome-stat-volume {
+  background: #fff0b8;
+  border-color: #947221;
+}
+.welcome-stat-records {
+  background: #d1f1de;
+  border-color: #49786a;
 }
 .analytics-top {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+.volume-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
 .volume-range-label {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  margin: 0;
   font-size: 13px;
 }
 .volume-range-label select {
   margin: 0;
   width: auto;
+  min-height: 44px;
+}
+.volume-filter-row .segmented {
+  margin: 0;
 }
 .volume-chart-scroll {
   overflow: visible;
@@ -4009,16 +4051,167 @@ summary {
     margin-top: 8px;
   }
   .welcome-stat-tags {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
   }
   .welcome-stat-tag {
+    width: 100%;
+    min-height: 64px;
+    border-radius: 22px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  .welcome-stat-copy {
+    display: grid;
+    align-items: start;
+    gap: 2px;
+    flex: 1;
+  }
+  .welcome-stat-copy strong {
+    font-size: 17px;
+    line-height: 1.2;
+  }
+  .welcome-stat-copy > span {
     font-size: 13px;
-    padding: 9px 12px;
+    line-height: 1.35;
+  }
+  .welcome-stat-tag .metric-info {
+    width: 38px;
+    height: 38px;
   }
   .analytics-top {
     grid-template-columns: 1fr;
   }
   .recovery-summary {
     font-size: 14px;
+  }
+}
+
+/* Exercise comparison controls stay out of the chart until requested. */
+.exercise-filter {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.exercise-filter > summary {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 14px;
+  min-height: 46px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  list-style: none;
+}
+.exercise-filter > summary::-webkit-details-marker {
+  display: none;
+}
+.exercise-filter > summary::before {
+  content: "▸";
+  color: var(--blue);
+}
+.exercise-filter[open] > summary::before {
+  content: "▾";
+}
+.exercise-filter > summary > svg {
+  flex: none;
+  color: var(--blue);
+}
+.exercise-filter-count {
+  margin-left: auto;
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: #edf3ff;
+  color: #28569a;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.exercise-filter-content {
+  padding: 14px;
+  border-top: 1px solid var(--border);
+}
+.exercise-filter-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.exercise-filter-tools input {
+  flex: 1;
+  min-width: 150px;
+}
+.exercise-filter-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  max-height: 264px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.exercise-filter-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #f7f7fa;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #34344a;
+  cursor: pointer;
+}
+.exercise-filter-option:has(input:checked) {
+  background: #edf3ff;
+}
+.exercise-filter-option input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  margin: 0;
+  padding: 0;
+  flex: none;
+  accent-color: var(--blue);
+}
+.exercise-filter-option > span {
+  overflow-wrap: anywhere;
+}
+.exercise-filter-option > i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+  margin-left: auto;
+}
+.exercise-filter > summary:focus-visible {
+  outline: 3px solid #1673ff;
+  outline-offset: -3px;
+}
+@media (max-width: 640px) {
+  .volume-filter-row {
+    gap: 10px;
+  }
+  .volume-range-label {
+    flex: 1 1 170px;
+  }
+  .volume-range-label select {
+    flex: 1;
+    min-width: 0;
+    font-size: 16px;
+  }
+  .exercise-filter-list {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: 320px;
+  }
+  .exercise-filter-tools input {
+    font-size: 16px;
   }
 }

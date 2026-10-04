@@ -39,28 +39,34 @@ export function DashboardOverview({
         </p>
         <span className="welcome-date">{fullDate(today)}</span>
         <div className="welcome-stat-tags">
-          <span className="welcome-stat-tag">
+          <span className="welcome-stat-tag welcome-stat-sets">
             <Layers size={18} />
-            <strong>{number(sets)}</strong>
-            {t(" completed sets · all time")}
+            <span className="welcome-stat-copy">
+              <strong>{number(sets)}</strong>
+              <span>{t("completed sets · all time")}</span>
+            </span>
           </span>
-          <span className="welcome-stat-tag">
+          <span className="welcome-stat-tag welcome-stat-volume">
             <Dumbbell size={18} />
-            <strong>
-              {number(lifting)}
-              {t(" kg")}
-            </strong>
-            <span>{t(group.label)}</span>
+            <span className="welcome-stat-copy">
+              <strong>
+                {number(lifting)}
+                {t(" kg")}
+              </strong>
+              <span>{t(group.label)}</span>
+            </span>
             <InfoButton title={t("Training volume")}>
               {t(
                 "Checked strength sets in the active training week. Planned sets are excluded.",
               )}
             </InfoButton>
           </span>
-          <span className="welcome-stat-tag">
+          <span className="welcome-stat-tag welcome-stat-records">
             <Trophy size={18} />
-            <strong>{prs}</strong>
-            {t(" records this month")}
+            <span className="welcome-stat-copy">
+              <strong>{prs}</strong>
+              <span>{t("records this month")}</span>
+            </span>
             <InfoButton title={t("Records this month")}>
               {t(
                 "New estimated 1RM records this month from checked strength sets.",

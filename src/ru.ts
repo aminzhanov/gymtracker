@@ -567,4 +567,8 @@ export const ru: Record<string, string> = {
   done: "завершено",
   coach: "тренер",
   athlete: "спортсмен",
+  selected: "выбрано",
+  "Search exercises": "Поиск упражнений",
+  "Clear selection": "Снять выбор",
+  "No matching exercises": "Упражнения не найдены",
 };

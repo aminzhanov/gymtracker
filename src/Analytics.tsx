@@ -9,7 +9,13 @@ import {
 import { readExerciseSelection } from "./chartDomain";
 import { VolumePlot } from "./VolumePlot";
 import { useEffect, useState } from "react";
-import { Plus, TrendingUp, ChevronDown, Trash2 } from "lucide-react";
+import {
+  Plus,
+  TrendingUp,
+  ChevronDown,
+  Trash2,
+  ListFilter,
+} from "lucide-react";
 import type { AppData, Week } from "./types";
 import { Chart, Panel, Empty, Modal, InfoButton } from "./components";
 import {
@@ -54,6 +60,7 @@ export function Analytics({
   const [metric, setMetric] = useState<"e1rm" | "weight">("e1rm");
   const [scale, setScale] = useState<"kg" | "percent">("kg");
   const [progressMonth, setProgressMonth] = useState("");
+  const [exerciseSearch, setExerciseSearch] = useState("");
   const useABSplit = data.settings.useABSplit;
   const effectiveWeek = useABSplit ? week : "All";
   const [expanded, setExpanded] = useState(false);
@@ -212,38 +219,40 @@ export function Analytics({
         }
       >
         <div className="volume-controls">
-          <label className="volume-range-label">
-            {t("Range")}
-            <select
-              aria-label={t("Training volume range")}
-              value={volumeRange}
-              onChange={(e) =>
-                setVolumeRange(e.target.value as "month" | "three" | "all")
-              }
+          <div className="volume-filter-row">
+            <label className="volume-range-label">
+              {t("Range")}
+              <select
+                aria-label={t("Training volume range")}
+                value={volumeRange}
+                onChange={(e) =>
+                  setVolumeRange(e.target.value as "month" | "three" | "all")
+                }
+              >
+                <option value="month">{t("This month")}</option>
+                <option value="three">{t("Last 3 months")}</option>
+                <option value="all">{t("All history")}</option>
+              </select>
+            </label>
+            <div
+              className="segmented"
+              aria-label={t("Analytics volume chart view")}
             >
-              <option value="month">{t("This month")}</option>
-              <option value="three">{t("Last 3 months")}</option>
-              <option value="all">{t("All history")}</option>
-            </select>
-          </label>
-          <div
-            className="segmented"
-            aria-label={t("Analytics volume chart view")}
-          >
-            <button
-              className={volumeView === "bars" ? "active" : ""}
-              aria-pressed={volumeView === "bars"}
-              onClick={() => setVolumeView("bars")}
-            >
-              {t("Bars")}
-            </button>
-            <button
-              className={volumeView === "line" ? "active" : ""}
-              aria-pressed={volumeView === "line"}
-              onClick={() => setVolumeView("line")}
-            >
-              {t("Line")}
-            </button>
+              <button
+                className={volumeView === "bars" ? "active" : ""}
+                aria-pressed={volumeView === "bars"}
+                onClick={() => setVolumeView("bars")}
+              >
+                {t("Bars")}
+              </button>
+              <button
+                className={volumeView === "line" ? "active" : ""}
+                aria-pressed={volumeView === "line"}
+                onClick={() => setVolumeView("line")}
+              >
+                {t("Line")}
+              </button>
+            </div>
           </div>
           {period === "week" && useABSplit && (
             <div className="volume-week-averages">
@@ -467,24 +476,74 @@ export function Analytics({
             </select>
           </label>
         </div>
-        <div className="exercise-chips">
-          {exerciseOptions.map((e) => (
-            <button
-              key={e.id}
-              className={`chip ${selected.includes(e.id) ? "selected" : ""}`}
-              aria-pressed={selected.includes(e.id)}
-              onClick={() =>
-                setSelected((old) =>
-                  old.includes(e.id)
-                    ? old.filter((x) => x !== e.id)
-                    : [...old, e.id],
+        <details className="exercise-filter">
+          <summary>
+            <ListFilter size={18} aria-hidden="true" />
+            <span>{t("Exercises")}</span>
+            <span className="exercise-filter-count" aria-live="polite">
+              {selected.length} {t("selected")}
+            </span>
+          </summary>
+          <div className="exercise-filter-content">
+            <div className="exercise-filter-tools">
+              <input
+                type="search"
+                aria-label={t("Search exercises")}
+                placeholder={t("Search exercises")}
+                value={exerciseSearch}
+                onChange={(e) => setExerciseSearch(e.target.value)}
+              />
+              <button
+                type="button"
+                className="text-button"
+                disabled={!selected.length}
+                onClick={() => setSelected([])}
+              >
+                {t("Clear selection")}
+              </button>
+            </div>
+            <div className="exercise-filter-list">
+              {exerciseOptions
+                .filter((e) =>
+                  `${exerciseName(e.name, e.id)} ${e.name}`
+                    .toLocaleLowerCase(appLocale())
+                    .includes(
+                      exerciseSearch.trim().toLocaleLowerCase(appLocale()),
+                    ),
                 )
-              }
-            >
-              {exerciseName(e.name, e.id)}
-            </button>
-          ))}
-        </div>
+                .map((e) => (
+                  <label key={e.id} className="exercise-filter-option">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(e.id)}
+                      onChange={() =>
+                        setSelected((old) =>
+                          old.includes(e.id)
+                            ? old.filter((x) => x !== e.id)
+                            : [...old, e.id],
+                        )
+                      }
+                    />
+                    <span>{exerciseName(e.name, e.id)}</span>
+                    {selected.includes(e.id) && (
+                      <i
+                        aria-hidden="true"
+                        style={{
+                          background:
+                            colors[selected.indexOf(e.id) % colors.length],
+                        }}
+                      />
+                    )}
+                  </label>
+                ))}
+            </div>
+            {!exerciseOptions.some((e) =>
+              `${exerciseName(e.name, e.id)} ${e.name}`
+                .toLocaleLowerCase(appLocale())
+                .includes(exerciseSearch.trim().toLocaleLowerCase(appLocale())),
+            ) && <p className="muted">{t("No matching exercises")}</p>}
+          </div>
+        </details>
         {dates.length ? (
           <>
             <Chart
@@ -499,36 +558,41 @@ export function Analytics({
                 ),
               }))}
             />
-            <div className="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th>{t("Date")}</th>
-                    {histories.map((h) => (
-                      <th key={h.id}>{h.name}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {dates.map((date) => (
-                    <tr key={date}>
-                      <td>{shortDate(date)}</td>
+            <details className="volume-breakdown progress-breakdown">
+              <summary>{t("Show breakdown")}</summary>
+              <div className="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>{t("Date")}</th>
                       {histories.map((h) => (
-                        <td key={h.id}>
-                          {h.rows.find((r) => r.date === date)
-                            ? scale === "percent"
-                              ? pct(h.rows.find((r) => r.date === date)!.value)
-                              : t(
-                                  `${number(h.rows.find((r) => r.date === date)!.value, 1)} kg`,
-                                )
-                            : "—"}
-                        </td>
+                        <th key={h.id}>{h.name}</th>
                       ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {dates.map((date) => (
+                      <tr key={date}>
+                        <td>{shortDate(date)}</td>
+                        {histories.map((h) => (
+                          <td key={h.id}>
+                            {h.rows.find((r) => r.date === date)
+                              ? scale === "percent"
+                                ? pct(
+                                    h.rows.find((r) => r.date === date)!.value,
+                                  )
+                                : t(
+                                    `${number(h.rows.find((r) => r.date === date)!.value, 1)} kg`,
+                                  )
+                              : "—"}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
           </>
         ) : (
           <Empty
