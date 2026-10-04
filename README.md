@@ -23,12 +23,15 @@ Open the URL Vite prints. No database keys are needed for demo mode. Start empty
 - Warm-up and cool-down duration, notes and completion. Recovery minutes are separate from lifting volume, e1RM and PRs.
 - Monday-first month calendar and seven-day agenda (the default on phones), both with exercise-name previews. Upcoming dashboard cards also list planned exercises. Click a date/session; drag sessions on desktop or use Move to date in the editor.
 - Analytics with session/week/month volume charts and tables, configurable weekly spike threshold, A/B filters and average calendar-week comparison/history, connected simultaneous exercise comparisons in kilograms or percentage growth from each exercise’s first completed daily best in a selected month, five most frequent exercise records by default, bodyweight and 7-calendar-day moving averages.
+- Today’s workout shares compact exercise cards with the editor, with individual set checks and an overview button to complete/reopen an entire exercise.
+- Recovery analytics show warm-up/cool-down completion, partial, skipped, pending and unplanned routines for started training sessions. Chart explanations open from accessible info buttons.
+- Coaches can save dashboard/menu messages separately for each athlete; database permissions prevent athletes changing them.
 - Per-athlete optional A/B split in Settings; disabling it hides program-week badges, filters and comparisons while keeping existing workout history.
 - JSON backup validation and full selected-athlete import/export. Replace/clear actions require confirmation. Exercise deletion preserves logged history.
 - Real coach profile selector, People summaries, session/template management, invitation and deactivation. Athletes only receive their own account view.
 - Database-level authorization, transactional saves, normalized relational tables, stale-edit detection, and an unsaved-data warning. Training data is not written to GitHub.
 
-Only strength sets with `done = true` count toward lifting analytics, including sets completed in a session whose status is still planned. Completing a session marks every remaining set and recovery item done using current values. Unchecking a set reopens its session. Epley: `weight * (1 + reps / 30)`. First-ever e1RM records count as records; subsequent strictly higher records are counted at most once per exercise per session. Bodyweight movements with 0 kg can be logged, but produce no weight-based record. A/B comparison averages calendar-week totals with completed lifting volume of that program; in-progress weeks are included. Missing percentage baselines display an empty value.
+Only strength sets with `done = true` count toward lifting analytics, including sets completed in a session whose status is still planned. Completing a session marks remaining strength sets done using current values while keeping warm-up and cool-down checkmarks unchanged. Unchecking a lifting set reopens its session; editing recovery completion preserves the session status. Epley: `weight * (1 + reps / 30)`. First-ever e1RM records count as records; subsequent strictly higher records are counted at most once per exercise per session. Bodyweight movements with 0 kg can be logged, but produce no weight-based record. A/B comparison averages calendar-week totals with completed lifting volume of that program; in-progress weeks are included. Missing percentage baselines display an empty value.
 
 ## Publish on the free GitHub domain
 
@@ -44,7 +47,7 @@ Without Supabase variables, the deployed app is a local demo. Your friends canno
 ### 1. Create the database
 
 1. Create a Supabase project at https://supabase.com/dashboard.
-2. Before creating app users, open **SQL Editor** and run [`supabase/migrations/001_liftlog.sql`](supabase/migrations/001_liftlog.sql) once, then [`supabase/migrations/002_program_preferences.sql`](supabase/migrations/002_program_preferences.sql). These create the tables, policies, functions, new-user trigger and program preference.
+2. Before creating app users, open **SQL Editor** and run [`supabase/migrations/001_liftlog.sql`](supabase/migrations/001_liftlog.sql) once, then [`supabase/migrations/002_program_preferences.sql`](supabase/migrations/002_program_preferences.sql). Then run [`supabase/migrations/003_coach_messages.sql`](supabase/migrations/003_coach_messages.sql) for coach messages and accurate recovery completion. These create the tables, policies, functions, new-user trigger and preferences.
 3. This migration is intended for a new project. If you already have Auth users, their profiles/settings need to be backfilled by an administrator before they can use the app; do not rerun the migration on an existing schema.
 
 ### Upgrade an existing LiftLog database
@@ -119,11 +122,15 @@ The function's Supabase URL and service-role key are provided by the Supabase fu
 
 An expired invitation can be resent by the project administrator in Supabase Auth. If an email error leaves a partially created account, inspect it there before retrying; the app never deletes an Auth account automatically. Existing-account reassignment requires administrator review.
 
+### Personal messages and recovery upgrade
+
+If you have already run migration 002, run only [`supabase/migrations/003_coach_messages.sql`](supabase/migrations/003_coach_messages.sql) in **SQL Editor**, then refresh LiftLog. It adds coach-only personal messages per athlete and updates session saves to preserve recovery checkmarks. Accounts, workouts, A/B preferences and training revisions remain intact; it is safe to rerun. In **Settings**, coaches select an athlete and edit their dashboard/menu messages. Athletes can read their own messages, but cannot edit them or replace them through a training backup. Before this update, real-account message editing is disabled. Existing recovery checkmarks are preserved; the app cannot reconstruct past skipped recovery that was previously auto-completed.
+
 ## Cloud saves and backups
 
 Cloud edits are queued and saved transactionally. Each selected athlete has a database revision. If another device or the coach changed that athlete's data, a stale save stops rather than silently overwriting newer data. Export unsaved local edits first, then reload saved data and reconcile. The app warns before navigating away while edits are pending or unsaved. It is online-first: offline cloud editing is not a supported sync workflow.
 
-Import/clear/demo affects only the selected athlete's training dataset. Account roles, credentials, invitations and coach links are administered separately and are not part of a training JSON backup.
+Import/clear/demo affects only the selected athlete's training dataset. Account roles, credentials, invitations, coach links and coach messages are administered separately and are not part of a training JSON backup.
 
 ## Validation
 
@@ -136,7 +143,7 @@ Tests cover completed-set analytics, session completion, separate recovery metri
 
 The database integration tests execute the actual migration in embedded PostgreSQL (PGlite), using three users and role switching. They verify own-data writes, foreign-owner denial, table-level RLS, blocked role promotion/direct mutations, malformed-backup rollback, stale/null-revision rejection, coach assignment access, server-enforced completion, and deactivation. Auth email delivery and the Edge Function require testing against your configured Supabase project; PGlite does not emulate those services.
 
-The responsive update has model and PostgreSQL integration coverage for sparse exercise histories, monthly growth, legacy backups and the program preference upgrade. A local browser preview could not run in this execution environment; verify the layout on your phone and desktop.
+The responsive update has model and PostgreSQL integration coverage for sparse exercise histories, monthly growth, legacy backups and the program preference upgrade. The previous deployed desktop demo was verified. Phone viewport simulation is unavailable in this environment; physical-device checks should confirm native date selection and iOS input behavior.
 
 ## Other hosting
 

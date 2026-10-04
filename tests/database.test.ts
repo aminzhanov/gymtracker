@@ -334,5 +334,156 @@ test("database isolation, atomic backups, completion and concurrency", async (t)
       await assert.rejects(() => save(athlete, next, 0), /Access denied/);
     },
   );
+  await t.test(
+    "coach message upgrade is repeatable and preserves accounts, workouts and revisions",
+    async () => {
+      await login(coach);
+      const before = await load(athlete);
+      await db.exec("reset role");
+      const migration = await readFile(
+        new URL(
+          "../supabase/migrations/003_coach_messages.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      await db.exec(migration);
+      await db.exec(migration);
+      await login(coach);
+      assert.deepEqual(await load(athlete), before);
+    },
+  );
+  const saveMessages = (
+    uid: string,
+    dashboard = "You can do it!",
+    sidebar = "Strong today.\nStronger tomorrow.",
+  ) =>
+    db.query("select public.save_coach_messages($1,$2,$3)", [
+      uid,
+      dashboard,
+      sidebar,
+    ]);
+  await t.test(
+    "completed training enforces lifting completion while preserving explicit recovery checks",
+    async () => {
+      await login(coach);
+      const before = await load(athlete);
+      const next = validateBackup(before.data);
+      const session = next.sessions[0];
+      session.status = "done";
+      session.exercises[0].sets[0].done = false;
+      const warmup = newExercise("warm", "Warm-up", "warmup");
+      warmup.duration = 0;
+      const cooldown = newExercise("cool", "Stretch", "cooldown");
+      cooldown.done = true;
+      session.exercises.push(warmup, cooldown);
+      await save(athlete, next, before.revision);
+      const result = await load(athlete);
+      const exercises = validateBackup(result.data).sessions[0].exercises;
+      assert.equal(exercises[0].sets[0].done, true);
+      assert.equal(exercises[1].done, false);
+      assert.equal(exercises[2].done, true);
+      const changed = validateBackup(result.data);
+      changed.sessions[0].exercises[2].done = false;
+      await save(athlete, changed, result.revision);
+      const reloaded = validateBackup((await load(athlete)).data).sessions[0];
+      assert.equal(reloaded.status, "done");
+      assert.equal(reloaded.exercises[2].done, false);
+    },
+  );
+  await t.test(
+    "active coaches can personalize assigned athletes and themselves, without accessing unassigned athletes",
+    async () => {
+      await login(coach);
+      await saveMessages(athlete);
+      await saveMessages(coach, "Coach dashboard", "Coach menu");
+      await assert.rejects(
+        () => saveMessages(stranger),
+        /Coach access required/,
+      );
+      const messages = (
+        await db.query<{ dashboard_message: string }>(
+          "select * from public.coach_messages where owner_user_id=$1",
+          [athlete],
+        )
+      ).rows;
+      assert.equal(messages[0].dashboard_message, "You can do it!");
+      await assert.rejects(
+        () => saveMessages(athlete, " ", "Menu"),
+        /character limits/,
+      );
+      await assert.rejects(
+        () => saveMessages(athlete, "x".repeat(181), "Menu"),
+        /character limits/,
+      );
+      assert.equal(
+        (
+          await db.query<{ dashboard_message: string }>(
+            "select * from public.coach_messages where owner_user_id=$1",
+            [athlete],
+          )
+        ).rows[0].dashboard_message,
+        "You can do it!",
+      );
+    },
+  );
+  await t.test(
+    "athletes can read their own messages, but cannot edit them through RPC, direct writes or training backups",
+    async () => {
+      await login(athlete);
+      assert.equal(
+        (await db.query("select * from public.coach_messages")).rows.length,
+        1,
+      );
+      await assert.rejects(
+        () => saveMessages(athlete),
+        /Coach access required/,
+      );
+      await assert.rejects(
+        () =>
+          db.query(
+            "update public.coach_messages set dashboard_message='Changed'",
+          ),
+        /permission denied/,
+      );
+      const before = await load(athlete);
+      const backup = validateBackup(before.data);
+      await save(
+        athlete,
+        { ...backup, coachMessages: { dashboard: "Forged" } },
+        before.revision,
+      );
+      assert.equal(
+        (
+          await db.query<{ dashboard_message: string }>(
+            "select * from public.coach_messages",
+          )
+        ).rows[0].dashboard_message,
+        "You can do it!",
+      );
+      await login(stranger);
+      assert.equal(
+        (await db.query("select * from public.coach_messages")).rows.length,
+        0,
+      );
+    },
+  );
+  await t.test(
+    "inactive coaches and unauthenticated callers cannot write personal messages",
+    async () => {
+      await db.exec("reset role");
+      await db.query("update public.profiles set active=false where id=$1", [
+        coach,
+      ]);
+      await login(coach);
+      await assert.rejects(
+        () => saveMessages(athlete),
+        /Coach access required/,
+      );
+      await db.exec("reset role");
+      await db.exec("set role anon");
+      await assert.rejects(() => saveMessages(athlete), /permission denied/);
+    },
+  );
   await db.close();
 });

@@ -67,3 +67,7 @@ export interface Profile {
   role: "coach" | "athlete";
   active: boolean;
 }
+export interface CoachMessages {
+  dashboard: string;
+  sidebar: string;
+}

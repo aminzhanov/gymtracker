@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, TrendingUp, ChevronDown, Trash2 } from "lucide-react";
 import type { AppData, Week } from "./types";
-import { Chart, Panel, Empty, Modal } from "./components";
+import { Chart, Panel, Empty, Modal, InfoButton } from "./components";
 import {
   filterSessions,
   volumeHistory,
@@ -10,12 +10,13 @@ import {
   exerciseProgress,
   parseDate,
   bodyweightHistory,
-  recoveryMinutes,
+  recoveryHistory,
   number,
   shortDate,
   dateKey,
   changePercent,
 } from "./model";
+import { RecoveryChecklist } from "./RecoveryChecklist";
 const colors = ["#1673ff", "#f17bb4", "#16b895", "#ad80ed", "#f2ad32"];
 const pct = (n: number | null) =>
   n === null ? "No previous data" : `${n >= 0 ? "+" : ""}${number(n, 1)}%`;
@@ -73,9 +74,13 @@ export function Analytics({
     ...new Set(histories.flatMap((h) => h.rows.map((r) => r.date))),
   ].sort();
   const latest = rows.at(-1);
-  const recovery = sessions
-    .map((s) => ({ label: shortDate(s.date), value: recoveryMinutes(s) }))
-    .filter((x) => x.value > 0);
+  const recovery = recoveryHistory(sessions);
+  const recoveryChecks = recovery
+    .flatMap((row) => [row.warmup, row.cooldown])
+    .filter((check) => check.status !== "unplanned");
+  const recoveryDone = recoveryChecks.filter(
+    (check) => check.status === "done",
+  ).length;
   const saveBody = () => {
     const weight = Number(bodyValue);
     if (!(weight > 0 && weight <= 600)) return;
@@ -112,7 +117,13 @@ export function Analytics({
       </div>
       <div className="analytics-top">
         <div className="metric-card tint-blue">
-          <span>Completed lifting volume</span>
+          <span className="metric-label">
+            Completed lifting volume{" "}
+            <InfoButton title="Completed lifting volume">
+              Total weight × reps for completed strength sets, respecting the
+              program-week filter.
+            </InfoButton>
+          </span>
           <strong>
             {number(
               sessions.reduce(
@@ -135,21 +146,44 @@ export function Analytics({
           </p>
         </div>
         <div className="metric-card tint-mint">
-          <span>Latest {period} change</span>
+          <span className="metric-label">
+            Latest {period} change{" "}
+            <InfoButton title="Latest training change">
+              Percentage change from the previous period. A previous value of
+              zero has no percentage baseline. The period is chosen in Training
+              volume.
+            </InfoButton>
+          </span>
           <strong>{pct(latest?.change ?? null)}</strong>
           <p>{latest?.label || "Log a completed set to begin"}</p>
         </div>
         <div className="metric-card tint-yellow">
-          <span>Recovery time</span>
+          <span className="metric-label">
+            Recovery completed{" "}
+            <InfoButton title="Recovery completed">
+              The number of fully completed warm-up and cool-down routines out
+              of planned routines in sessions you have started. See the
+              checklist for skipped and partial routines.
+            </InfoButton>
+          </span>
           <strong>
-            {number(recovery.reduce((n, x) => n + x.value, 0))}
-            <small> min</small>
+            {recoveryDone}
+            <small> / {recoveryChecks.length}</small>
           </strong>
-          <p>Warm-ups & cool-downs only</p>
+          <p>Warm-ups & cool-downs</p>
         </div>
       </div>
       <Panel
         title="Training volume"
+        info={
+          <p>
+            Completed strength sets only. Weeks start on Monday. A change from
+            zero has no percentage baseline.
+            {rows.length > 24
+              ? " Chart shows the latest 24 periods; the table contains every period."
+              : ""}
+          </p>
+        }
         action={
           <div className="segmented">
             {(["session", "week", "month"] as const).map((p) => (
@@ -207,13 +241,6 @@ export function Analytics({
                 </tbody>
               </table>
             </div>
-            <p className="footnote">
-              Completed strength sets only. Weeks start on Monday. A change from
-              zero has no percentage baseline.
-              {rows.length > 24
-                ? " Chart shows the latest 24 periods; the table contains every period."
-                : ""}
-            </p>
           </>
         ) : (
           <Empty
@@ -224,7 +251,15 @@ export function Analytics({
       </Panel>
       <div className="two-col">
         {useABSplit && (
-          <Panel title="Week A vs Week B">
+          <Panel
+            title="Week A vs Week B"
+            info={
+              <p>
+                Average calendar-week volume with completed lifting sets in each
+                program. This comparison always shows both weeks.
+              </p>
+            }
+          >
             <div className="comparison">
               <div>
                 <span className="badge week-a">Week A</span>
@@ -250,10 +285,6 @@ export function Analytics({
                 Week A {pct(comp.difference)} compared with Week B
               </p>
             )}
-            <p className="footnote">
-              Average calendar-week volume with completed lifting sets in each
-              program. This comparison always shows both weeks.
-            </p>
             {volumeHistory(data.sessions, "week").length > 0 && (
               <Chart
                 bar
@@ -281,36 +312,70 @@ export function Analytics({
           </Panel>
         )}
         <Panel
-          title="Recovery, in its own lane"
+          title="Recovery checklist"
           className={useABSplit ? "" : "span-full"}
+          info={
+            <>
+              <p>
+                Shows warm-ups and cool-downs for sessions with completed sets
+                or activities. Future plans that have not started are excluded.
+              </p>
+              <p>
+                Done means every activity in that routine was marked complete.
+                Partial means only some were completed. Skipped means it was not
+                marked complete in a finished or past training session. Pending
+                means today’s session is still in progress. Not planned means
+                the session contains no activity of that kind.
+              </p>
+              <p>
+                Recovery completion stays separate from lifting volume,
+                estimated 1RM and records.
+              </p>
+            </>
+          }
         >
-          <p className="muted">
-            Completed warm-ups and cool-downs support your training. Their time
-            stays separate from volume, e1RM and records.
-          </p>
-          {recovery.length ? (
-            <Chart
-              bar
-              labels={recovery.slice(-12).map((r) => r.label)}
-              unit="minutes"
-              series={[
-                {
-                  name: "Recovery minutes",
-                  color: "#ad80ed",
-                  values: recovery.slice(-12).map((r) => r.value),
-                },
-              ]}
-            />
-          ) : (
-            <Empty
-              title="Make room for recovery"
-              detail="Mark a warm-up or cool-down done to track its duration."
-            />
-          )}
+          <RecoveryChecklist rows={recovery} />
         </Panel>
       </div>
       <Panel
         title="Exercise progress"
+        info={
+          <>
+            <p>
+              Lines connect recorded training days. An exercise with one
+              recorded day has one point; missing days are not treated as zero.
+            </p>
+            <p>
+              Epley estimate: weight × (1 + reps ÷ 30). Bodyweight movements
+              need a entered lifting weight to produce a weight-based estimate.
+            </p>{" "}
+            {scale === "percent" && (
+              <div className="progress-baselines">
+                <p className="muted">
+                  0% is each exercise’s first completed{" "}
+                  {metric === "weight" ? "top weight" : "estimated 1RM"} in the
+                  selected month.
+                </p>
+                {histories
+                  .filter((history) => history.baseline)
+                  .map((history) => (
+                    <span key={history.id}>
+                      <i
+                        style={{
+                          background:
+                            colors[
+                              selected.indexOf(history.id) % colors.length
+                            ],
+                        }}
+                      />
+                      {history.name}: {number(history.baseline.value, 1)} kg on{" "}
+                      {shortDate(history.baseline.date)}
+                    </span>
+                  ))}
+              </div>
+            )}
+          </>
+        }
         action={
           <select
             aria-label="Exercise progress metric"
@@ -429,40 +494,15 @@ export function Analytics({
             detail="Select one or more exercises to compare completed performance."
           />
         )}
-        {scale === "percent" && (
-          <div className="progress-baselines">
-            <p className="muted">
-              0% is each exercise’s first completed{" "}
-              {metric === "weight" ? "top weight" : "estimated 1RM"} in the
-              selected month.
-            </p>
-            {histories
-              .filter((history) => history.baseline)
-              .map((history) => (
-                <span key={history.id}>
-                  <i
-                    style={{
-                      background:
-                        colors[selected.indexOf(history.id) % colors.length],
-                    }}
-                  />
-                  {history.name}: {number(history.baseline.value, 1)} kg on{" "}
-                  {shortDate(history.baseline.date)}
-                </span>
-              ))}
-          </div>
-        )}
-        <p className="footnote">
-          Lines connect recorded training days. An exercise with one recorded
-          day has one point; missing days are not treated as zero.
-        </p>
-        <p className="footnote">
-          Epley estimate: weight × (1 + reps ÷ 30). Bodyweight movements need a
-          entered lifting weight to produce a weight-based estimate.
-        </p>
       </Panel>
       <Panel
         title="Personal records"
+        info={
+          <p>
+            The first five exercises are ranked by completed-set frequency.
+            Records respect the week filter.
+          </p>
+        }
         action={
           prs.rows.length > 5 ? (
             <button
@@ -510,13 +550,16 @@ export function Analytics({
             detail="Finish a set with weight and reps to get started."
           />
         )}
-        <p className="footnote">
-          The first five exercises are ranked by completed-set frequency.
-          Records respect the week filter.
-        </p>
       </Panel>
       <Panel
         title="Bodyweight"
+        info={
+          <p>
+            Average of measurements in the preceding seven calendar days,
+            including the entry date. Bodyweight is independent of the
+            program-week filter.
+          </p>
+        }
         action={
           <button
             className="button secondary"
@@ -599,11 +642,6 @@ export function Analytics({
                 </tbody>
               </table>
             </details>
-            <p className="footnote">
-              Average of measurements in the preceding seven calendar days,
-              including the entry date. Bodyweight is independent of the
-              program-week filter.
-            </p>
           </>
         ) : (
           <Empty

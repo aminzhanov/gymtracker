@@ -10,6 +10,83 @@ export const id = () => crypto.randomUUID();
 export const dateKey = (d = new Date()) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const parseDate = (s: string) => new Date(`${s}T12:00:00`);
+export const fullDate = (s: string) => {
+  const date = parseDate(s);
+  return `${date.toLocaleDateString("en-GB", { weekday: "long" })} ${date.getDate()}, ${date.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`;
+};
+export function exerciseComplete(exercise: WorkoutExercise) {
+  return exercise.kind === "strength"
+    ? exercise.sets.length > 0 && exercise.sets.every((set) => set.done)
+    : exercise.done;
+}
+export function setExerciseCompletion(
+  exercise: WorkoutExercise,
+  done: boolean,
+): WorkoutExercise {
+  return {
+    ...exercise,
+    done,
+    sets: exercise.sets.map((set) => ({ ...set, done })),
+  };
+}
+export function updateSessionExercise(
+  session: Session,
+  exercise: WorkoutExercise,
+): Session {
+  return {
+    ...session,
+    status:
+      session.status === "done" &&
+      exercise.kind === "strength" &&
+      !exerciseComplete(exercise)
+        ? "planned"
+        : session.status,
+    exercises: session.exercises.map((old) =>
+      old.id === exercise.id ? exercise : old,
+    ),
+  };
+}
+export type RecoveryStatus =
+  "done" | "partial" | "skipped" | "pending" | "unplanned";
+export function recoveryHistory(sessions: Session[], today = dateKey()) {
+  return sessions
+    .filter(
+      (session) =>
+        session.status === "done" ||
+        session.exercises.some((exercise) =>
+          exercise.kind === "strength"
+            ? exercise.sets.some((set) => set.done)
+            : exercise.done,
+        ),
+    )
+    .sort((a, b) => b.date.localeCompare(a.date) || a.id.localeCompare(b.id))
+    .map((session) => {
+      const check = (kind: "warmup" | "cooldown") => {
+        const activities = session.exercises.filter(
+          (exercise) => exercise.kind === kind,
+        );
+        const completed = activities.filter((exercise) => exercise.done).length;
+        const total = activities.length;
+        const status: RecoveryStatus = !total
+          ? "unplanned"
+          : completed === total
+            ? "done"
+            : completed
+              ? "partial"
+              : session.status === "done" || session.date < today
+                ? "skipped"
+                : "pending";
+        return { status, completed, total };
+      };
+      return {
+        id: session.id,
+        date: session.date,
+        name: session.name,
+        warmup: check("warmup"),
+        cooldown: check("cooldown"),
+      };
+    });
+}
 export const addDays = (s: string, n: number) => {
   const d = parseDate(s);
   d.setDate(d.getDate() + n);
@@ -149,11 +226,9 @@ export function completeSession(s: Session): Session {
   return {
     ...s,
     status: "done",
-    exercises: s.exercises.map((e) => ({
-      ...e,
-      done: true,
-      sets: e.sets.map((set) => ({ ...set, done: true })),
-    })),
+    exercises: s.exercises.map((e) =>
+      e.kind === "strength" ? setExerciseCompletion(e, true) : e,
+    ),
   };
 }
 export const changePercent = (now: number, before: number): number | null =>

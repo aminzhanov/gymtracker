@@ -2923,3 +2923,215 @@ summary {
     font-size: 11px;
   }
 }
+
+/* Keep native date controls within their column and expose a readable date. */
+.editor-main,
+.editor-details {
+  min-width: 0;
+}
+.date-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px;
+  color: #2c2d40;
+}
+.date-display {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  line-height: 1.45;
+}
+.date-field > svg {
+  flex: none;
+  color: #7b7486;
+}
+.date-field input[type="date"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  font-size: 16px;
+  cursor: pointer;
+}
+.date-field input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.date-field:focus-within {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+.exercise-overview-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.exercise-overview-row .exercise-overview {
+  flex: 1;
+  min-width: 0;
+}
+.exercise-quick-complete {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+.today-panel .exercise-block {
+  margin: 12px 0;
+}
+.personal-message {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+.message-fields {
+  border: 0;
+  padding: 0;
+  margin: 16px 0 0;
+  min-width: 0;
+}
+.message-fields textarea {
+  width: 100%;
+}
+.message-fields:disabled {
+  opacity: 0.6;
+}
+.panel-heading,
+.metric-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.panel-heading h2 {
+  min-width: 0;
+}
+.metric-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #7b7486;
+}
+.metric-info:hover,
+.metric-info:focus-visible {
+  background: #edf3ff;
+  color: var(--blue);
+}
+.metric-explanation {
+  font-size: 15px;
+  line-height: 1.65;
+}
+.metric-explanation p {
+  margin: 0 0 14px;
+}
+.metric-explanation .progress-baselines {
+  margin-top: 18px;
+}
+.recovery-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 13px;
+}
+.recovery-mark.done {
+  color: #128365;
+}
+.recovery-mark.skipped {
+  color: #bf5360;
+}
+.recovery-mark.partial {
+  color: #9b6b11;
+}
+.recovery-mark.pending,
+.recovery-mark.unplanned {
+  color: #7b7486;
+}
+.recovery-mark small {
+  font-size: 12px;
+}
+.recovery-session-date {
+  display: block;
+  color: #7b7486;
+  margin-top: 4px;
+}
+.recovery-checklist {
+  max-height: 390px;
+}
+.recovery-checklist table {
+  min-width: 360px;
+}
+
+/* iOS zooms focused controls whose computed text is below 16px. */
+@media (max-width: 850px), (pointer: coarse) {
+  .editor-main .counter input,
+  .editor-main .set-row .counter input,
+  .today-panel .set-row .counter input {
+    font-size: 18px;
+  }
+  .editor-details label input,
+  .editor-details label select,
+  .editor-details textarea,
+  .message-fields textarea,
+  input[type="date"] {
+    font-size: 16px;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .editor-main .set-row > .done-button {
+    width: 44px;
+    height: 44px;
+  }
+  .editor-main .set-row .set-index {
+    font-size: 14px;
+  }
+  .editor-main .set-row {
+    gap: 6px 9px;
+  }
+  .editor-main .set-row > .counter button {
+    width: 38px;
+    min-width: 38px;
+  }
+  .exercise-overview-row {
+    gap: 8px;
+  }
+  .exercise-quick-complete {
+    width: 44px;
+    min-width: 44px;
+  }
+  .metric-info {
+    width: 38px;
+    height: 38px;
+  }
+  .panel-heading {
+    flex: 1;
+  }
+  .metric-explanation {
+    font-size: 16px;
+  }
+  .recovery-checklist th,
+  .recovery-checklist td {
+    font-size: 14px;
+  }
+}

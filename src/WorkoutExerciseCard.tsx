@@ -10,7 +10,12 @@ import {
 } from "lucide-react";
 import type { Session, WorkoutExercise } from "./types";
 import { LastTime, SetRow } from "./components";
-import { exerciseSummary, id } from "./model";
+import {
+  exerciseSummary,
+  exerciseComplete,
+  setExerciseCompletion,
+  id,
+} from "./model";
 
 export function WorkoutExerciseCard({
   exercise,
@@ -31,7 +36,7 @@ export function WorkoutExerciseCard({
   canSave: boolean;
   onChange: (exercise: WorkoutExercise) => void;
   onSave: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
 }) {
   const [expanded, setExpanded] = useState(initiallyExpanded);
   const completed =
@@ -44,44 +49,61 @@ export function WorkoutExerciseCard({
       className={`exercise-block ${exercise.kind !== "strength" ? "recovery-block" : ""} ${expanded ? "expanded" : "collapsed"}`}
     >
       {!expanded ? (
-        <button
-          className="exercise-overview"
-          aria-label={`Edit ${exercise.name}`}
-          aria-expanded={false}
-          onClick={() => setExpanded(true)}
-        >
-          <span
-            className={`exercise-symbol ${exercise.kind === "strength" ? "tint-blue" : "tint-pink"}`}
+        <div className="exercise-overview-row">
+          <button
+            className="exercise-overview"
+            aria-label={`Edit ${exercise.name}`}
+            aria-expanded={false}
+            onClick={() => setExpanded(true)}
           >
-            {exercise.kind === "strength" ? (
-              <Dumbbell size={20} />
-            ) : (
-              <Timer size={20} />
-            )}
-          </span>
-          <span className="exercise-overview-copy">
-            <strong>{exercise.name}</strong>
-            <span className="exercise-prescription">
-              {exerciseSummary(exercise)}
+            <span
+              className={`exercise-symbol ${exercise.kind === "strength" ? "tint-blue" : "tint-pink"}`}
+            >
+              {exercise.kind === "strength" ? (
+                <Dumbbell size={20} />
+              ) : (
+                <Timer size={20} />
+              )}
             </span>
-            {!isTemplate && (
-              <span
-                className={`exercise-completion ${completed === total && total > 0 ? "positive" : ""}`}
-              >
-                {exercise.kind === "strength"
-                  ? `${completed}/${total} sets done`
-                  : exercise.done
-                    ? "Completed"
-                    : "Planned"}{" "}
-                · Tap to edit
+            <span className="exercise-overview-copy">
+              <strong>{exercise.name}</strong>
+              <span className="exercise-prescription">
+                {exerciseSummary(exercise)}
               </span>
-            )}
-            {isTemplate && (
-              <span className="exercise-completion">Tap to edit</span>
-            )}
-          </span>
-          <ChevronDown size={20} />
-        </button>
+              {!isTemplate && (
+                <span
+                  className={`exercise-completion ${completed === total && total > 0 ? "positive" : ""}`}
+                >
+                  {exercise.kind === "strength"
+                    ? `${completed}/${total} sets done`
+                    : exercise.done
+                      ? "Completed"
+                      : "Planned"}{" "}
+                  · Tap to edit
+                </span>
+              )}
+              {isTemplate && (
+                <span className="exercise-completion">Tap to edit</span>
+              )}
+            </span>
+            <ChevronDown size={20} />
+          </button>
+          {!isTemplate && (
+            <button
+              className={`done-button exercise-quick-complete ${exerciseComplete(exercise) ? "checked" : ""}`}
+              aria-label={`${exerciseComplete(exercise) ? "Reopen" : "Complete"} ${exercise.name}`}
+              aria-pressed={exerciseComplete(exercise)}
+              disabled={exercise.kind === "strength" && total === 0}
+              onClick={() =>
+                onChange(
+                  setExerciseCompletion(exercise, !exerciseComplete(exercise)),
+                )
+              }
+            >
+              <Check size={20} />
+            </button>
+          )}
+        </div>
       ) : (
         <>
           <div className="exercise-head">
@@ -115,13 +137,15 @@ export function WorkoutExerciseCard({
                 />
               )}
             </div>
-            <button
-              className="icon-button danger-text"
-              aria-label={`Remove ${exercise.name}`}
-              onClick={onRemove}
-            >
-              <Trash2 size={18} />
-            </button>
+            {onRemove && (
+              <button
+                className="icon-button danger-text"
+                aria-label={`Remove ${exercise.name}`}
+                onClick={onRemove}
+              >
+                <Trash2 size={18} />
+              </button>
+            )}
           </div>
           {exercise.kind === "strength" ? (
             <>

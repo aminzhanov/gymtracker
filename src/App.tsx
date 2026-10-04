@@ -22,13 +22,21 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import type { AppData, Session, Template, Profile } from "./types";
+import type {
+  AppData,
+  Session,
+  Template,
+  Profile,
+  CoachMessages,
+} from "./types";
 import {
   supabase,
   loadCloud,
   saveCloud,
   loadProfiles,
   loadLocal,
+  loadLocalMessages,
+  saveCoachMessages,
   DEMO_PROFILES,
 } from "./backend";
 import {
@@ -50,6 +58,7 @@ import {
   records,
   changePercent,
   validateBackup,
+  updateSessionExercise,
 } from "./model";
 import {
   Logo,
@@ -58,11 +67,13 @@ import {
   WeekBadge,
   Empty,
   Modal,
-  SetRow,
-  LastTime,
+  InfoButton,
   DumbbellArt,
 } from "./components";
 import { SessionEditor } from "./SessionEditor";
+import { WorkoutExerciseCard } from "./WorkoutExerciseCard";
+import { CoachMessageEditor } from "./CoachMessages";
+import { DEFAULT_MESSAGES } from "./messages";
 import { Analytics } from "./Analytics";
 import { Calendar } from "./Calendar";
 type Page =
@@ -184,6 +195,10 @@ export default function App() {
   const [data, setData] = useState<AppData | null>(null);
   const [programPreferenceReady, setProgramPreferenceReady] =
     useState(!supabase);
+  const [messages, setMessages] = useState<CoachMessages>(DEFAULT_MESSAGES);
+  const [messagesReady, setMessagesReady] = useState(!supabase);
+  const messageOwner = useRef(owner);
+  messageOwner.current = owner;
   const [page, setPage] = useState<Page>("Dashboard");
   const [editor, setEditor] = useState<Session | null>(null);
   const [templateEditor, setTemplateEditor] = useState<Template | null>(null);
@@ -273,6 +288,8 @@ export default function App() {
     setLoading(true);
     setError("");
     setData(null);
+    setMessages(DEFAULT_MESSAGES);
+    setMessagesReady(false);
     dataRef.current = null;
     blocked.current = false;
     setSaveState("saved");
@@ -282,6 +299,8 @@ export default function App() {
           data: loadLocal(owner, p?.name || "Athlete"),
           revision: 0,
           programPreferenceReady: true,
+          messages: loadLocalMessages(owner),
+          messagesReady: true,
         }))
       : loadCloud(owner);
     load
@@ -289,6 +308,8 @@ export default function App() {
         if (!active) return;
         revision.current = result.revision;
         setProgramPreferenceReady(result.programPreferenceReady);
+        setMessages(result.messages);
+        setMessagesReady(result.messagesReady);
         dataRef.current = result.data;
         setData(result.data);
       })
@@ -460,11 +481,7 @@ export default function App() {
         </nav>
         <div className="sidebar-cheer">
           <span>✦</span>
-          <strong>
-            Strong friends.
-            <br />
-            Stronger days.
-          </strong>
+          <strong className="personal-message">{messages.sidebar}</strong>
           <small>One rep at a time.</small>
         </div>
         <div className="sidebar-foot">
@@ -619,7 +636,7 @@ export default function App() {
                       <h1>
                         Hey {data.settings.name} <span>💪</span>
                       </h1>
-                      <p>Ready to move today?</p>
+                      <p className="personal-message">{messages.dashboard}</p>
                       <div className="flex">
                         {data.settings.useABSplit && (
                           <WeekBadge week={currentWeek(data)} />
@@ -668,7 +685,13 @@ export default function App() {
                           {number(currentVolume)}
                           <small> kg</small>
                         </strong>
-                        <span>Training volume</span>
+                        <span>
+                          Training volume{" "}
+                          <InfoButton title="Training volume">
+                            Completed strength sets this week: weight × reps.
+                            Warm-ups and cool-downs stay separate.
+                          </InfoButton>
+                        </span>
                       </div>
                       <div className="stat tint-mint">
                         <ArrowUpRight size={22} />
@@ -686,7 +709,13 @@ export default function App() {
                       <div className="stat tint-yellow">
                         <span className="stat-doodle">🏆</span>
                         <strong>{newRecords}</strong>
-                        <span>Records this month</span>
+                        <span>
+                          Records this month{" "}
+                          <InfoButton title="Records this month">
+                            New estimated 1RM records achieved this month, based
+                            on completed lifting sets.
+                          </InfoButton>
+                        </span>
                       </div>
                     </div>
                     <div className="alltime">
@@ -749,45 +778,20 @@ export default function App() {
                               </div>
                               <ArrowRight size={18} />
                             </button>
-                            {s.exercises
-                              .filter((e) => e.kind === "strength")
-                              .map((e) => (
-                                <div className="dashboard-exercise" key={e.id}>
-                                  <strong>{e.name}</strong>
-                                  <LastTime
-                                    exercise={e}
-                                    session={s}
-                                    sessions={data.sessions}
-                                  />
-                                  {e.sets.map((set, i) => (
-                                    <SetRow
-                                      key={set.id}
-                                      set={set}
-                                      index={i}
-                                      onChange={(updated) =>
-                                        saveSession({
-                                          ...s,
-                                          status: !updated.done
-                                            ? "planned"
-                                            : s.status,
-                                          exercises: s.exercises.map((old) =>
-                                            old.id === e.id
-                                              ? {
-                                                  ...old,
-                                                  sets: old.sets.map((x) =>
-                                                    x.id === set.id
-                                                      ? updated
-                                                      : x,
-                                                  ),
-                                                }
-                                              : old,
-                                          ),
-                                        })
-                                      }
-                                    />
-                                  ))}
-                                </div>
-                              ))}
+                            {s.exercises.map((exercise) => (
+                              <WorkoutExerciseCard
+                                key={exercise.id}
+                                exercise={exercise}
+                                session={s}
+                                sessions={data.sessions}
+                                isTemplate={false}
+                                canSave={Boolean(s.name.trim())}
+                                onChange={(updated) =>
+                                  saveSession(updateSessionExercise(s, updated))
+                                }
+                                onSave={() => {}}
+                              />
+                            ))}
                             {!s.exercises.length && (
                               <p className="muted">
                                 Open the session to add your exercises.
@@ -1040,6 +1044,30 @@ export default function App() {
                       </p>
                     </div>
                   </div>
+                  {coach && (
+                    <Panel
+                      title={`Personal messages for ${viewing?.name || data.settings.name}`}
+                    >
+                      <p className="muted">
+                        Choose an athlete at the top to personalize their
+                        dashboard and menu.
+                      </p>
+                      <CoachMessageEditor
+                        key={owner}
+                        messages={messages}
+                        ready={messagesReady}
+                        onSave={async (next) => {
+                          if (demo)
+                            localStorage.setItem(
+                              `liftlog-messages-${owner}`,
+                              JSON.stringify(next),
+                            );
+                          else await saveCoachMessages(owner, next);
+                          if (messageOwner.current === owner) setMessages(next);
+                        }}
+                      />
+                    </Panel>
+                  )}
                   <div className="two-col">
                     <Panel title="Program & workload">
                       <label>

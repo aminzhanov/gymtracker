@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Plus,
@@ -7,6 +8,8 @@ import {
   ArrowRight,
   Dumbbell,
   Sparkles,
+  Info,
+  CalendarDays,
 } from "lucide-react";
 import type { Session, WorkoutExercise, LiftSet } from "./types";
 import {
@@ -16,7 +19,61 @@ import {
   shortDate,
   lastPerformance,
   chartLinePath,
+  fullDate,
 } from "./model";
+export function InfoButton({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        className="metric-info"
+        aria-label={`About ${title}`}
+        onClick={() => setOpen(true)}
+      >
+        <Info size={17} />
+      </button>
+      {open && (
+        <Modal title={`About ${title}`} onClose={() => setOpen(false)}>
+          <div className="metric-explanation">{children}</div>
+        </Modal>
+      )}
+    </>
+  );
+}
+export function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (date: string) => void;
+}) {
+  return (
+    <label>
+      {label}
+      <span className="date-field">
+        <span className="date-display">{fullDate(value)}</span>
+        <CalendarDays size={19} aria-hidden="true" />
+        <input
+          type="date"
+          aria-label={label}
+          value={value}
+          onChange={(event) => {
+            if (event.target.value) onChange(event.target.value);
+          }}
+        />
+      </span>
+    </label>
+  );
+}
 export function useMediaQuery(query: string) {
   const [matches, setMatches] = useState(
     () => window.matchMedia(query).matches,
@@ -72,7 +129,7 @@ export function Modal({
       prev?.focus();
     };
   }, [onClose]);
-  return (
+  return createPortal(
     <div
       className="modal-backdrop"
       onClick={(e) => {
@@ -95,7 +152,8 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 export function Empty({
@@ -494,11 +552,13 @@ export function Chart({
 }
 export function Panel({
   title,
+  info,
   action,
   children,
   className = "",
 }: {
   title: string;
+  info?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -506,7 +566,10 @@ export function Panel({
   return (
     <section className={`panel ${className}`}>
       <div className="panel-title">
-        <h2>{title}</h2>
+        <div className="panel-heading">
+          <h2>{title}</h2>
+          {info && <InfoButton title={title}>{info}</InfoButton>}
+        </div>
         {action}
       </div>
       {children}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2, Save, Check, Dumbbell, ChevronDown } from "lucide-react";
 import type { AppData, Session, Template, WorkoutExercise } from "./types";
-import { Modal, WeekBadge, Empty } from "./components";
+import { Modal, WeekBadge, Empty, DateField } from "./components";
 import {
   id,
   newExercise,
@@ -11,6 +11,7 @@ import {
   doneSets,
   number,
   cloneExercises,
+  updateSessionExercise,
 } from "./model";
 import { WorkoutExerciseCard } from "./WorkoutExerciseCard";
 const icons = [
@@ -80,14 +81,8 @@ export function SessionEditor({
   const [savedTemplate, setSavedTemplate] = useState(false);
   const patch = (change: Partial<Session>) =>
     setS((old) => ({ ...old, ...change }));
-  const changeExercise = (index: number, e: WorkoutExercise) =>
-    patch({
-      exercises: s.exercises.map((old, i) => (i === index ? e : old)),
-      ...(s.status === "done" &&
-      (e.kind === "strength" ? e.sets.some((set) => !set.done) : !e.done)
-        ? { status: "planned" as const }
-        : {}),
-    });
+  const changeExercise = (e: WorkoutExercise) =>
+    setS(updateSessionExercise(s, e));
   const add = (exerciseId: string, name: string) => {
     const exercise = newExercise(exerciseId, name, kind);
     patch({ exercises: [...s.exercises, exercise] });
@@ -171,7 +166,7 @@ export function SessionEditor({
               detail="Add strength work, a warm-up or a cool-down."
             />
           )}
-          {s.exercises.map((exercise, index) => (
+          {s.exercises.map((exercise) => (
             <WorkoutExerciseCard
               key={exercise.id}
               exercise={exercise}
@@ -180,7 +175,7 @@ export function SessionEditor({
               isTemplate={isTemplate}
               initiallyExpanded={exercise.id === addedExercise}
               canSave={Boolean(s.name.trim())}
-              onChange={(updated) => changeExercise(index, updated)}
+              onChange={changeExercise}
               onSave={() => onSave(s)}
               onRemove={() =>
                 patch({
@@ -272,16 +267,11 @@ export function SessionEditor({
         <aside className="editor-details">
           <h3>{isTemplate ? "Template details" : "Session details"}</h3>
           {!isTemplate && (
-            <label>
-              Move to date
-              <input
-                type="date"
-                value={s.date}
-                onChange={(e) => {
-                  if (e.target.value) patch({ date: e.target.value });
-                }}
-              />
-            </label>
+            <DateField
+              label="Move to date"
+              value={s.date}
+              onChange={(date) => patch({ date })}
+            />
           )}
           {data.settings.useABSplit && (
             <>

@@ -20,7 +20,13 @@ import {
   chartLinePath,
   exerciseSummary,
   filterSessions,
+  exerciseComplete,
+  setExerciseCompletion,
+  updateSessionExercise,
+  recoveryHistory,
+  fullDate,
 } from "../src/model.ts";
+import { validateMessages } from "../src/messages.ts";
 const fixture = () => {
   const d = emptyData();
   const s = newSession(d, "2026-09-28");
@@ -32,6 +38,113 @@ const fixture = () => {
   s.exercises = [e];
   return s;
 };
+test("overview completion preserves weight and reps, and reopening marks the session planned", () => {
+  const session = fixture();
+  const original = structuredClone(session);
+  const completed = setExerciseCompletion(session.exercises[0], true);
+  assert.equal(exerciseComplete(completed), true);
+  assert.deepEqual(
+    completed.sets.map(({ weight, reps }) => ({ weight, reps })),
+    original.exercises[0].sets.map(({ weight, reps }) => ({ weight, reps })),
+  );
+  const done = completeSession(updateSessionExercise(session, completed));
+  const reopened = updateSessionExercise(
+    done,
+    setExerciseCompletion(done.exercises[0], false),
+  );
+  assert.equal(reopened.status, "planned");
+  assert.equal(exerciseComplete(reopened.exercises[0]), false);
+  assert.deepEqual(session, original);
+  assert.equal(exerciseComplete({ ...completed, sets: [] }), false);
+});
+test("recovery completion uses its own checkbox and includes zero-minute activities", () => {
+  const recovery = newExercise("warm", "Mobility", "warmup");
+  recovery.duration = 0;
+  const completed = setExerciseCompletion(recovery, true);
+  assert.equal(exerciseComplete(completed), true);
+  assert.equal(recovery.done, false);
+  assert.equal(
+    exerciseComplete(setExerciseCompletion(completed, false)),
+    false,
+  );
+});
+test("finishing lifting preserves skipped recovery and recovery edits do not reopen a completed workout", () => {
+  const session = fixture();
+  const warmup = newExercise("warm", "Warm-up", "warmup");
+  const cooldown = setExerciseCompletion(
+    newExercise("cool", "Stretch", "cooldown"),
+    true,
+  );
+  session.exercises.push(warmup, cooldown);
+  const done = completeSession(session);
+  assert.equal(done.exercises[1].done, false);
+  assert.equal(done.exercises[2].done, true);
+  const updated = updateSessionExercise(
+    done,
+    setExerciseCompletion(done.exercises[2], false),
+  );
+  assert.equal(updated.status, "done");
+  assert.equal(updated.exercises[2].done, false);
+});
+test("recovery checklist shows actual training, partial and skipped routines, without treating unplanned work as skipped", () => {
+  const session = fixture();
+  session.exercises.push(
+    setExerciseCompletion(newExercise("warm", "Warm-up", "warmup"), true),
+    newExercise("warm2", "Mobility", "warmup"),
+    newExercise("cool", "Stretch", "cooldown"),
+  );
+  const future = newSession(emptyData(), "2026-10-10");
+  future.exercises = [newExercise("warm", "Warm-up", "warmup")];
+  const noRecovery = fixture();
+  noRecovery.id = "no-recovery";
+  const rows = recoveryHistory([session, future, noRecovery], "2026-10-04");
+  assert.equal(rows.length, 2);
+  const row = rows.find((row) => row.id === session.id)!;
+  assert.deepEqual(row.warmup, { status: "partial", completed: 1, total: 2 });
+  assert.equal(row.cooldown.status, "skipped");
+  assert.equal(
+    rows.find((row) => row.id === noRecovery.id)!.warmup.status,
+    "unplanned",
+  );
+});
+test("unfinished recovery is pending today and skipped only after the training is finished or past", () => {
+  const session = fixture();
+  session.date = "2026-10-04";
+  session.exercises.push(newExercise("cool", "Stretch", "cooldown"));
+  assert.equal(
+    recoveryHistory([session], session.date)[0].cooldown.status,
+    "pending",
+  );
+  session.status = "done";
+  assert.equal(
+    recoveryHistory([session], session.date)[0].cooldown.status,
+    "skipped",
+  );
+  session.exercises[1].done = true;
+  assert.equal(
+    recoveryHistory([session], session.date)[0].cooldown.status,
+    "done",
+  );
+});
+test("full session date has an English weekday, day, month and year", () => {
+  assert.equal(fullDate("2026-10-02"), "Friday 2, October 2026");
+});
+test("coach message validation preserves line breaks and rejects empty or oversized text", () => {
+  assert.deepEqual(
+    validateMessages({
+      dashboard: "  Keep going!  ",
+      sidebar: "Strong friends.\nStronger days.",
+    }),
+    { dashboard: "Keep going!", sidebar: "Strong friends.\nStronger days." },
+  );
+  for (const messages of [
+    { dashboard: " ", sidebar: "Go" },
+    { dashboard: "Go", sidebar: "x".repeat(121) },
+    { dashboard: 123, sidebar: "Go" },
+    null,
+  ])
+    assert.throws(() => validateMessages(messages));
+});
 test("unfinished sets never contribute to volume, e1RM or records", () => {
   const s = fixture();
   assert.equal(volume(s), 640);

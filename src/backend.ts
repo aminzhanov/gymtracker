@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import type { AppData, Profile } from "./types";
+import type { AppData, Profile, CoachMessages } from "./types";
+import { DEFAULT_MESSAGES, validateMessages } from "./messages";
 import { emptyData, validateBackup } from "./model";
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -18,12 +19,44 @@ export async function loadCloud(owner: string) {
     target_owner: owner,
   });
   if (error) throw error;
+  const { data: messages, error: messagesError } = await supabase!
+    .from("coach_messages")
+    .select("dashboard_message,sidebar_message")
+    .eq("owner_user_id", owner)
+    .maybeSingle();
   return {
     data: validateBackup(data.data),
     revision: Number(data.revision),
     programPreferenceReady:
       typeof data.data?.settings?.useABSplit === "boolean",
+    messages: messages
+      ? {
+          dashboard: messages.dashboard_message,
+          sidebar: messages.sidebar_message,
+        }
+      : DEFAULT_MESSAGES,
+    messagesReady: !messagesError,
   };
+}
+export async function saveCoachMessages(
+  owner: string,
+  messages: CoachMessages,
+) {
+  const validated = validateMessages(messages);
+  const { error } = await supabase!.rpc("save_coach_messages", {
+    target_owner: owner,
+    dashboard_message: validated.dashboard,
+    sidebar_message: validated.sidebar,
+  });
+  if (error) throw error;
+}
+export function loadLocalMessages(owner: string): CoachMessages {
+  try {
+    const raw = localStorage.getItem(`liftlog-messages-${owner}`);
+    return raw ? validateMessages(JSON.parse(raw)) : DEFAULT_MESSAGES;
+  } catch {
+    return DEFAULT_MESSAGES;
+  }
 }
 export async function saveCloud(
   owner: string,
