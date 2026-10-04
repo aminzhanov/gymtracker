@@ -1,0 +1,3 @@
+[functions.invite-athlete]
+# The function validates the token using auth.getUser. This also supports new JWT keys.
+verify_jwt = false
