@@ -16,6 +16,10 @@ import {
   cloneExercises,
   recoveryMinutes,
   changePercent,
+  exerciseProgress,
+  chartLinePath,
+  exerciseSummary,
+  filterSessions,
 } from "../src/model.ts";
 const fixture = () => {
   const d = emptyData();
@@ -133,4 +137,104 @@ test("backup rejects duplicate identities across sessions and invalid calendar d
   d.sessions = [a];
   a.date = "2026-02-31";
   assert.throws(() => validateBackup(d));
+});
+
+test("exercise lines join sparse dates without inventing zero observations", () => {
+  assert.equal(
+    chartLinePath(
+      [null, 10, null, 15, null],
+      (index) => index * 10,
+      (value) => 100 - value,
+    ),
+    "M10,90 L30,85",
+  );
+  assert.equal(
+    chartLinePath(
+      [null, null],
+      (index) => index,
+      (value) => value,
+    ),
+    "",
+  );
+});
+test("monthly growth uses each exercise's first completed daily best", () => {
+  const data = emptyData();
+  const record = (date: string, weight: number, eid = "bench", done = true) => {
+    const session = newSession(data, date);
+    session.exercises = [newExercise(eid, eid)];
+    session.exercises[0].sets = [
+      { id: crypto.randomUUID(), weight, reps: 5, done },
+    ];
+    return session;
+  };
+  const sessions = [
+    record("2026-09-29", 50),
+    record("2026-10-02", 100),
+    record("2026-10-02", 110),
+    record("2026-10-12", 121),
+    record("2026-10-16", 99),
+    record("2026-10-20", 1000, "bench", false),
+    record("2026-10-04", 20, "curl"),
+    record("2026-10-18", 25, "curl"),
+  ];
+  const bench = exerciseProgress(
+    sessions,
+    "bench",
+    "weight",
+    "percent",
+    "2026-10",
+  );
+  assert.equal(bench.baseline.value, 110);
+  assert.deepEqual(
+    bench.rows.map((row) => Math.round(row.value)),
+    [0, 10, -10],
+  );
+  const curl = exerciseProgress(
+    sessions,
+    "curl",
+    "weight",
+    "percent",
+    "2026-10",
+  );
+  assert.deepEqual(
+    curl.rows.map((row) => row.value),
+    [0, 25],
+  );
+  assert.deepEqual(
+    exerciseProgress(sessions, "bench", "weight", "percent", "2026-11").rows,
+    [],
+  );
+  assert.equal(
+    exerciseProgress(sessions, "bench", "e1rm", "kg", "2026-10").rows[0].value,
+    110 * (1 + 5 / 30),
+  );
+});
+test("optional split preserves history, ignores week filter and roundtrips older backups", () => {
+  const data = emptyData();
+  data.sessions = [fixture()];
+  data.sessions[0].week = "B";
+  data.settings.useABSplit = false;
+  assert.equal(filterSessions(data, "A").length, 1);
+  assert.equal(newSession(data).week, "A");
+  assert.equal(validateBackup(data).settings.useABSplit, false);
+  assert.equal(data.sessions[0].week, "B");
+  const legacy = structuredClone(data) as any;
+  delete legacy.settings.useABSplit;
+  assert.equal(validateBackup(legacy).settings.useABSplit, true);
+  legacy.settings.useABSplit = "false";
+  assert.throws(() => validateBackup(legacy));
+});
+test("exercise overview groups matching prescriptions and keeps varying sets visible", () => {
+  const exercise = newExercise("bench", "Bench");
+  exercise.sets = [
+    { id: "one", weight: 87.5, reps: 6, done: false },
+    { id: "two", weight: 87.5, reps: 6, done: false },
+    { id: "three", weight: 0, reps: 8, done: true },
+  ];
+  assert.equal(
+    exerciseSummary(exercise),
+    "2 sets × 6 reps · 87.5 kg / 1 set × 8 reps · 0 kg",
+  );
+  const warmup = newExercise("warm", "Warm", "warmup");
+  assert.equal(exerciseSummary(warmup), "5 min · Warm-up");
 });

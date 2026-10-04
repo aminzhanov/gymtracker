@@ -56,6 +56,7 @@ export function emptyData(name = "Aleksei"): AppData {
     })),
     bodyweight: [],
     settings: {
+      useABSplit: true,
       spikeThreshold: 30,
       anchorDate: monday(dateKey()),
       anchorWeek: "A",
@@ -64,6 +65,7 @@ export function emptyData(name = "Aleksei"): AppData {
   };
 }
 export function currentWeek(data: AppData, date = dateKey()): Week {
+  if (!data.settings.useABSplit) return "A";
   const delta = Math.round(
     (parseDate(monday(date)).getTime() -
       parseDate(monday(data.settings.anchorDate)).getTime()) /
@@ -85,7 +87,9 @@ export function newSession(
     date,
     name: template?.name || "New workout",
     icon: template?.icon || "🏋️",
-    week: template?.week || currentWeek(data, date),
+    week: data.settings.useABSplit
+      ? template?.week || currentWeek(data, date)
+      : "A",
     status: "planned",
     difficulty: "",
     notes: template?.notes || "",
@@ -155,7 +159,27 @@ export function completeSession(s: Session): Session {
 export const changePercent = (now: number, before: number): number | null =>
   before > 0 ? ((now - before) / before) * 100 : null;
 export function filterSessions(data: AppData, week: "All" | Week) {
-  return data.sessions.filter((s) => week === "All" || s.week === week);
+  return data.sessions.filter(
+    (s) => !data.settings.useABSplit || week === "All" || s.week === week,
+  );
+}
+export function exerciseSummary(exercise: WorkoutExercise) {
+  if (exercise.kind !== "strength")
+    return `${number(exercise.duration)} min · ${exercise.kind === "warmup" ? "Warm-up" : "Cool-down"}`;
+  if (!exercise.sets.length) return "No sets planned";
+  const groups: { count: number; weight: number; reps: number }[] = [];
+  for (const set of exercise.sets) {
+    const last = groups.at(-1);
+    if (last && last.weight === set.weight && last.reps === set.reps)
+      last.count++;
+    else groups.push({ count: 1, weight: set.weight, reps: set.reps });
+  }
+  return groups
+    .map(
+      (g) =>
+        `${g.count} ${g.count === 1 ? "set" : "sets"} × ${g.reps} reps · ${number(g.weight, 2)} kg`,
+    )
+    .join(" / ");
 }
 export function lastPerformance(
   sessions: Session[],
@@ -312,26 +336,57 @@ export function exerciseHistory(
   eid: string,
   metric: "e1rm" | "weight",
 ) {
-  return [...sessions]
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .flatMap((s) => {
-      const sets = doneSets(s).filter(
-        (x) => x.exerciseId === eid && x.weight > 0 && x.reps > 0,
-      );
-      return sets.length
-        ? [
-            {
-              label: shortDate(s.date),
-              date: s.date,
-              value: Math.max(
-                ...sets.map((x) =>
-                  metric === "e1rm" ? estimatedMax(x.weight, x.reps) : x.weight,
-                ),
-              ),
-            },
-          ]
-        : [];
-    });
+  const daily = new Map<string, number>();
+  for (const s of sessions) {
+    const sets = doneSets(s).filter(
+      (x) => x.exerciseId === eid && x.weight > 0 && x.reps > 0,
+    );
+    if (!sets.length) continue;
+    const value = Math.max(
+      ...sets.map((x) =>
+        metric === "e1rm" ? estimatedMax(x.weight, x.reps) : x.weight,
+      ),
+    );
+    daily.set(s.date, Math.max(daily.get(s.date) ?? 0, value));
+  }
+  return [...daily]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, value]) => ({ label: shortDate(date), date, value }));
+}
+export function exerciseProgress(
+  sessions: Session[],
+  eid: string,
+  metric: "e1rm" | "weight",
+  scale: "kg" | "percent",
+  month: string,
+) {
+  const history = exerciseHistory(sessions, eid, metric).filter(
+    (row) => !month || row.date.startsWith(month),
+  );
+  const baseline = history[0];
+  return {
+    baseline,
+    rows: history.map((row) => ({
+      ...row,
+      value:
+        scale === "percent"
+          ? changePercent(row.value, baseline.value)!
+          : row.value,
+    })),
+  };
+}
+export function chartLinePath(
+  values: (number | null)[],
+  x: (index: number) => number,
+  y: (value: number) => number,
+) {
+  return values
+    .flatMap((value, index) => (value === null ? [] : [{ value, index }]))
+    .map(
+      ({ value, index }, point) =>
+        `${point === 0 ? "M" : "L"}${x(index)},${y(value)}`,
+    )
+    .join(" ");
 }
 export function bodyweightHistory(entries: Bodyweight[]) {
   return [...entries]
@@ -538,8 +593,12 @@ export function validateBackup(value: unknown): AppData {
     !num(d.settings.spikeThreshold, 1000) ||
     !validDate(d.settings.anchorDate) ||
     !["A", "B"].includes(d.settings.anchorWeek) ||
+    (d.settings.useABSplit !== undefined &&
+      typeof d.settings.useABSplit !== "boolean") ||
     !text(d.settings.name)
   )
     return fail();
-  return structuredClone(d);
+  const normalized = structuredClone(d);
+  normalized.settings.useABSplit ??= true;
+  return normalized;
 }

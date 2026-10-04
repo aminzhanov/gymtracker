@@ -18,7 +18,12 @@ export async function loadCloud(owner: string) {
     target_owner: owner,
   });
   if (error) throw error;
-  return { data: validateBackup(data.data), revision: Number(data.revision) };
+  return {
+    data: validateBackup(data.data),
+    revision: Number(data.revision),
+    programPreferenceReady:
+      typeof data.data?.settings?.useABSplit === "boolean",
+  };
 }
 export async function saveCloud(
   owner: string,

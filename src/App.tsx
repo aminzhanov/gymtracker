@@ -8,8 +8,6 @@ import {
   Settings,
   Plus,
   ArrowRight,
-  ChevronLeft,
-  ChevronRight,
   Download,
   Upload,
   FlaskConical,
@@ -66,6 +64,7 @@ import {
 } from "./components";
 import { SessionEditor } from "./SessionEditor";
 import { Analytics } from "./Analytics";
+import { Calendar } from "./Calendar";
 type Page =
   "Dashboard" | "Training" | "Calendar" | "Analytics" | "People" | "Settings";
 const pages = [
@@ -183,6 +182,8 @@ export default function App() {
   const [profiles, setProfiles] = useState<Profile[]>(DEMO_PROFILES);
   const [owner, setOwner] = useState("demo-self");
   const [data, setData] = useState<AppData | null>(null);
+  const [programPreferenceReady, setProgramPreferenceReady] =
+    useState(!supabase);
   const [page, setPage] = useState<Page>("Dashboard");
   const [editor, setEditor] = useState<Session | null>(null);
   const [templateEditor, setTemplateEditor] = useState<Template | null>(null);
@@ -280,12 +281,14 @@ export default function App() {
       ? Promise.resolve().then(() => ({
           data: loadLocal(owner, p?.name || "Athlete"),
           revision: 0,
+          programPreferenceReady: true,
         }))
       : loadCloud(owner);
     load
       .then((result) => {
         if (!active) return;
         revision.current = result.revision;
+        setProgramPreferenceReady(result.programPreferenceReady);
         dataRef.current = result.data;
         setData(result.data);
       })
@@ -618,7 +621,9 @@ export default function App() {
                       </h1>
                       <p>Ready to move today?</p>
                       <div className="flex">
-                        <WeekBadge week={currentWeek(data)} />
+                        {data.settings.useABSplit && (
+                          <WeekBadge week={currentWeek(data)} />
+                        )}
                         <span className="welcome-date">
                           {parseDate(today).toLocaleDateString(undefined, {
                             weekday: "short",
@@ -734,7 +739,12 @@ export default function App() {
                               <div>
                                 <strong>{s.name}</strong>
                                 <span>
-                                  <WeekBadge week={s.week} /> · {s.status}
+                                  {data.settings.useABSplit && (
+                                    <>
+                                      <WeekBadge week={s.week} /> ·{" "}
+                                    </>
+                                  )}
+                                  {s.status}
                                 </span>
                               </div>
                               <ArrowRight size={18} />
@@ -837,6 +847,7 @@ export default function App() {
                               <SessionCard
                                 key={s.id}
                                 session={s}
+                                showWeek={data.settings.useABSplit}
                                 onOpen={setEditor}
                               />
                             ))
@@ -865,6 +876,7 @@ export default function App() {
                               <SessionCard
                                 key={s.id}
                                 session={s}
+                                showWeek={data.settings.useABSplit}
                                 onOpen={setEditor}
                               />
                             ))
@@ -954,7 +966,9 @@ export default function App() {
                             action={<span className="avatar">{p.name[0]}</span>}
                           >
                             <div className="flex">
-                              <WeekBadge week={d ? currentWeek(d) : "A"} />
+                              {d?.settings.useABSplit && (
+                                <WeekBadge week={currentWeek(d)} />
+                              )}
                               <span
                                 className={`badge ${p.active ? "tint-mint" : "tint-pink"}`}
                               >
@@ -1043,45 +1057,84 @@ export default function App() {
                           }
                         />
                       </label>
-                      <label>
-                        Week A/B anchor date
+                      <label className="program-switch">
+                        <span>
+                          <strong>Use A/B split</strong>
+                          <small>Alternate between Week A and Week B.</small>
+                        </span>
                         <input
-                          type="date"
-                          value={data.settings.anchorDate}
-                          onChange={(e) => {
-                            if (e.target.value)
-                              change({
-                                ...data,
-                                settings: {
-                                  ...data.settings,
-                                  anchorDate: e.target.value,
-                                },
-                              });
-                          }}
-                        />
-                      </label>
-                      <label>
-                        Anchor program week
-                        <select
-                          value={data.settings.anchorWeek}
-                          onChange={(e) =>
+                          type="checkbox"
+                          role="switch"
+                          aria-label="Use A/B split"
+                          checked={data.settings.useABSplit}
+                          disabled={!programPreferenceReady}
+                          onChange={(event) =>
                             change({
                               ...data,
                               settings: {
                                 ...data.settings,
-                                anchorWeek: e.target.value as "A" | "B",
+                                useABSplit: event.target.checked,
                               },
                             })
                           }
-                        >
-                          <option>A</option>
-                          <option>B</option>
-                        </select>
+                        />
                       </label>
-                      <p className="footnote">
-                        Your dashboard alternates A/B from this date's Monday.
-                        Existing sessions retain their assigned week.
-                      </p>
+                      {!programPreferenceReady && (
+                        <p className="footnote">
+                          This preference needs an account settings update
+                          before it can be changed.
+                        </p>
+                      )}
+                      {!data.settings.useABSplit && (
+                        <p className="muted">
+                          Plan freely, with all sessions in one program. Your
+                          existing workouts are kept.
+                        </p>
+                      )}
+                      {data.settings.useABSplit && (
+                        <>
+                          <label>
+                            Week A/B anchor date
+                            <input
+                              type="date"
+                              value={data.settings.anchorDate}
+                              onChange={(e) => {
+                                if (e.target.value)
+                                  change({
+                                    ...data,
+                                    settings: {
+                                      ...data.settings,
+                                      anchorDate: e.target.value,
+                                    },
+                                  });
+                              }}
+                            />
+                          </label>
+                          <label>
+                            Anchor program week
+                            <select
+                              value={data.settings.anchorWeek}
+                              onChange={(e) =>
+                                change({
+                                  ...data,
+                                  settings: {
+                                    ...data.settings,
+                                    anchorWeek: e.target.value as "A" | "B",
+                                  },
+                                })
+                              }
+                            >
+                              <option>A</option>
+                              <option>B</option>
+                            </select>
+                          </label>
+                          <p className="footnote">
+                            Your dashboard alternates A/B from this date's
+                            Monday. Existing sessions retain their assigned
+                            week.
+                          </p>
+                        </>
+                      )}
                       <label>
                         Workload spike threshold (%)
                         <input
@@ -1353,7 +1406,7 @@ export default function App() {
                 >
                   <span>{t.icon}</span>
                   <strong>{t.name}</strong>
-                  <WeekBadge week={t.week} />
+                  {data.settings.useABSplit && <WeekBadge week={t.week} />}
                   <ArrowRight size={16} />
                 </button>
               ))}
@@ -1578,7 +1631,12 @@ function Training({
         sessions.length ? (
           <div className="training-list">
             {sessions.map((s) => (
-              <SessionCard key={s.id} session={s} onOpen={onOpen} />
+              <SessionCard
+                key={s.id}
+                session={s}
+                showWeek={data.settings.useABSplit}
+                onOpen={onOpen}
+              />
             ))}
           </div>
         ) : (
@@ -1627,7 +1685,11 @@ function Training({
                 <Panel
                   key={t.id}
                   title={`${t.icon} ${t.name}`}
-                  action={<WeekBadge week={t.week} />}
+                  action={
+                    data.settings.useABSplit ? (
+                      <WeekBadge week={t.week} />
+                    ) : undefined
+                  }
                 >
                   <p className="muted">
                     {t.exercises.filter((e) => e.kind === "strength").length}{" "}
@@ -1663,134 +1725,6 @@ function Training({
           )}
         </>
       )}
-    </>
-  );
-}
-function Calendar({
-  data,
-  onOpen,
-  onCreate,
-  onMove,
-}: {
-  data: AppData;
-  onOpen: (s: Session) => void;
-  onCreate: (date: string) => void;
-  onMove: (sid: string, date: string) => void;
-}) {
-  const [month, setMonth] = useState(dateKey().slice(0, 7));
-  const first = `${month}-01`;
-  const start = monday(first);
-  const days = Array.from({ length: 42 }, (_, i) => addDays(start, i));
-  const move = (n: number) => {
-    const d = parseDate(first);
-    d.setMonth(d.getMonth() + n);
-    setMonth(dateKey(d).slice(0, 7));
-  };
-  return (
-    <>
-      <div className="page-head">
-        <div>
-          <span className="eyebrow">PLAN. TRAIN. PROGRESS.</span>
-          <h1>
-            Your training calendar <span>↗</span>
-          </h1>
-          <p>Make a little space for getting stronger.</p>
-        </div>
-        <button className="button primary" onClick={() => onCreate(dateKey())}>
-          <Plus size={17} /> Add session
-        </button>
-      </div>
-      <Panel
-        title={parseDate(first).toLocaleDateString(undefined, {
-          month: "long",
-          year: "numeric",
-        })}
-        action={
-          <div className="flex">
-            <button
-              className="icon-button"
-              aria-label="Previous month"
-              onClick={() => move(-1)}
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button
-              className="button secondary compact"
-              onClick={() => setMonth(dateKey().slice(0, 7))}
-            >
-              Today
-            </button>
-            <button
-              className="icon-button"
-              aria-label="Next month"
-              onClick={() => move(1)}
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
-        }
-      >
-        <div className="calendar-grid">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-            <div className="calendar-label" key={day}>
-              {day}
-            </div>
-          ))}
-          {days.map((date) => (
-            <div
-              key={date}
-              className={`calendar-day ${date.slice(0, 7) !== month ? "other-month" : ""} ${date === dateKey() ? "today" : ""}`}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault();
-                const sid = e.dataTransfer.getData("text/liftlog-session");
-                if (sid) onMove(sid, date);
-              }}
-            >
-              <button
-                className="day-number"
-                aria-label={`Create session on ${date}`}
-                onClick={() => onCreate(date)}
-              >
-                {parseDate(date).getDate()}
-              </button>
-              {data.sessions
-                .filter((s) => s.date === date)
-                .map((s) => (
-                  <button
-                    key={s.id}
-                    draggable
-                    className={`calendar-session week-${s.week.toLowerCase()}`}
-                    onDragStart={(e) =>
-                      e.dataTransfer.setData("text/liftlog-session", s.id)
-                    }
-                    onClick={() => onOpen(s)}
-                    title={`${s.name} · Week ${s.week} · ${s.status}`}
-                  >
-                    <span>
-                      {s.icon} <strong>{s.name}</strong>
-                    </span>
-                    <small>
-                      A/B: {s.week} ·{" "}
-                      {s.status === "done" ? "✓ Done" : "Planned"}
-                    </small>
-                  </button>
-                ))}
-              <button
-                className="day-add"
-                aria-label={`Add session on ${date}`}
-                onClick={() => onCreate(date)}
-              >
-                <Plus size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-        <p className="footnote">
-          Tap a date to plan, or a session to open it. Drag a session to
-          reschedule on desktop. Use “Move to date” in the editor on mobile.
-        </p>
-      </Panel>
     </>
   );
 }

@@ -280,5 +280,59 @@ test("database isolation, atomic backups, completion and concurrency", async (t)
       assert.deepEqual(reloaded.bodyweight, next.bodyweight);
     },
   );
+  await t.test(
+    "program preference upgrade preserves data and securely persists each athlete's choice",
+    async () => {
+      await login(coach);
+      const before = await load(athlete);
+      await db.exec("reset role");
+      const migration = await readFile(
+        new URL(
+          "../supabase/migrations/002_program_preferences.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      );
+      await db.exec(migration);
+      await db.exec(migration);
+      await login(coach);
+      const upgraded = await load(athlete);
+      assert.equal(upgraded.revision, before.revision);
+      assert.deepEqual(
+        validateBackup(upgraded.data).sessions,
+        validateBackup(before.data).sessions,
+      );
+      const next = validateBackup(upgraded.data);
+      assert.equal(next.settings.useABSplit, true);
+      next.settings.useABSplit = false;
+      await save(athlete, next, upgraded.revision);
+      assert.equal(
+        validateBackup((await load(athlete)).data).settings.useABSplit,
+        false,
+      );
+      assert.equal(
+        validateBackup((await load(coach)).data).settings.useABSplit,
+        true,
+      );
+      const corrupt = structuredClone(next) as any;
+      corrupt.settings.useABSplit = "false";
+      const revision = (await load(athlete)).revision;
+      await assert.rejects(
+        () => save(athlete, corrupt, revision),
+        /Invalid A\/B preference/,
+      );
+      assert.equal((await load(athlete)).revision, revision);
+      const oldClient = structuredClone(next) as any;
+      delete oldClient.settings.useABSplit;
+      await save(athlete, oldClient, revision);
+      assert.equal(
+        validateBackup((await load(athlete)).data).settings.useABSplit,
+        false,
+      );
+      await login(stranger);
+      await assert.rejects(() => load(athlete), /Access denied/);
+      await assert.rejects(() => save(athlete, next, 0), /Access denied/);
+    },
+  );
   await db.close();
 });

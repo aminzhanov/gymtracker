@@ -1,15 +1,7 @@
 import { useState } from "react";
-import {
-  Plus,
-  Trash2,
-  Save,
-  Check,
-  Dumbbell,
-  Timer,
-  ChevronDown,
-} from "lucide-react";
+import { Plus, Trash2, Save, Check, Dumbbell, ChevronDown } from "lucide-react";
 import type { AppData, Session, Template, WorkoutExercise } from "./types";
-import { Modal, SetRow, LastTime, WeekBadge, Empty } from "./components";
+import { Modal, WeekBadge, Empty } from "./components";
 import {
   id,
   newExercise,
@@ -20,6 +12,7 @@ import {
   number,
   cloneExercises,
 } from "./model";
+import { WorkoutExerciseCard } from "./WorkoutExerciseCard";
 const icons = [
   "🏋️",
   "💪",
@@ -78,6 +71,7 @@ export function SessionEditor({
   onCustom: (name: string) => string;
 }) {
   const [s, setS] = useState<Session>(structuredClone(initial));
+  const [addedExercise, setAddedExercise] = useState<string | null>(null);
   const [picker, setPicker] = useState(false);
   const [adding, setAdding] = useState(false);
   const [search, setSearch] = useState("");
@@ -87,9 +81,17 @@ export function SessionEditor({
   const patch = (change: Partial<Session>) =>
     setS((old) => ({ ...old, ...change }));
   const changeExercise = (index: number, e: WorkoutExercise) =>
-    patch({ exercises: s.exercises.map((old, i) => (i === index ? e : old)) });
+    patch({
+      exercises: s.exercises.map((old, i) => (i === index ? e : old)),
+      ...(s.status === "done" &&
+      (e.kind === "strength" ? e.sets.some((set) => !set.done) : !e.done)
+        ? { status: "planned" as const }
+        : {}),
+    });
   const add = (exerciseId: string, name: string) => {
-    patch({ exercises: [...s.exercises, newExercise(exerciseId, name, kind)] });
+    const exercise = newExercise(exerciseId, name, kind);
+    patch({ exercises: [...s.exercises, exercise] });
+    setAddedExercise(exercise.id);
     setAdding(false);
     setSearch("");
   };
@@ -122,7 +124,7 @@ export function SessionEditor({
                 onChange={(e) => patch({ name: e.target.value })}
               />
               <div className="flex">
-                <WeekBadge week={s.week} />
+                {data.settings.useABSplit && <WeekBadge week={s.week} />}
                 <span className="muted">
                   {isTemplate
                     ? "Reusable training plan"
@@ -169,178 +171,25 @@ export function SessionEditor({
               detail="Add strength work, a warm-up or a cool-down."
             />
           )}
-          {s.exercises.map((e, index) => (
-            <section
-              className={`exercise-block ${e.kind !== "strength" ? "recovery-block" : ""}`}
-              key={e.id}
-            >
-              <div className="exercise-head">
-                <span
-                  className={`exercise-symbol ${e.kind === "strength" ? "tint-blue" : "tint-pink"}`}
-                >
-                  {e.kind === "strength" ? (
-                    <Dumbbell size={20} />
-                  ) : (
-                    <Timer size={20} />
-                  )}
-                </span>
-                <div className="grow">
-                  <input
-                    aria-label="Exercise name"
-                    className="exercise-name"
-                    value={e.name}
-                    onChange={(ev) =>
-                      changeExercise(index, { ...e, name: ev.target.value })
-                    }
-                  />
-                  {e.kind === "strength" && !isTemplate && (
-                    <LastTime
-                      exercise={e}
-                      session={s}
-                      sessions={data.sessions}
-                    />
-                  )}
-                  <span className="last-time">
-                    {e.kind === "warmup"
-                      ? "Warm-up · recovery analytics only"
-                      : e.kind === "cooldown"
-                        ? "Cool-down · recovery analytics only"
-                        : ""}
-                  </span>
-                </div>
-                <button
-                  className="icon-button"
-                  onClick={() => {
-                    setAdding(true);
-                    setKind(e.kind);
-                    setSearch("");
-                  }}
-                  title="Add another exercise"
-                  aria-label="Add exercise"
-                >
-                  <Plus size={18} />
-                </button>
-                <button
-                  className="icon-button danger-text"
-                  aria-label={`Remove ${e.name}`}
-                  onClick={() =>
-                    patch({
-                      exercises: s.exercises.filter((x) => x.id !== e.id),
-                    })
-                  }
-                >
-                  <Trash2 size={17} />
-                </button>
-              </div>
-              {e.kind === "strength" ? (
-                <>
-                  <div className="set-labels">
-                    <span>Set</span>
-                    <span>Weight</span>
-                    <span>Reps</span>
-                    <span>Done</span>
-                  </div>
-                  {e.sets.map((set, si) => (
-                    <SetRow
-                      key={set.id}
-                      set={set}
-                      index={si}
-                      onChange={(updated) => {
-                        const exercises = s.exercises.map((old, i) =>
-                          i === index
-                            ? {
-                                ...e,
-                                sets: e.sets.map((old) =>
-                                  old.id === set.id ? updated : old,
-                                ),
-                              }
-                            : old,
-                        );
-                        patch({
-                          exercises,
-                          ...(!updated.done
-                            ? { status: "planned" as const }
-                            : {}),
-                        });
-                      }}
-                      onRemove={() =>
-                        changeExercise(index, {
-                          ...e,
-                          sets: e.sets.filter((x) => x.id !== set.id),
-                        })
-                      }
-                    />
-                  ))}
-                  <button
-                    className="text-button"
-                    onClick={() =>
-                      changeExercise(index, {
-                        ...e,
-                        sets: [
-                          ...e.sets,
-                          {
-                            id: id(),
-                            weight: e.sets.at(-1)?.weight || 20,
-                            reps: e.sets.at(-1)?.reps || 8,
-                            done: false,
-                          },
-                        ],
-                      })
-                    }
-                  >
-                    <Plus size={15} /> Add set
-                  </button>
-                </>
-              ) : (
-                <div className="recovery-fields">
-                  <label>
-                    Duration (minutes)
-                    <input
-                      type="number"
-                      min="0"
-                      max="1440"
-                      value={e.duration}
-                      onChange={(ev) =>
-                        changeExercise(index, {
-                          ...e,
-                          duration: Math.max(
-                            0,
-                            Math.min(1440, Number(ev.target.value)),
-                          ),
-                        })
-                      }
-                    />
-                  </label>
-                  <label className="grow">
-                    Notes
-                    <input
-                      placeholder="Light cardio, mobility…"
-                      value={e.notes}
-                      onChange={(ev) =>
-                        changeExercise(index, { ...e, notes: ev.target.value })
-                      }
-                    />
-                  </label>
-                  {!isTemplate && (
-                    <button
-                      className={`done-button ${e.done ? "checked" : ""}`}
-                      aria-label={`${e.name} complete`}
-                      aria-pressed={e.done}
-                      onClick={() =>
-                        patch({
-                          exercises: s.exercises.map((old, i) =>
-                            i === index ? { ...e, done: !e.done } : old,
-                          ),
-                          ...(!e.done ? {} : { status: "planned" as const }),
-                        })
-                      }
-                    >
-                      <Check size={18} />
-                    </button>
-                  )}
-                </div>
-              )}
-            </section>
+          {s.exercises.map((exercise, index) => (
+            <WorkoutExerciseCard
+              key={exercise.id}
+              exercise={exercise}
+              session={s}
+              sessions={data.sessions}
+              isTemplate={isTemplate}
+              initiallyExpanded={exercise.id === addedExercise}
+              canSave={Boolean(s.name.trim())}
+              onChange={(updated) => changeExercise(index, updated)}
+              onSave={() => onSave(s)}
+              onRemove={() =>
+                patch({
+                  exercises: s.exercises.filter(
+                    (old) => old.id !== exercise.id,
+                  ),
+                })
+              }
+            />
           ))}
           <button
             className="button secondary full"
@@ -434,16 +283,20 @@ export function SessionEditor({
               />
             </label>
           )}
-          <label>
-            Program week
-            <select
-              value={s.week}
-              onChange={(e) => patch({ week: e.target.value as "A" | "B" })}
-            >
-              <option value="A">Week A</option>
-              <option value="B">Week B</option>
-            </select>
-          </label>
+          {data.settings.useABSplit && (
+            <>
+              <label>
+                Program week
+                <select
+                  value={s.week}
+                  onChange={(e) => patch({ week: e.target.value as "A" | "B" })}
+                >
+                  <option value="A">Week A</option>
+                  <option value="B">Week B</option>
+                </select>
+              </label>
+            </>
+          )}
           {!isTemplate && (
             <>
               <label>

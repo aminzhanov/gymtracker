@@ -1,6 +1,6 @@
 # LiftLog · train together
 
-A working React + TypeScript workout app, styled after the supplied LiftLog designs. Open directly into the training dashboard. Kilograms throughout. Desktop sidebar and mobile bottom navigation.
+A working React + TypeScript workout app, styled after the supplied LiftLog designs. Open directly into the training dashboard. Kilograms for lifting, with optional monthly percentage growth charts. Desktop sidebar and mobile bottom navigation.
 
 **Status:** the complete frontend works in browser-local demo mode. Secure Supabase persistence, normalized database tables, Coach/Athlete permissions and invitations are implemented. Real accounts require the Supabase setup below. The repository includes GitHub Pages deployment; the repository owner must enable Pages. A passing local build is not proof of a live deployment or a tested email flow.
 
@@ -18,11 +18,12 @@ Open the URL Vite prints. No database keys are needed for demo mode. Start empty
 ## Included
 
 - Dashboard with today's editable sets, completed sets and volume this week, prior-week change, all-time counts, upcoming/recent sessions, and new record events this calendar month.
-- Training with editable sessions, date moves, icons, difficulty, notes, custom exercises, add/remove sets, one weight/reps field, ±2.5 kg and ±1 rep controls, and last completed performance.
+- Training with collapsed exercise summaries (sets, reps, weights and completion); tap to edit, then save to collapse. Editable sessions, date moves, icons, difficulty, notes, custom exercises, add/remove sets, one weight/reps field, ±2.5 kg and ±1 rep controls, and last completed performance.
 - Session templates with preserved A/B designation and fresh completion state when used.
 - Warm-up and cool-down duration, notes and completion. Recovery minutes are separate from lifting volume, e1RM and PRs.
-- Monday-first month calendar. Click a date/session; drag sessions on desktop or use Move to date in the editor.
-- Analytics with session/week/month volume charts and tables, configurable weekly spike threshold, A/B filters and average calendar-week comparison/history, simultaneous exercise comparisons, five most frequent exercise records by default, bodyweight and 7-calendar-day moving averages.
+- Monday-first month calendar and seven-day agenda (the default on phones), both with exercise-name previews. Upcoming dashboard cards also list planned exercises. Click a date/session; drag sessions on desktop or use Move to date in the editor.
+- Analytics with session/week/month volume charts and tables, configurable weekly spike threshold, A/B filters and average calendar-week comparison/history, connected simultaneous exercise comparisons in kilograms or percentage growth from each exercise’s first completed daily best in a selected month, five most frequent exercise records by default, bodyweight and 7-calendar-day moving averages.
+- Per-athlete optional A/B split in Settings; disabling it hides program-week badges, filters and comparisons while keeping existing workout history.
 - JSON backup validation and full selected-athlete import/export. Replace/clear actions require confirmation. Exercise deletion preserves logged history.
 - Real coach profile selector, People summaries, session/template management, invitation and deactivation. Athletes only receive their own account view.
 - Database-level authorization, transactional saves, normalized relational tables, stale-edit detection, and an unsaved-data warning. Training data is not written to GitHub.
@@ -43,8 +44,12 @@ Without Supabase variables, the deployed app is a local demo. Your friends canno
 ### 1. Create the database
 
 1. Create a Supabase project at https://supabase.com/dashboard.
-2. Before creating app users, open **SQL Editor** and run the entire file [`supabase/migrations/001_liftlog.sql`](supabase/migrations/001_liftlog.sql) once. This creates tables, policies, functions and the new-user trigger.
+2. Before creating app users, open **SQL Editor** and run [`supabase/migrations/001_liftlog.sql`](supabase/migrations/001_liftlog.sql) once, then [`supabase/migrations/002_program_preferences.sql`](supabase/migrations/002_program_preferences.sql). These create the tables, policies, functions, new-user trigger and program preference.
 3. This migration is intended for a new project. If you already have Auth users, their profiles/settings need to be backfilled by an administrator before they can use the app; do not rerun the migration on an existing schema.
+
+### Upgrade an existing LiftLog database
+
+Run only [`supabase/migrations/002_program_preferences.sql`](supabase/migrations/002_program_preferences.sql) in **SQL Editor**, then refresh LiftLog. It adds the per-athlete A/B preference and updates the load/save RPCs atomically, retaining accounts, relationships, workouts and revisions. It is safe to rerun. Existing accounts default to A/B enabled. The frontend continues to use the old database until this is applied, with the new preference disabled instead of silently failing to save it.
 
 ### 2. Create your Coach account
 
@@ -131,7 +136,7 @@ Tests cover completed-set analytics, session completion, separate recovery metri
 
 The database integration tests execute the actual migration in embedded PostgreSQL (PGlite), using three users and role switching. They verify own-data writes, foreign-owner denial, table-level RLS, blocked role promotion/direct mutations, malformed-backup rollback, stale/null-revision rejection, coach assignment access, server-enforced completion, and deactivation. Auth email delivery and the Edge Function require testing against your configured Supabase project; PGlite does not emulate those services.
 
-Browser/device visual QA has not been performed in this execution environment. Verify the interface on your phone and desktop before relying on it for a live session.
+The responsive update has model and PostgreSQL integration coverage for sparse exercise histories, monthly growth, legacy backups and the program preference upgrade. A local browser preview could not run in this execution environment; verify the layout on your phone and desktop.
 
 ## Other hosting
 

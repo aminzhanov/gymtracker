@@ -47,6 +47,7 @@ export interface Bodyweight {
   weight: number;
 }
 export interface Settings {
+  useABSplit: boolean;
   spikeThreshold: number;
   anchorDate: string;
   anchorWeek: Week;

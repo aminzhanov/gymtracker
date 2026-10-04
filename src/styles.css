@@ -2259,3 +2259,667 @@ summary {
     transition: none !important;
   }
 }
+
+/* Workout previews and readable calendar layouts. */
+:root {
+  --muted: #696778;
+}
+.footnote {
+  font-size: 12px;
+  color: #6f6b79;
+}
+.last-time {
+  font-size: 12px;
+  color: #716c80;
+}
+.session-card {
+  display: grid;
+  grid-template-columns: 41px minmax(0, 1fr) auto auto;
+  gap: 7px 12px;
+  padding: 14px;
+}
+.session-copy strong {
+  font-size: 15px;
+}
+.session-copy > span {
+  font-size: 12px;
+  color: #6f6b7b;
+}
+.session-card .exercise-preview {
+  grid-column: 2 / -1;
+}
+.exercise-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #4f4b60;
+}
+.exercise-preview > span:not(:last-child)::after {
+  content: " ·";
+  color: #77717e;
+}
+.exercise-preview .muted {
+  font-size: inherit;
+}
+.calendar-panel .panel-title {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.calendar-scroll {
+  overflow-x: auto;
+}
+.calendar-grid {
+  min-width: 840px;
+}
+.calendar-label {
+  font-size: 13px;
+}
+.calendar-day {
+  min-height: 145px;
+  padding: 10px;
+}
+.calendar-date {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.day-number {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  flex: none;
+}
+.calendar-workouts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.calendar-session {
+  width: 100%;
+  padding: 10px;
+  gap: 7px;
+}
+.calendar-session span {
+  overflow: visible;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.calendar-session .calendar-session-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+.calendar-session strong {
+  font-size: 14px;
+}
+.calendar-session small {
+  font-size: 12px;
+  opacity: 1;
+}
+.calendar-session .exercise-preview {
+  display: block;
+}
+.calendar-session .exercise-preview > span {
+  display: block;
+  font-size: 12px;
+}
+.calendar-session .exercise-preview > span::after {
+  content: "";
+}
+.calendar-session .exercise-preview > span:not(.muted)::before {
+  content: "· ";
+}
+.day-add {
+  opacity: 1;
+  min-width: 36px;
+  min-height: 36px;
+  color: #696778;
+}
+.calendar-agenda {
+  display: grid;
+  gap: 12px;
+}
+.calendar-agenda .calendar-day {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr) 44px;
+  gap: 14px;
+  align-items: start;
+  min-height: 90px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+.calendar-agenda .calendar-date > span {
+  font-size: 14px;
+  font-weight: 600;
+}
+.calendar-date small {
+  display: block;
+  font-size: 12px;
+  color: var(--blue);
+  margin-top: 4px;
+}
+.calendar-agenda .calendar-workouts {
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.calendar-agenda .calendar-session {
+  flex: 1;
+  min-width: 180px;
+}
+.calendar-agenda .calendar-session .exercise-preview {
+  display: flex;
+}
+.calendar-agenda .calendar-session .exercise-preview > span::before {
+  content: "";
+}
+.calendar-agenda
+  .calendar-session
+  .exercise-preview
+  > span:not(:last-child)::after {
+  content: " ·";
+}
+.calendar-rest {
+  color: #777281;
+  font-size: 14px;
+  padding: 8px 0;
+}
+.calendar-agenda .day-add {
+  align-self: start;
+  margin: 0;
+}
+.calendar-agenda .today .day-number {
+  width: 38px;
+  height: 38px;
+}
+.exercise-overview {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 2px;
+  border-radius: 8px;
+}
+.exercise-overview > svg {
+  color: var(--blue);
+  flex: none;
+  align-self: center;
+}
+.exercise-overview-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  flex: 1;
+}
+.exercise-overview-copy > strong {
+  font-size: 16px;
+  line-height: 1.4;
+}
+.exercise-prescription {
+  font-size: 14px;
+  color: #4d4b60;
+  line-height: 1.65;
+}
+.exercise-completion {
+  font-size: 12px;
+  color: #696778;
+}
+.exercise-completion.positive {
+  color: #078563;
+}
+.exercise-block.collapsed {
+  padding: 16px;
+}
+.exercise-name-label {
+  margin: 0;
+  font-size: 12px;
+}
+.exercise-name {
+  font-size: 16px;
+  padding: 5px 0;
+}
+.exercise-save {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+.set-row {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 28px minmax(0, 1fr) 40px 34px;
+  gap: 8px;
+}
+.set-row .counter {
+  max-width: none;
+}
+.set-labels {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 28px minmax(0, 1fr) 40px 34px;
+  gap: 8px;
+  padding: 0;
+  font-size: 12px;
+  color: #696778;
+}
+.set-labels > span:nth-child(3) {
+  grid-column: 4;
+}
+.set-labels > span:nth-child(4) {
+  grid-column: 5;
+}
+.counter-unit {
+  display: none;
+}
+.progress-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.progress-controls label {
+  margin: 0;
+  min-width: 150px;
+  flex: 1;
+  max-width: 260px;
+}
+.progress-baselines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  margin-top: 16px;
+  border-radius: 10px;
+  background: #f5f2ec;
+}
+.progress-baselines > span {
+  font-size: 12px;
+  color: #5e596b;
+  line-height: 1.5;
+}
+.progress-baselines i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+.chart-legend {
+  font-size: 12px;
+  color: #605b6d;
+}
+.span-full {
+  grid-column: 1 / -1;
+}
+.program-switch {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 18px;
+}
+.program-switch strong {
+  font-size: 15px;
+  color: #242536;
+}
+.program-switch small {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.program-switch input {
+  appearance: none;
+  width: 50px;
+  height: 30px;
+  min-width: 50px;
+  border: 0;
+  border-radius: 20px;
+  background: #a1a0ac;
+  cursor: pointer;
+  padding: 3px;
+  margin: 0;
+}
+.program-switch input::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.15s;
+}
+.program-switch input:checked {
+  background: var(--blue);
+}
+.program-switch input:checked::before {
+  transform: translateX(20px);
+}
+.program-switch input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 650px) {
+  main {
+    padding-inline: 12px;
+  }
+  .panel {
+    padding: 16px;
+  }
+  .muted,
+  .footnote,
+  .last-time,
+  .page-head p,
+  .empty p {
+    font-size: 14px;
+  }
+  label,
+  .editor-details label,
+  .recovery-fields label {
+    font-size: 14px;
+  }
+  input,
+  select,
+  textarea,
+  .editor-details input,
+  .editor-details select,
+  .editor-details textarea,
+  .recovery-fields input {
+    font-size: 16px;
+  }
+  .button,
+  .text-button {
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .badge {
+    font-size: 12px;
+  }
+  .welcome-date,
+  .today-heading > div > span,
+  .stat > span:last-child,
+  .alltime,
+  .data-actions small,
+  .metric-card p {
+    font-size: 12px;
+  }
+  .data-actions strong,
+  .dashboard-exercise > strong,
+  .metric-card > span {
+    font-size: 14px;
+  }
+  .demo-banner,
+  .error-banner {
+    font-size: 12px;
+  }
+  .demo-banner {
+    flex-wrap: wrap;
+  }
+  .session-card,
+  .training-list > .session-card {
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    padding: 12px;
+    gap: 8px 10px;
+  }
+  .session-card > .badge {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: start;
+  }
+  .session-card > .tiny-done,
+  .session-card > svg {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .session-card .exercise-preview {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    font-size: 14px;
+  }
+  .session-copy strong,
+  .training-list .session-copy strong {
+    font-size: 16px;
+  }
+  .session-copy > span,
+  .training-list .session-copy > span {
+    font-size: 13px;
+  }
+  .calendar-controls {
+    gap: 10px;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .calendar-controls .segmented button {
+    font-size: 14px;
+    min-height: 40px;
+    padding: 8px 12px;
+  }
+  .calendar-controls .flex {
+    gap: 3px;
+  }
+  .calendar-agenda .calendar-day {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+    padding: 13px;
+  }
+  .calendar-agenda .calendar-date {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .calendar-agenda .day-number {
+    height: 38px;
+    width: 38px;
+    font-size: 18px;
+  }
+  .calendar-agenda .calendar-date > span {
+    font-size: 15px;
+  }
+  .calendar-agenda .day-add {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .calendar-agenda .calendar-workouts {
+    grid-column: 1 / -1;
+  }
+  .calendar-agenda .calendar-session {
+    padding: 13px;
+    min-width: 0;
+    flex-basis: 100%;
+  }
+  .calendar-agenda .calendar-session strong {
+    font-size: 16px;
+  }
+  .calendar-agenda .calendar-session small {
+    font-size: 13px;
+  }
+  .calendar-agenda .calendar-session .exercise-preview > span {
+    font-size: 14px;
+  }
+  .modal-backdrop {
+    padding: 8px;
+  }
+  .modal {
+    padding: 16px;
+    max-height: 96dvh;
+    border-radius: 16px;
+  }
+  .modal-head {
+    margin-bottom: 16px;
+  }
+  .workout-heading {
+    gap: 12px;
+  }
+  .workout-heading > div {
+    min-width: 0;
+  }
+  .workout-heading .flex {
+    flex-wrap: wrap;
+  }
+  .workout-heading .muted {
+    font-size: 13px;
+  }
+  .title-input {
+    font-size: 23px;
+  }
+  .exercise-block,
+  .exercise-block.collapsed {
+    padding: 13px;
+  }
+  .exercise-overview {
+    gap: 10px;
+  }
+  .exercise-overview-copy > strong {
+    font-size: 17px;
+  }
+  .exercise-prescription {
+    font-size: 15px;
+  }
+  .exercise-completion {
+    font-size: 13px;
+  }
+  .exercise-symbol {
+    width: 32px;
+    height: 32px;
+  }
+  .exercise-head {
+    gap: 9px;
+    align-items: flex-start;
+  }
+  .exercise-name {
+    font-size: 17px;
+  }
+  .exercise-name-label {
+    font-size: 12px;
+  }
+  .set-labels {
+    display: none;
+  }
+  .set-row {
+    grid-template-columns: 18px minmax(0, 1fr) 44px;
+    grid-template-rows: 46px 46px;
+    gap: 6px 9px;
+    padding: 12px 0;
+    border-top: 1px solid #f0ece8;
+  }
+  .set-index {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    font-size: 14px;
+    align-self: center;
+  }
+  .set-row > .counter:nth-of-type(1) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .set-row > .counter:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .set-row > .unit {
+    display: none;
+  }
+  .set-row > .done-button {
+    grid-column: 3;
+    grid-row: 1;
+    width: 44px;
+  }
+  .set-row > .icon-button {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .counter {
+    height: 46px;
+  }
+  .counter button {
+    height: 46px;
+    width: 38px;
+    min-width: 38px;
+  }
+  .counter input {
+    font-size: 17px;
+    min-width: 30px;
+  }
+  .counter-unit {
+    display: block;
+    font-size: 13px;
+    color: #676276;
+    padding: 0 5px;
+    flex: none;
+  }
+  .exercise-save .button {
+    width: 100%;
+  }
+  .editor-details {
+    display: block;
+    padding: 16px;
+  }
+  .editor-details label {
+    margin: 14px 0;
+  }
+  .session-totals > div,
+  .session-totals strong {
+    font-size: 14px;
+  }
+  .section-label {
+    font-size: 14px;
+  }
+  .recovery-fields label {
+    width: 100%;
+    flex-basis: 100%;
+  }
+  .recovery-fields label:first-child {
+    width: 100%;
+  }
+  .progress-controls {
+    gap: 10px;
+  }
+  .progress-controls label {
+    min-width: 0;
+    flex-basis: calc(50% - 5px);
+  }
+  .progress-baselines > span {
+    font-size: 13px;
+  }
+  .exercise-chips .chip {
+    font-size: 13px;
+    min-height: 42px;
+    padding: 9px 12px;
+  }
+  .chart-legend {
+    justify-content: flex-start;
+    font-size: 13px;
+    gap: 10px 16px;
+  }
+  .panel-title {
+    flex-wrap: wrap;
+  }
+  .panel-title > select {
+    font-size: 14px;
+  }
+  .segmented button {
+    min-height: 40px;
+    font-size: 13px;
+  }
+  .program-switch small {
+    font-size: 14px;
+  }
+  .bottom-nav button {
+    font-size: 11px;
+  }
+}

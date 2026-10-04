@@ -7,7 +7,8 @@ import {
   volumeHistory,
   weekComparison,
   records,
-  exerciseHistory,
+  exerciseProgress,
+  parseDate,
   bodyweightHistory,
   recoveryMinutes,
   number,
@@ -29,11 +30,15 @@ export function Analytics({
   const [period, setPeriod] = useState<"session" | "week" | "month">("week");
   const [selected, setSelected] = useState<string[]>(["default-0"]);
   const [metric, setMetric] = useState<"e1rm" | "weight">("e1rm");
+  const [scale, setScale] = useState<"kg" | "percent">("kg");
+  const [progressMonth, setProgressMonth] = useState("");
+  const useABSplit = data.settings.useABSplit;
+  const effectiveWeek = useABSplit ? week : "All";
   const [expanded, setExpanded] = useState(false);
   const [bodyModal, setBodyModal] = useState(false);
   const [bodyDate, setBodyDate] = useState(dateKey());
   const [bodyValue, setBodyValue] = useState("");
-  const sessions = filterSessions(data, week);
+  const sessions = filterSessions(data, effectiveWeek);
   const rows = volumeHistory(sessions, period);
   const comp = weekComparison(data.sessions);
   const prs = records(sessions);
@@ -51,9 +56,18 @@ export function Analytics({
       ].map((e) => [e.id, e]),
     ).values(),
   ];
+  const months = [
+    ...new Set([
+      dateKey().slice(0, 7),
+      ...sessions.map((session) => session.date.slice(0, 7)),
+    ]),
+  ]
+    .sort()
+    .reverse();
   const histories = selected.map((eid) => ({
+    id: eid,
     name: exerciseOptions.find((e) => e.id === eid)?.name || eid,
-    rows: exerciseHistory(sessions, eid, metric),
+    ...exerciseProgress(sessions, eid, metric, scale, progressMonth),
   }));
   const dates = [
     ...new Set(histories.flatMap((h) => h.rows.map((r) => r.date))),
@@ -84,15 +98,17 @@ export function Analytics({
           </h1>
           <p>Your progress, from every rep to every week.</p>
         </div>
-        <select
-          aria-label="Analytics week filter"
-          value={week}
-          onChange={(e) => setWeek(e.target.value as "All" | Week)}
-        >
-          <option value="All">All weeks</option>
-          <option value="A">Week A</option>
-          <option value="B">Week B</option>
-        </select>
+        {useABSplit && (
+          <select
+            aria-label="Analytics week filter"
+            value={week}
+            onChange={(e) => setWeek(e.target.value as "All" | Week)}
+          >
+            <option value="All">All weeks</option>
+            <option value="A">Week A</option>
+            <option value="B">Week B</option>
+          </select>
+        )}
       </div>
       <div className="analytics-top">
         <div className="metric-card tint-blue">
@@ -112,7 +128,11 @@ export function Analytics({
             )}
             <small> kg</small>
           </strong>
-          <p>{week === "All" ? "All program weeks" : `Week ${week} only`}</p>
+          <p>
+            {effectiveWeek === "All"
+              ? "All training weeks"
+              : `Week ${effectiveWeek} only`}
+          </p>
         </div>
         <div className="metric-card tint-mint">
           <span>Latest {period} change</span>
@@ -203,62 +223,67 @@ export function Analytics({
         )}
       </Panel>
       <div className="two-col">
-        <Panel title="Week A vs Week B">
-          <div className="comparison">
-            <div>
-              <span className="badge week-a">Week A</span>
-              <strong>
-                {comp.a === null ? "—" : number(comp.a)}
-                <small> kg / week</small>
-              </strong>
+        {useABSplit && (
+          <Panel title="Week A vs Week B">
+            <div className="comparison">
+              <div>
+                <span className="badge week-a">Week A</span>
+                <strong>
+                  {comp.a === null ? "—" : number(comp.a)}
+                  <small> kg / week</small>
+                </strong>
+              </div>
+              <div>
+                <span className="badge week-b">Week B</span>
+                <strong>
+                  {comp.b === null ? "—" : number(comp.b)}
+                  <small> kg / week</small>
+                </strong>
+              </div>
             </div>
-            <div>
-              <span className="badge week-b">Week B</span>
-              <strong>
-                {comp.b === null ? "—" : number(comp.b)}
-                <small> kg / week</small>
-              </strong>
-            </div>
-          </div>
-          {comp.difference === null ? (
-            <p className="muted">
-              Complete workouts in both weeks to compare your program.
+            {comp.difference === null ? (
+              <p className="muted">
+                Complete workouts in both weeks to compare your program.
+              </p>
+            ) : (
+              <p className="positive">
+                Week A {pct(comp.difference)} compared with Week B
+              </p>
+            )}
+            <p className="footnote">
+              Average calendar-week volume with completed lifting sets in each
+              program. This comparison always shows both weeks.
             </p>
-          ) : (
-            <p className="positive">
-              Week A {pct(comp.difference)} compared with Week B
-            </p>
-          )}
-          <p className="footnote">
-            Average calendar-week volume with completed lifting sets in each
-            program. This comparison always shows both weeks.
-          </p>
-          {volumeHistory(data.sessions, "week").length > 0 && (
-            <Chart
-              bar
-              labels={volumeHistory(data.sessions, "week")
-                .slice(-12)
-                .map((r) => r.label)}
-              series={[
-                {
-                  name: "Week A",
-                  color: "#2581ff",
-                  values: volumeHistory(data.sessions, "week")
-                    .slice(-12)
-                    .map((r) => r.a),
-                },
-                {
-                  name: "Week B",
-                  color: "#f17bb4",
-                  values: volumeHistory(data.sessions, "week")
-                    .slice(-12)
-                    .map((r) => r.b),
-                },
-              ]}
-            />
-          )}
-        </Panel>
-        <Panel title="Recovery, in its own lane">
+            {volumeHistory(data.sessions, "week").length > 0 && (
+              <Chart
+                bar
+                labels={volumeHistory(data.sessions, "week")
+                  .slice(-12)
+                  .map((r) => r.label)}
+                series={[
+                  {
+                    name: "Week A",
+                    color: "#2581ff",
+                    values: volumeHistory(data.sessions, "week")
+                      .slice(-12)
+                      .map((r) => r.a),
+                  },
+                  {
+                    name: "Week B",
+                    color: "#f17bb4",
+                    values: volumeHistory(data.sessions, "week")
+                      .slice(-12)
+                      .map((r) => r.b),
+                  },
+                ]}
+              />
+            )}
+          </Panel>
+        )}
+        <Panel
+          title="Recovery, in its own lane"
+          className={useABSplit ? "" : "span-full"}
+        >
           <p className="muted">
             Completed warm-ups and cool-downs support your training. Their time
             stays separate from volume, e1RM and records.
@@ -297,11 +322,48 @@ export function Analytics({
           </select>
         }
       >
+        <div className="progress-controls">
+          <label>
+            Display
+            <select
+              aria-label="Exercise progress scale"
+              value={scale}
+              onChange={(event) => {
+                const next = event.target.value as "kg" | "percent";
+                setScale(next);
+                if (next === "percent" && !progressMonth)
+                  setProgressMonth(dateKey().slice(0, 7));
+              }}
+            >
+              <option value="kg">Weight (kg)</option>
+              <option value="percent">Growth (%)</option>
+            </select>
+          </label>
+          <label>
+            Period
+            <select
+              aria-label="Exercise progress period"
+              value={progressMonth}
+              onChange={(event) => setProgressMonth(event.target.value)}
+            >
+              {scale === "kg" && <option value="">All history</option>}
+              {months.map((month) => (
+                <option key={month} value={month}>
+                  {parseDate(`${month}-01`).toLocaleDateString(undefined, {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <div className="exercise-chips">
           {exerciseOptions.map((e) => (
             <button
               key={e.id}
               className={`chip ${selected.includes(e.id) ? "selected" : ""}`}
+              aria-pressed={selected.includes(e.id)}
               onClick={() =>
                 setSelected((old) =>
                   old.includes(e.id)
@@ -317,6 +379,8 @@ export function Analytics({
         {dates.length ? (
           <>
             <Chart
+              connectGaps
+              unit={scale === "percent" ? "%" : "kg"}
               labels={dates.map(shortDate)}
               series={histories.map((h, i) => ({
                 name: h.name,
@@ -332,7 +396,7 @@ export function Analytics({
                   <tr>
                     <th>Date</th>
                     {histories.map((h) => (
-                      <th key={h.name}>{h.name}</th>
+                      <th key={h.id}>{h.name}</th>
                     ))}
                   </tr>
                 </thead>
@@ -341,9 +405,11 @@ export function Analytics({
                     <tr key={date}>
                       <td>{shortDate(date)}</td>
                       {histories.map((h) => (
-                        <td key={h.name}>
+                        <td key={h.id}>
                           {h.rows.find((r) => r.date === date)
-                            ? `${number(h.rows.find((r) => r.date === date)!.value, 1)} kg`
+                            ? scale === "percent"
+                              ? pct(h.rows.find((r) => r.date === date)!.value)
+                              : `${number(h.rows.find((r) => r.date === date)!.value, 1)} kg`
                             : "—"}
                         </td>
                       ))}
@@ -363,6 +429,33 @@ export function Analytics({
             detail="Select one or more exercises to compare completed performance."
           />
         )}
+        {scale === "percent" && (
+          <div className="progress-baselines">
+            <p className="muted">
+              0% is each exercise’s first completed{" "}
+              {metric === "weight" ? "top weight" : "estimated 1RM"} in the
+              selected month.
+            </p>
+            {histories
+              .filter((history) => history.baseline)
+              .map((history) => (
+                <span key={history.id}>
+                  <i
+                    style={{
+                      background:
+                        colors[selected.indexOf(history.id) % colors.length],
+                    }}
+                  />
+                  {history.name}: {number(history.baseline.value, 1)} kg on{" "}
+                  {shortDate(history.baseline.date)}
+                </span>
+              ))}
+          </div>
+        )}
+        <p className="footnote">
+          Lines connect recorded training days. An exercise with one recorded
+          day has one point; missing days are not treated as zero.
+        </p>
         <p className="footnote">
           Epley estimate: weight × (1 + reps ÷ 30). Bodyweight movements need a
           entered lifting weight to produce a weight-based estimate.

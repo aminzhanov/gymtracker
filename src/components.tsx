@@ -9,7 +9,27 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { Session, WorkoutExercise, LiftSet } from "./types";
-import { number, volume, doneSets, shortDate, lastPerformance } from "./model";
+import {
+  number,
+  volume,
+  doneSets,
+  shortDate,
+  lastPerformance,
+  chartLinePath,
+} from "./model";
+export function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(
+    () => window.matchMedia(query).matches,
+  );
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const update = () => setMatches(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, [query]);
+  return matches;
+}
 export function Modal({
   title,
   children,
@@ -106,9 +126,11 @@ export function WeekBadge({ week }: { week: string }) {
 export function SessionCard({
   session,
   onOpen,
+  showWeek = true,
 }: {
   session: Session;
   onOpen: (s: Session) => void;
+  showWeek?: boolean;
 }) {
   return (
     <button className="session-card" onClick={() => onOpen(session)}>
@@ -126,7 +148,7 @@ export function SessionCard({
             : "Planned"}
         </span>
       </span>
-      <WeekBadge week={session.week} />
+      {showWeek && <WeekBadge week={session.week} />}
       {session.status === "done" ? (
         <span className="tiny-done">
           <Check size={14} />
@@ -134,7 +156,21 @@ export function SessionCard({
       ) : (
         <ArrowRight size={17} />
       )}
+      <ExerciseNames exercises={session.exercises} />
     </button>
+  );
+}
+export function ExerciseNames({ exercises }: { exercises: WorkoutExercise[] }) {
+  return (
+    <span className="exercise-preview">
+      {exercises.length ? (
+        exercises.map((exercise) => (
+          <span key={exercise.id}>{exercise.name}</span>
+        ))
+      ) : (
+        <span className="muted">No exercises planned yet</span>
+      )}
+    </span>
   );
 }
 export function Counter({
@@ -182,6 +218,7 @@ export function Counter({
           if (e.key === "Enter") e.currentTarget.blur();
         }}
       />
+      <span className="counter-unit">{step === 1 ? "reps" : "kg"}</span>
       <button
         aria-label={`Increase ${label}`}
         onClick={() =>
@@ -302,12 +339,15 @@ export function Chart({
   bar = false,
   unit = "kg",
   labels,
+  connectGaps = false,
 }: {
   series: { name: string; color: string; values: (number | null)[] }[];
   bar?: boolean;
   unit?: string;
   labels: string[];
+  connectGaps?: boolean;
 }) {
+  const compact = useMediaQuery("(max-width: 640px)");
   const max = Math.max(
     1,
     ...series.flatMap((s) => s.values.filter((v): v is number => v !== null)),
@@ -320,8 +360,8 @@ export function Chart({
           s.values.filter((v): v is number => v !== null),
         ),
       );
-  const height = 180,
-    width = 700,
+  const height = compact ? 235 : 210,
+    width = compact ? 360 : 700,
     left = 48,
     right = 20,
     bottom = 30,
@@ -356,9 +396,10 @@ export function Chart({
               y={top + t * plotH + 4}
               textAnchor="end"
               fill="#868695"
-              fontSize="10"
+              fontSize={compact ? 12 : 11}
             >
-              {number(max - t * (max - min))}
+              {number(max - t * (max - min), unit === "%" ? 1 : 0)}
+              {unit === "%" ? "%" : ""}
             </text>
           </g>
         ))}
@@ -393,13 +434,17 @@ export function Chart({
           ) : (
             <g key={s.name}>
               <path
-                d={s.values
-                  .map((v, i) =>
-                    v === null
-                      ? ""
-                      : `${i === 0 || s.values[i - 1] === null ? "M" : "L"}${x(i)},${y(v)}`,
-                  )
-                  .join(" ")}
+                d={
+                  connectGaps
+                    ? chartLinePath(s.values, x, y)
+                    : s.values
+                        .map((v, i) =>
+                          v === null
+                            ? ""
+                            : `${i === 0 || s.values[i - 1] === null ? "M" : "L"}${x(i)},${y(v)}`,
+                        )
+                        .join(" ")
+                }
                 stroke={s.color}
                 strokeWidth="3"
                 fill="none"
@@ -421,13 +466,14 @@ export function Chart({
           (l, i) =>
             (i === 0 ||
               i === labels.length - 1 ||
-              i % Math.max(1, Math.ceil(labels.length / 6)) === 0) && (
+              i % Math.max(1, Math.ceil(labels.length / (compact ? 3 : 6))) ===
+                0) && (
               <text
                 key={i}
                 x={x(i)}
                 y={height - 8}
                 textAnchor="middle"
-                fontSize="10"
+                fontSize={compact ? 12 : 11}
                 fill="#868695"
               >
                 {l.length > 16 ? l.slice(0, 16) + "…" : l}
