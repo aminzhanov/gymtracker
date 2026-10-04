@@ -81,6 +81,12 @@ import { CoachMessageEditor } from "./CoachMessages";
 import { DEFAULT_MESSAGES } from "./messages";
 import { Analytics } from "./Analytics";
 import { Calendar } from "./Calendar";
+import {
+  monthLabel,
+  trainingGroups,
+  trainingMonths,
+  type TrainingScope,
+} from "./planning";
 type Page =
   "Dashboard" | "Training" | "Calendar" | "Analytics" | "People" | "Settings";
 const pages = [
@@ -1677,13 +1683,22 @@ function Training({
 }) {
   const [tab, setTab] = useState<"sessions" | "templates">("sessions");
   const [filter, setFilter] = useState("all");
-  const sessions = [...data.sessions]
-    .filter(
-      (s) =>
-        s.name.toLowerCase().includes(search.toLowerCase()) &&
-        (filter === "all" || s.status === filter),
-    )
-    .sort((a, b) => b.date.localeCompare(a.date));
+  const [scope, setScope] = useState<TrainingScope>(search ? "all" : "current");
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const currentMonth = dateKey().slice(0, 7);
+  const availableMonths = trainingMonths(data.sessions).filter(
+    (month) => scope !== "past" || month < currentMonth,
+  );
+  const monthFilter = availableMonths.includes(selectedMonth)
+    ? selectedMonth
+    : "all";
+  const groups = trainingGroups(
+    data.sessions,
+    scope,
+    monthFilter,
+    filter,
+    search,
+  );
   return (
     <>
       <div className="page-head">
@@ -1701,12 +1716,14 @@ function Training({
       <div className="training-toolbar">
         <div className="segmented">
           <button
+            aria-pressed={tab === "sessions"}
             className={tab === "sessions" ? "active" : ""}
             onClick={() => setTab("sessions")}
           >
             Sessions
           </button>
           <button
+            aria-pressed={tab === "templates"}
             className={tab === "templates" ? "active" : ""}
             onClick={() => setTab("templates")}
           >
@@ -1725,16 +1742,77 @@ function Training({
           </select>
         )}
       </div>
+      {tab === "sessions" && (
+        <div className="training-period-toolbar">
+          <div className="segmented" aria-label="Training history period">
+            {(
+              [
+                ["current", "This month"],
+                ["past", "Past months"],
+                ["all", "All history"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                aria-pressed={scope === value}
+                className={scope === value ? "active" : ""}
+                onClick={() => {
+                  setScope(value);
+                  setSelectedMonth("all");
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {scope !== "current" && (
+            <label className="training-month-filter">
+              Month
+              <select
+                aria-label="Training month filter"
+                value={monthFilter}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+              >
+                <option value="all">
+                  {scope === "past" ? "All past months" : "All months"}
+                </option>
+                {availableMonths.map((month) => (
+                  <option key={month} value={month}>
+                    {monthLabel(month)}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+      )}
       {tab === "sessions" ? (
-        sessions.length ? (
-          <div className="training-list">
-            {sessions.map((s) => (
-              <SessionCard
-                key={s.id}
-                session={s}
-                showWeek={data.settings.useABSplit}
-                onOpen={onOpen}
-              />
+        groups.length ? (
+          <div className="training-months">
+            {groups.map((group) => (
+              <section
+                key={group.month}
+                className="training-month-group"
+                aria-label={monthLabel(group.month)}
+              >
+                <div className="training-month-heading">
+                  <h2>{monthLabel(group.month)}</h2>
+                  <span>
+                    {group.sessions.length}{" "}
+                    {group.sessions.length === 1 ? "session" : "sessions"}
+                  </span>
+                </div>
+                <div className="training-list">
+                  {group.sessions.map((s) => (
+                    <SessionCard
+                      key={s.id}
+                      session={s}
+                      showWeek={data.settings.useABSplit}
+                      onOpen={onOpen}
+                    />
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
         ) : (
@@ -1743,12 +1821,16 @@ function Training({
               title={
                 search
                   ? "No matching sessions"
-                  : "Your next chapter starts here"
+                  : data.sessions.length
+                    ? "No sessions in this view"
+                    : "Your next chapter starts here"
               }
               detail={
                 search
-                  ? "Try another session name."
-                  : "Create a session or load demo data from Settings."
+                  ? "Try another session name or switch the month or history period."
+                  : data.sessions.length
+                    ? "Choose another month, All history, or a different status filter. You can also plan a new session."
+                    : "Create a session or load demo data from Settings."
               }
               action={
                 <button className="button primary" onClick={onCreate}>

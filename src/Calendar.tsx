@@ -3,6 +3,7 @@ import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import type { AppData, Session } from "./types";
 import { Panel, ExerciseNames, useMediaQuery } from "./components";
 import { dateKey, parseDate, addDays, monday, shortDate } from "./model";
+import { CalendarVolume } from "./CalendarVolume";
 
 export function Calendar({
   data,
@@ -197,6 +198,7 @@ export function Calendar({
           reschedule on desktop. Use “Move to date” in the editor on mobile.
         </p>
       </Panel>
+      <CalendarVolume data={data} month={month} />
     </>
   );
 }

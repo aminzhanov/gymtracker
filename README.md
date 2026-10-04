@@ -146,6 +146,12 @@ Drag an exercise's grip in the session/template editor with a mouse or touch poi
 
 The shared modal focuses itself only on opening, so typing in invitation fields, exercise notes and technique-link fields retains input focus. Browser verification should include continuous typing, changing exercise order, saving/reopening notes and toggling the portrait player. Real Drive playback and touch gestures in an installed iPhone app require a physical-device check.
 
+### Calendar volume outlook and monthly training history
+
+Calendar alone includes a weekly volume outlook for its focused month (also in the mobile week view). Solid bars show checked lifting sets from completed sessions; lighter outlined stacks show all prescribed weight × reps in planned sessions. Marking a session done replaces its plan with completed volume. Sessions still marked planned remain entirely projected, including checked sets, so no volume is double counted. Warm-ups/cool-downs are excluded. Calendar weeks start Monday and clip to the month's boundaries. Program Week A/B colors follow each session's assigned week; disabling the split merges them. Bars/Line toggles to completed volume and a dashed combined projection. Weekly breakdown exposes exact values on touch devices and to assistive technology. No plans are generated for empty weeks.
+
+Training defaults to **This month**, with **Past months** and **All history** and a month selector for those broader views. Sessions group by dated month, newest first. Status and name search apply within the selected period. All history includes future scheduled months as well. These features use existing training data; no database migration is needed.
+
 ## Cloud saves and backups
 
 Cloud edits are queued and saved transactionally. Each selected athlete has a database revision. If another device or the coach changed that athlete's data, a stale save stops rather than silently overwriting newer data. Export unsaved local edits first, then reload saved data and reconcile. The app warns before navigating away while edits are pending or unsaved. It is online-first: offline cloud editing is not a supported sync workflow.
