@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import type { AppData, Session } from "./types";
 import { Panel, ExerciseNames, useMediaQuery } from "./components";
 import { dateKey, parseDate, addDays, monday, shortDate } from "./model";
@@ -10,11 +10,13 @@ export function Calendar({
   onOpen,
   onCreate,
   onMove,
+  onDuplicate,
 }: {
   data: AppData;
   onOpen: (session: Session) => void;
   onCreate: (date: string) => void;
   onMove: (id: string, date: string) => void;
+  onDuplicate: (s: Session) => void;
 }) {
   const compact = useMediaQuery("(max-width: 850px)");
   const [view, setView] = useState<"month" | "week" | null>(null);
@@ -154,28 +156,37 @@ export function Calendar({
                   </div>
                   <div className="calendar-workouts">
                     {sessions.map((session) => (
-                      <button
-                        key={session.id}
-                        draggable
-                        className={`calendar-session ${showWeek ? `week-${session.week.toLowerCase()}` : "tint-blue"}`}
-                        onDragStart={(event) =>
-                          event.dataTransfer.setData(
-                            "text/liftlog-session",
-                            session.id,
-                          )
-                        }
-                        onClick={() => onOpen(session)}
-                      >
-                        <span className="calendar-session-title">
-                          <span aria-hidden="true">{session.icon}</span>
-                          <strong>{session.name}</strong>
-                        </span>
-                        <small>
-                          {showWeek && `Week ${session.week} · `}
-                          {session.status === "done" ? "✓ Done" : "Planned"}
-                        </small>
-                        <ExerciseNames exercises={session.exercises} />
-                      </button>
+                      <div className="calendar-session-wrap" key={session.id}>
+                        <button
+                          draggable
+                          className={`calendar-session ${showWeek ? `week-${session.week.toLowerCase()}` : "tint-blue"}`}
+                          onDragStart={(event) =>
+                            event.dataTransfer.setData(
+                              "text/liftlog-session",
+                              session.id,
+                            )
+                          }
+                          onClick={() => onOpen(session)}
+                        >
+                          <span className="calendar-session-title">
+                            <span aria-hidden="true">{session.icon}</span>
+                            <strong>{session.name}</strong>
+                          </span>
+                          <small>
+                            {showWeek && `Week ${session.week} · `}
+                            {session.status === "done" ? "✓ Done" : "Planned"}
+                          </small>
+                          <ExerciseNames exercises={session.exercises} />
+                        </button>
+                        <button
+                          className="duplicate-session-button"
+                          aria-label={`Duplicate ${session.name} on ${session.date}`}
+                          title="Duplicate session"
+                          onClick={() => onDuplicate(session)}
+                        >
+                          <Copy size={16} />
+                        </button>
+                      </div>
                     ))}
                     {activeView === "week" && !sessions.length && (
                       <span className="calendar-rest">No session planned</span>

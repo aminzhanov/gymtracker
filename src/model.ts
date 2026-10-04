@@ -206,6 +206,22 @@ export function cloneExercises(
     sets: e.sets.map((s) => ({ ...s, id: id(), done: false })),
   }));
 }
+export function duplicateSession(
+  data: AppData,
+  source: Session,
+  date: string,
+  week: Week = source.week,
+): Session {
+  const copy = newSession(data, date, {
+    id: source.id,
+    name: source.name,
+    icon: source.icon,
+    week,
+    notes: source.notes,
+    exercises: source.exercises,
+  });
+  return { ...copy, week };
+}
 export function newExercise(
   exerciseId: string,
   name: string,

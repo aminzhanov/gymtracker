@@ -1,3 +1,5 @@
+import { DashboardOverview } from "./DashboardOverview";
+import { DuplicateSession } from "./DuplicateSession";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { assignTrainingWeeks } from "./trainingWeeks";
 import { CompletedWorkout, CompletionToast } from "./CompletedWorkout";
@@ -233,6 +235,7 @@ export default function App() {
   const messageOwner = useRef(owner);
   messageOwner.current = owner;
   const [page, setPage] = useState<Page>("Dashboard");
+  const [duplicate, setDuplicate] = useState<Session | null>(null);
   const [editor, setEditor] = useState<Session | null>(null);
   const [templateEditor, setTemplateEditor] = useState<Template | null>(null);
   const [createDate, setCreateDate] = useState<string | null>(null);
@@ -584,6 +587,7 @@ export default function App() {
       return;
     }
     setOwner(next);
+    setDuplicate(null);
     setEditor(null);
     setPage("Dashboard");
   };
@@ -614,19 +618,8 @@ export default function App() {
     };
   }, [page, profiles, demo, owner]);
   const today = dateKey();
-  const todaySessions = data?.sessions.filter((s) => s.date === today) || [];
   const thisMonday = monday(today);
-  const prevMonday = addDays(thisMonday, -7);
-  const thisWeek =
-    data?.sessions.filter(
-      (s) => s.date >= thisMonday && s.date <= addDays(thisMonday, 6),
-    ) || [];
-  const previous =
-    data?.sessions.filter((s) => s.date >= prevMonday && s.date < thisMonday) ||
-    [];
-  const currentVolume = thisWeek.reduce((n, s) => n + volume(s), 0);
-  const previousVolume = previous.reduce((n, s) => n + volume(s), 0);
-  const percent = changePercent(currentVolume, previousVolume);
+  const todaySessions = data?.sessions.filter((s) => s.date === today) || [];
   const upcoming =
     data?.sessions
       .filter((s) => s.status === "planned" && s.date > today)
@@ -635,11 +628,6 @@ export default function App() {
     data?.sessions
       .filter((s) => s.status === "done")
       .sort((a, b) => b.date.localeCompare(a.date)) || [];
-  const newRecords = data
-    ? records(data.sessions.filter((s) => s.date <= today)).events.filter((e) =>
-        e.date.startsWith(today.slice(0, 7)),
-      ).length
-    : 0;
   if (!authReady) return <div className="loading">Opening LiftLog…</div>;
   if (!demo && !authId) return <Auth onDemo={() => setDemo(true)} />;
   return (
@@ -813,120 +801,7 @@ export default function App() {
             <>
               {page === "Dashboard" && (
                 <>
-                  <section className="welcome">
-                    <div>
-                      <span className="eyebrow">
-                        LET'S MAKE TODAY A GOOD ONE
-                      </span>
-                      <h1>
-                        Hey {data.settings.name} <span>💪</span>
-                      </h1>
-                      <p className="personal-message">{messages.dashboard}</p>
-                      <div className="flex">
-                        {data.settings.useABSplit && (
-                          <WeekBadge week={currentWeek(data)} />
-                        )}
-                        <span className="welcome-date">
-                          {parseDate(today).toLocaleDateString(undefined, {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                    <DumbbellArt />
-                    <span className="welcome-stamp">
-                      LET'S
-                      <br />
-                      LIFT! ↗
-                    </span>
-                  </section>
-                  <Panel
-                    title="Your stats"
-                    action={
-                      <span className="muted">This week · Monday start</span>
-                    }
-                  >
-                    <div className="stats-grid">
-                      <div className="stat tint-mint">
-                        <Home size={22} />
-                        <strong>
-                          {thisWeek.filter((s) => s.status === "done").length}
-                        </strong>
-                        <span>Sessions this week</span>
-                      </div>
-                      <div className="stat tint-pink">
-                        <Dumbbell size={22} />
-                        <strong>
-                          {thisWeek.reduce((n, s) => n + doneSets(s).length, 0)}
-                        </strong>
-                        <span>Sets completed</span>
-                      </div>
-                      <div className="stat tint-blue">
-                        <span className="stat-doodle">▰</span>
-                        <strong>
-                          {number(currentVolume)}
-                          <small> kg</small>
-                        </strong>
-                        <span>
-                          Training volume{" "}
-                          <InfoButton title="Training volume">
-                            Completed strength sets this week: weight × reps.
-                            Warm-ups and cool-downs stay separate.
-                          </InfoButton>
-                        </span>
-                      </div>
-                      <div className="stat tint-mint">
-                        <ArrowUpRight size={22} />
-                        <strong>
-                          {percent === null
-                            ? "—"
-                            : `${percent >= 0 ? "+" : ""}${number(percent, 1)}%`}
-                        </strong>
-                        <span>
-                          {percent === null
-                            ? "No prior-week volume"
-                            : "vs previous week"}
-                        </span>
-                      </div>
-                      <div className="stat tint-yellow">
-                        <span className="stat-doodle">🏆</span>
-                        <strong>{newRecords}</strong>
-                        <span>
-                          Records this month{" "}
-                          <InfoButton title="Records this month">
-                            New estimated 1RM records achieved this month, based
-                            on completed lifting sets.
-                          </InfoButton>
-                        </span>
-                      </div>
-                    </div>
-                    <div className="alltime">
-                      <span>
-                        <strong>
-                          {
-                            data.sessions.filter((s) => s.status === "done")
-                              .length
-                          }
-                        </strong>{" "}
-                        sessions all time
-                      </span>
-                      <span>
-                        <strong>
-                          {data.sessions.reduce(
-                            (n, s) => n + doneSets(s).length,
-                            0,
-                          )}
-                        </strong>{" "}
-                        completed sets all time
-                      </span>
-                      <span>
-                        Keep showing up. Progress adds up <span>✦</span>
-                      </span>
-                    </div>
-                  </Panel>
+                  <DashboardOverview data={data} message={messages.dashboard} />
                   <div className="dashboard-grid">
                     <Panel
                       title="Today's workout"
@@ -1121,6 +996,7 @@ export default function App() {
                   search={search}
                   onChange={change}
                   onOpen={setEditor}
+                  onDuplicate={setDuplicate}
                   onCreate={() => setCreateDate(today)}
                   onTemplateEdit={setTemplateEditor}
                   onUseTemplate={(t) => setEditor(newSession(data, today, t))}
@@ -1140,6 +1016,7 @@ export default function App() {
               )}
               {page === "Calendar" && (
                 <Calendar
+                  onDuplicate={setDuplicate}
                   data={data}
                   onOpen={setEditor}
                   onCreate={setCreateDate}
@@ -1150,7 +1027,12 @@ export default function App() {
                 />
               )}
               {page === "Analytics" && (
-                <Analytics data={data} onChange={change} />
+                <Analytics
+                  key={`${demo ? "demo" : authId}:${owner}`}
+                  preferenceKey={`${demo ? "demo" : authId}:${owner}`}
+                  data={data}
+                  onChange={change}
+                />
               )}
               {page === "People" && coach && (
                 <>
@@ -1641,6 +1523,19 @@ export default function App() {
           onCustom={addCustom}
         />
       )}
+      {duplicate && data && (
+        <DuplicateSession
+          key={duplicate.id}
+          source={duplicate}
+          data={data}
+          onClose={() => setDuplicate(null)}
+          onCreate={(copy) => {
+            saveSession(copy);
+            setDuplicate(null);
+            setEditor(copy);
+          }}
+        />
+      )}
       {createDate && data && (
         <Modal title="Plan a session" onClose={() => setCreateDate(null)}>
           <label>
@@ -1835,6 +1730,7 @@ function Training({
   search,
   onChange,
   onOpen,
+  onDuplicate,
   onCreate,
   onTemplateEdit,
   onUseTemplate,
@@ -1844,6 +1740,7 @@ function Training({
   search: string;
   onChange: (d: AppData) => void;
   onOpen: (s: Session) => void;
+  onDuplicate: (s: Session) => void;
   onCreate: () => void;
   onTemplateEdit: (t: Template) => void;
   onUseTemplate: (t: Template) => void;
@@ -1986,6 +1883,7 @@ function Training({
                       session={s}
                       showWeek={data.settings.useABSplit}
                       onOpen={onOpen}
+                      onDuplicate={onDuplicate}
                     />
                   ))}
                 </div>

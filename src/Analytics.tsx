@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { volumeRows, trainingAverages } from "./analyticsVolume";
+import { readExerciseSelection } from "./chartDomain";
+import { VolumePlot } from "./VolumePlot";
+import { useEffect, useState } from "react";
 import { Plus, TrendingUp, ChevronDown, Trash2 } from "lucide-react";
 import type { AppData, Week } from "./types";
 import { Chart, Panel, Empty, Modal, InfoButton } from "./components";
 import {
   filterSessions,
-  volumeHistory,
-  weekComparison,
   records,
   exerciseProgress,
   parseDate,
@@ -23,13 +24,26 @@ const pct = (n: number | null) =>
 export function Analytics({
   data,
   onChange,
+  preferenceKey,
 }: {
+  preferenceKey: string;
   data: AppData;
   onChange: (d: AppData) => void;
 }) {
   const [week, setWeek] = useState<"All" | Week>("All");
   const [period, setPeriod] = useState<"session" | "week" | "month">("week");
-  const [selected, setSelected] = useState<string[]>(["default-0"]);
+  const storageKey = `liftlog:progress-exercises:${preferenceKey}`;
+  const [selected, setSelected] = useState<string[]>(() =>
+    readExerciseSelection(localStorage, storageKey),
+  );
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(selected));
+    } catch {
+      /* Optional browser preference. */
+    }
+  }, [selected, storageKey]);
+  const [volumeView, setVolumeView] = useState<"bars" | "line">("bars");
   const [metric, setMetric] = useState<"e1rm" | "weight">("e1rm");
   const [scale, setScale] = useState<"kg" | "percent">("kg");
   const [progressMonth, setProgressMonth] = useState("");
@@ -40,8 +54,8 @@ export function Analytics({
   const [bodyDate, setBodyDate] = useState(dateKey());
   const [bodyValue, setBodyValue] = useState("");
   const sessions = filterSessions(data, effectiveWeek);
-  const rows = volumeHistory(sessions, period);
-  const comp = weekComparison(data.sessions);
+  const rows = volumeRows(sessions, period, useABSplit);
+  const comp = trainingAverages(data.sessions);
   const prs = records(sessions);
   const allRecords = records(data.sessions);
   const bw = bodyweightHistory(data.bodyweight);
@@ -73,7 +87,7 @@ export function Analytics({
   const dates = [
     ...new Set(histories.flatMap((h) => h.rows.map((r) => r.date))),
   ].sort();
-  const latest = rows.at(-1);
+  const latest = rows.filter((row) => row.done > 0).at(-1);
   const recovery = recoveryHistory(sessions);
   const recoveryChecks = recovery
     .flatMap((row) => [row.warmup, row.cooldown])
@@ -149,13 +163,17 @@ export function Analytics({
           <span className="metric-label">
             Latest {period} change{" "}
             <InfoButton title="Latest training change">
-              Percentage change from the previous period. A previous value of
-              zero has no percentage baseline. The period is chosen in Training
-              volume.
+              Completed volume compared with the previous completed period. In
+              A/B week view, A compares with A and B with B; unfinished training
+              weeks never become the next baseline. Planned sets are excluded.
             </InfoButton>
           </span>
           <strong>{pct(latest?.change ?? null)}</strong>
-          <p>{latest?.label || "Log a completed set to begin"}</p>
+          <p>
+            {latest
+              ? `${latest.label}${latest.baseline ? ` vs ${latest.baseline}` : ""}`
+              : "Log a completed set to begin"}
+          </p>
         </div>
         <div className="metric-card tint-yellow">
           <span className="metric-label">
@@ -177,8 +195,14 @@ export function Analytics({
         title="Training volume"
         info={
           <p>
-            Completed strength sets only. Weeks start on Monday. A change from
-            zero has no percentage baseline.
+            Solid bars show checked strength sets. Lighter bars show remaining
+            planned sets; the dashed line shows the combined projection. Planned
+            sets affect only this chart. A/B week view uses assigned training
+            groups across weekdays and month boundaries. Changes and spikes use
+            actual volume, comparing A with the previous completed A group and B
+            with the previous completed B group. An unfinished group can show a
+            provisional change. Averages include only fully completed training
+            groups, always showing both A and B averages.
             {rows.length > 24
               ? " Chart shows the latest 24 periods; the table contains every period."
               : ""}
@@ -198,25 +222,77 @@ export function Analytics({
           </div>
         }
       >
+        <div className="volume-controls">
+          <div className="segmented" aria-label="Analytics volume chart view">
+            <button
+              className={volumeView === "bars" ? "active" : ""}
+              aria-pressed={volumeView === "bars"}
+              onClick={() => setVolumeView("bars")}
+            >
+              Bars
+            </button>
+            <button
+              className={volumeView === "line" ? "active" : ""}
+              aria-pressed={volumeView === "line"}
+              onClick={() => setVolumeView("line")}
+            >
+              Line
+            </button>
+          </div>
+          {period === "week" && useABSplit && (
+            <div className="volume-week-averages">
+              <span>
+                Week A avg{" "}
+                <strong>
+                  {comp.a === null ? "—" : `${number(comp.a)} kg`}
+                </strong>
+              </span>
+              <span>
+                Week B avg{" "}
+                <strong>
+                  {comp.b === null ? "—" : `${number(comp.b)} kg`}
+                </strong>
+              </span>
+              {comp.difference !== null && (
+                <span>
+                  Week A <strong>{pct(comp.difference)}</strong> compared with
+                  Week B
+                </span>
+              )}
+            </div>
+          )}
+        </div>
         {rows.length ? (
           <>
-            <Chart
-              bar
-              labels={rows.slice(-24).map((r) => r.label)}
-              series={[
-                {
-                  name: "Completed volume",
-                  color: "#2581ff",
-                  values: rows.slice(-24).map((r) => r.value),
-                },
-              ]}
+            <VolumePlot
+              rows={rows.slice(-24)}
+              view={volumeView}
+              split={useABSplit}
+              training={period === "week" && useABSplit}
+              title="Training volume"
+              range={(row) =>
+                period === "week" && useABSplit
+                  ? `${shortDate(row.from)}–${shortDate(row.to)}`
+                  : period === "session"
+                    ? shortDate(row.from)
+                    : row.label
+              }
+              caption={
+                period === "week"
+                  ? useABSplit
+                    ? "Assigned training weeks · kg"
+                    : "Monday–Sunday weeks · kg"
+                  : `${period} volume · kg`
+              }
             />
             <div className="table-scroll">
               <table>
                 <thead>
                   <tr>
                     <th>Period</th>
-                    <th>Volume</th>
+                    <th>Completed</th>
+                    <th>Planned</th>
+                    <th>Projection</th>
                     <th>Change</th>
                     <th>Workload</th>
                   </tr>
@@ -225,8 +301,18 @@ export function Analytics({
                   {[...rows].reverse().map((r) => (
                     <tr key={r.key}>
                       <td>{r.label}</td>
-                      <td>{number(r.value)} kg</td>
-                      <td>{pct(r.change)}</td>
+                      <td>{number(r.done)} kg</td>
+                      <td>{number(r.planned)} kg</td>
+                      <td>{number(r.total)} kg</td>
+                      <td>
+                        {pct(r.change)}
+                        {r.done > 0 &&
+                          !r.closed &&
+                          period === "week" &&
+                          useABSplit && (
+                            <small className="muted"> · In progress</small>
+                          )}
+                      </td>
                       <td>
                         {period === "week" &&
                         r.change !== null &&
@@ -250,70 +336,9 @@ export function Analytics({
         )}
       </Panel>
       <div className="two-col">
-        {useABSplit && (
-          <Panel
-            title="Week A vs Week B"
-            info={
-              <p>
-                Average calendar-week volume with completed lifting sets in each
-                program. This comparison always shows both weeks.
-              </p>
-            }
-          >
-            <div className="comparison">
-              <div>
-                <span className="badge week-a">Week A</span>
-                <strong>
-                  {comp.a === null ? "—" : number(comp.a)}
-                  <small> kg / week</small>
-                </strong>
-              </div>
-              <div>
-                <span className="badge week-b">Week B</span>
-                <strong>
-                  {comp.b === null ? "—" : number(comp.b)}
-                  <small> kg / week</small>
-                </strong>
-              </div>
-            </div>
-            {comp.difference === null ? (
-              <p className="muted">
-                Complete workouts in both weeks to compare your program.
-              </p>
-            ) : (
-              <p className="positive">
-                Week A {pct(comp.difference)} compared with Week B
-              </p>
-            )}
-            {volumeHistory(data.sessions, "week").length > 0 && (
-              <Chart
-                bar
-                labels={volumeHistory(data.sessions, "week")
-                  .slice(-12)
-                  .map((r) => r.label)}
-                series={[
-                  {
-                    name: "Week A",
-                    color: "#2581ff",
-                    values: volumeHistory(data.sessions, "week")
-                      .slice(-12)
-                      .map((r) => r.a),
-                  },
-                  {
-                    name: "Week B",
-                    color: "#f17bb4",
-                    values: volumeHistory(data.sessions, "week")
-                      .slice(-12)
-                      .map((r) => r.b),
-                  },
-                ]}
-              />
-            )}
-          </Panel>
-        )}
         <Panel
           title="Recovery checklist"
-          className={useABSplit ? "" : "span-full"}
+          className="span-full"
           info={
             <>
               <p>
@@ -591,6 +616,8 @@ export function Analytics({
               </span>
             </div>
             <Chart
+              zeroBaseline={false}
+              axisDecimals={1}
               labels={bw.map((e) => shortDate(e.date))}
               series={[
                 {

@@ -1,3 +1,4 @@
+import { bodyweightDomain } from "./chartDomain";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -10,6 +11,7 @@ import {
   Sparkles,
   Info,
   CalendarDays,
+  Copy,
 } from "lucide-react";
 import type { Session, WorkoutExercise, LiftSet } from "./types";
 import {
@@ -187,12 +189,14 @@ export function SessionCard({
   session,
   onOpen,
   showWeek = true,
+  onDuplicate,
 }: {
+  onDuplicate?: (s: Session) => void;
   session: Session;
   onOpen: (s: Session) => void;
   showWeek?: boolean;
 }) {
-  return (
+  const card = (
     <button className="session-card" onClick={() => onOpen(session)}>
       <span
         className={`session-icon tint-${session.week === "A" ? "yellow" : "pink"}`}
@@ -218,6 +222,21 @@ export function SessionCard({
       )}
       <ExerciseNames exercises={session.exercises} />
     </button>
+  );
+  return onDuplicate ? (
+    <div className="session-card-wrap">
+      {card}
+      <button
+        className="duplicate-session-button"
+        aria-label={`Duplicate ${session.name}`}
+        title="Duplicate session"
+        onClick={() => onDuplicate(session)}
+      >
+        <Copy size={18} />
+      </button>
+    </div>
+  ) : (
+    card
   );
 }
 export function ExerciseNames({ exercises }: { exercises: WorkoutExercise[] }) {
@@ -400,26 +419,25 @@ export function Chart({
   unit = "kg",
   labels,
   connectGaps = false,
+  zeroBaseline = true,
+  axisDecimals,
 }: {
   series: { name: string; color: string; values: (number | null)[] }[];
   bar?: boolean;
   unit?: string;
   labels: string[];
   connectGaps?: boolean;
+  zeroBaseline?: boolean;
+  axisDecimals?: number;
 }) {
   const compact = useMediaQuery("(max-width: 640px)");
-  const max = Math.max(
-    1,
-    ...series.flatMap((s) => s.values.filter((v): v is number => v !== null)),
+  const values = series.flatMap((s) =>
+    s.values.filter((v): v is number => v !== null),
   );
-  const min = bar
-    ? 0
-    : Math.min(
-        0,
-        ...series.flatMap((s) =>
-          s.values.filter((v): v is number => v !== null),
-        ),
-      );
+  const [min, max] =
+    zeroBaseline || bar
+      ? [bar ? 0 : Math.min(0, ...values), Math.max(1, ...values)]
+      : bodyweightDomain(values);
   const height = compact ? 235 : 210,
     width = compact ? 360 : 700,
     left = 48,
@@ -458,7 +476,10 @@ export function Chart({
               fill="#868695"
               fontSize={compact ? 12 : 11}
             >
-              {number(max - t * (max - min), unit === "%" ? 1 : 0)}
+              {number(
+                max - t * (max - min),
+                axisDecimals ?? (unit === "%" ? 1 : 0),
+              )}
               {unit === "%" ? "%" : ""}
             </text>
           </g>
