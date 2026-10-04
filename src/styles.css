@@ -3529,6 +3529,8 @@ summary {
 }
 
 .completed-workout {
+  scroll-margin-top: 88px;
+  scroll-margin-bottom: 100px;
   margin-top: 16px;
   padding: 22px;
   border: 1px solid #afd7c5;

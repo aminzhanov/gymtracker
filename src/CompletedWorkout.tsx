@@ -26,14 +26,23 @@ export function CompletedWorkout({
   onEdit: () => void;
 }) {
   const edit = useRef<HTMLButtonElement>(null);
+  const card = useRef<HTMLElement>(null);
   useEffect(() => {
     // The Complete button disappears with the editable workout. Keep keyboard
     // focus on the replacement action, without moving the user's scroll position.
-    if (celebrate && !document.querySelector('[role="dialog"]'))
+    if (celebrate && !document.querySelector('[role="dialog"]')) {
       edit.current?.focus({ preventScroll: true });
+      card.current?.scrollIntoView({
+        block: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
+      });
+    }
   }, [celebrate]);
   return (
     <article
+      ref={card}
       className={`completed-workout ${celebrate ? "just-completed" : ""}`}
       aria-label={`${session.name} · Workout complete`}
     >
