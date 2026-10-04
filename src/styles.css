@@ -1496,6 +1496,45 @@ summary {
   align-items: center;
   margin-bottom: 12px;
 }
+.exercise-collapse-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--blue);
+  font-size: 12px;
+  border-radius: 8px;
+}
+.exercise-collapse-toggle:hover {
+  background: #126cff0a;
+}
+.exercise-collapse-toggle .rotated {
+  transform: rotate(180deg);
+}
+.training-toolbar > .segmented {
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .training-toolbar > .segmented {
+    width: 100%;
+  }
+  .training-toolbar > .segmented button {
+    flex: 1;
+    font-size: 14px;
+    min-height: 44px;
+    padding: 8px;
+  }
+}
+.library-sharing-note {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #767184;
+  margin-bottom: 18px;
+}
 .exercise-symbol {
   display: flex;
   align-items: center;

@@ -79,7 +79,7 @@ export function SessionEditor({
   onTemplate?: (t: Template) => void;
   onClose: () => void;
   isTemplate?: boolean;
-  onCustom: (name: string) => string;
+  onCustom: (name: string) => Promise<string>;
   techniqueVideos: TechniqueVideos;
   techniqueReady: boolean;
   onSaveTechnique?: (exerciseId: string, url: string) => Promise<void>;
@@ -92,6 +92,8 @@ export function SessionEditor({
   const [kind, setKind] = useState<WorkoutExercise["kind"]>("strength");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [savedTemplate, setSavedTemplate] = useState(false);
+  const [customBusy, setCustomBusy] = useState(false);
+  const [customError, setCustomError] = useState("");
   const patch = (change: Partial<Session>) =>
     setS((old) => ({ ...old, ...change }));
   const changeExercise = (e: WorkoutExercise) =>
@@ -281,11 +283,30 @@ export function SessionEditor({
                 ) && (
                   <button
                     className="button secondary full"
-                    onClick={() => add(onCustom(search.trim()), search.trim())}
+                    disabled={customBusy}
+                    onClick={async () => {
+                      setCustomBusy(true);
+                      setCustomError("");
+                      const name = search.trim();
+                      try {
+                        add(await onCustom(name), name);
+                      } catch (error) {
+                        setCustomError((error as Error).message);
+                      } finally {
+                        setCustomBusy(false);
+                      }
+                    }}
                   >
-                    Create custom exercise: {search}
+                    {customBusy
+                      ? "Adding exercise…"
+                      : `Create custom exercise: ${search}`}
                   </button>
                 )}
+              {customError && (
+                <p role="alert" className="danger-text">
+                  {customError}
+                </p>
+              )}
             </div>
           )}
         </div>

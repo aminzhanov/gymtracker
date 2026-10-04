@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Home,
   Dumbbell,
@@ -39,7 +39,12 @@ import {
   loadLocal,
   loadLocalMessages,
   saveCoachMessages,
-  loadLocalTechniqueVideos,
+  loadSharedLibrary,
+  loadLocalSharedLibrary,
+  addSharedExercise,
+  archiveSharedExercise,
+  saveLocalSharedVideo,
+  setLocalLibraryArchive,
   saveTechniqueVideo,
   DEMO_PROFILES,
 } from "./backend";
@@ -81,6 +86,7 @@ import { CoachMessageEditor } from "./CoachMessages";
 import { DEFAULT_MESSAGES } from "./messages";
 import { Analytics } from "./Analytics";
 import { Calendar } from "./Calendar";
+import { exerciseNameKey } from "./library";
 import {
   monthLabel,
   trainingGroups,
@@ -211,6 +217,8 @@ export default function App() {
   const [appNameReady, setAppNameReady] = useState(!supabase);
   const [techniqueVideos, setTechniqueVideos] = useState<TechniqueVideos>({});
   const [techniqueVideosReady, setTechniqueVideosReady] = useState(!supabase);
+  const [sharedLibraryReady, setSharedLibraryReady] = useState(!supabase);
+  const libraryRequest = useRef(0);
   useEffect(() => {
     const name = (demo || authId) && data ? messages.appName : "LiftLog";
     document.title = `${name} · Train together`;
@@ -315,19 +323,25 @@ export default function App() {
     setAppNameReady(false);
     setTechniqueVideos({});
     setTechniqueVideosReady(false);
+    setSharedLibraryReady(false);
+    libraryRequest.current++;
     dataRef.current = null;
     blocked.current = false;
     setSaveState("saved");
     const p = profiles.find((x) => x.id === owner);
     const load = demo
       ? Promise.resolve().then(() => ({
-          data: loadLocal(owner, p?.name || "Athlete"),
+          data: {
+            ...loadLocal(owner, p?.name || "Athlete"),
+            exercises: loadLocalSharedLibrary(owner).exercises,
+          },
+          sharedLibraryReady: true,
           revision: 0,
           programPreferenceReady: true,
           messages: loadLocalMessages(owner),
           messagesReady: true,
           appNameReady: true,
-          techniqueVideos: loadLocalTechniqueVideos(owner),
+          techniqueVideos: loadLocalSharedLibrary(owner).techniqueVideos,
           techniqueVideosReady: true,
         }))
       : loadCloud(owner);
@@ -341,6 +355,7 @@ export default function App() {
         setAppNameReady(result.appNameReady);
         setTechniqueVideos(result.techniqueVideos);
         setTechniqueVideosReady(result.techniqueVideosReady);
+        setSharedLibraryReady(result.sharedLibraryReady);
         dataRef.current = result.data;
         setData(result.data);
       })
@@ -367,18 +382,76 @@ export default function App() {
   const me = demo ? DEMO_PROFILES[0] : profiles.find((p) => p.id === authId);
   const viewing = profiles.find((p) => p.id === owner);
   const coach = me?.role === "coach";
+  const refreshLibrary = async (target = owner) => {
+    const request = ++libraryRequest.current;
+    const library = demo
+      ? loadLocalSharedLibrary(target)
+      : await loadSharedLibrary(target);
+    if (
+      library &&
+      messageOwner.current === target &&
+      request === libraryRequest.current &&
+      dataRef.current &&
+      !pending.current &&
+      !blocked.current
+    ) {
+      const current = dataRef.current;
+      if (
+        JSON.stringify(current.exercises) !== JSON.stringify(library.exercises)
+      ) {
+        const next = { ...current, exercises: library.exercises };
+        dataRef.current = next;
+        setData(next);
+      }
+      setTechniqueVideos((old) =>
+        JSON.stringify(old) === JSON.stringify(library.techniqueVideos)
+          ? old
+          : library.techniqueVideos,
+      );
+    }
+    return library;
+  };
+  useEffect(() => {
+    if (!sharedLibraryReady) return;
+    let active = true;
+    const refresh = () => {
+      if (
+        !active ||
+        document.visibilityState === "hidden" ||
+        pending.current ||
+        blocked.current
+      )
+        return;
+      void refreshLibrary(owner).catch((error) => {
+        if (active)
+          setError(
+            `Could not refresh the shared exercise library: ${error.message}`,
+          );
+      });
+    };
+    const timer = window.setInterval(refresh, 15000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+      libraryRequest.current++;
+    };
+  }, [owner, demo, sharedLibraryReady]);
   const saveTechnique = async (exerciseId: string, url: string) => {
     if (!coach || !techniqueVideosReady)
       throw new Error("Coach access required");
-    if (demo) {
-      const next = { ...loadLocalTechniqueVideos(owner) };
-      if (url) next[exerciseId] = url;
-      else delete next[exerciseId];
-      localStorage.setItem(
-        `liftlog-technique-videos-${owner}`,
-        JSON.stringify(next),
-      );
-    } else await saveTechniqueVideo(owner, exerciseId, url);
+    await queue.current;
+    if (blocked.current)
+      throw new Error("Finish syncing training changes before saving a video.");
+    if (demo) saveLocalSharedVideo(owner, exerciseId, url);
+    else await saveTechniqueVideo(owner, exerciseId, url);
+    if (sharedLibraryReady) {
+      await refreshLibrary(owner);
+      return;
+    }
     if (messageOwner.current === owner)
       setTechniqueVideos((old) => {
         const next = { ...old };
@@ -426,21 +499,55 @@ export default function App() {
       })
       .finally(() => {
         pending.current--;
-        if (!pending.current && !blocked.current) setSaveState("saved");
+        if (!pending.current && !blocked.current) {
+          setSaveState("saved");
+          if (sharedLibraryReady)
+            void refreshLibrary(target).catch((error) =>
+              setError(
+                `Could not refresh the shared exercise library: ${error.message}`,
+              ),
+            );
+        }
       });
   };
   const saveSession = (s: Session) => {
     const d = dataRef.current!;
     change({ ...d, sessions: [...d.sessions.filter((x) => x.id !== s.id), s] });
   };
-  const addCustom = (name: string) => {
+  const addCustom = async (name: string) => {
+    const target = owner;
     const d = dataRef.current!;
+    const existing = d.exercises.find(
+      (exercise) => exerciseNameKey(exercise.name) === exerciseNameKey(name),
+    );
+    if (existing) return existing.id;
     const eid = id();
+    if (!demo && sharedLibraryReady) {
+      const result = await addSharedExercise(target, name, eid);
+      await refreshLibrary(target);
+      return result;
+    }
+    if (demo) setLocalLibraryArchive(name, false);
     change({
       ...d,
       exercises: [...d.exercises, { id: eid, name, custom: true }],
     });
     return eid;
+  };
+  const removeLibraryExercise = async (exercise: Exercise) => {
+    if (sharedLibraryReady) {
+      if (!coach)
+        throw new Error("Only your coach can remove shared exercises.");
+      if (demo) setLocalLibraryArchive(exercise.name, true);
+      else await archiveSharedExercise(owner, exercise.id);
+      await refreshLibrary(owner);
+    } else {
+      const d = dataRef.current!;
+      change({
+        ...d,
+        exercises: d.exercises.filter((old) => old.id !== exercise.id),
+      });
+    }
   };
   const switchOwner = (next: string) => {
     if (pending.current || blocked.current) {
@@ -965,6 +1072,7 @@ export default function App() {
               )}
               {page === "Training" && (
                 <Training
+                  key={owner}
                   data={data}
                   search={search}
                   onChange={change}
@@ -972,6 +1080,18 @@ export default function App() {
                   onCreate={() => setCreateDate(today)}
                   onTemplateEdit={setTemplateEditor}
                   onUseTemplate={(t) => setEditor(newSession(data, today, t))}
+                  library={
+                    <ExerciseLibrary
+                      data={data}
+                      onAdd={addCustom}
+                      onRemove={removeLibraryExercise}
+                      sharedReady={sharedLibraryReady}
+                      canRemove={coach || !sharedLibraryReady}
+                      techniqueVideos={techniqueVideos}
+                      techniqueReady={techniqueVideosReady}
+                      onSaveTechnique={coach ? saveTechnique : undefined}
+                    />
+                  }
                 />
               )}
               {page === "Calendar" && (
@@ -1100,9 +1220,7 @@ export default function App() {
                       <h1>
                         Make it yours <span>✦</span>
                       </h1>
-                      <p>
-                        Training preferences, backups and your exercise library.
-                      </p>
+                      <p>Training preferences and backups.</p>
                     </div>
                   </div>
                   {coach && (
@@ -1329,14 +1447,6 @@ export default function App() {
                       />
                     </Panel>
                   </div>
-                  <ExerciseLibrary
-                    key={owner}
-                    data={data}
-                    onChange={change}
-                    techniqueVideos={techniqueVideos}
-                    techniqueReady={techniqueVideosReady}
-                    onSaveTechnique={coach ? saveTechnique : undefined}
-                  />
                   <Panel title="Account">
                     <p>
                       {demo
@@ -1672,6 +1782,7 @@ function Training({
   onCreate,
   onTemplateEdit,
   onUseTemplate,
+  library,
 }: {
   data: AppData;
   search: string;
@@ -1680,8 +1791,11 @@ function Training({
   onCreate: () => void;
   onTemplateEdit: (t: Template) => void;
   onUseTemplate: (t: Template) => void;
+  library: ReactNode;
 }) {
-  const [tab, setTab] = useState<"sessions" | "templates">("sessions");
+  const [tab, setTab] = useState<"sessions" | "templates" | "library">(
+    "sessions",
+  );
   const [filter, setFilter] = useState("all");
   const [scope, setScope] = useState<TrainingScope>(search ? "all" : "current");
   const [selectedMonth, setSelectedMonth] = useState("all");
@@ -1728,6 +1842,13 @@ function Training({
             onClick={() => setTab("templates")}
           >
             Templates
+          </button>
+          <button
+            aria-pressed={tab === "library"}
+            className={tab === "library" ? "active" : ""}
+            onClick={() => setTab("library")}
+          >
+            Exercise library
           </button>
         </div>
         {tab === "sessions" && (
@@ -1840,6 +1961,8 @@ function Training({
             />
           </Panel>
         )
+      ) : tab === "library" ? (
+        library
       ) : (
         <>
           <div className="flex end">
@@ -1910,36 +2033,54 @@ function Training({
 }
 function ExerciseLibrary({
   data,
-  onChange,
+  onAdd,
+  onRemove,
+  sharedReady,
+  canRemove,
   techniqueVideos,
   techniqueReady,
   onSaveTechnique,
 }: {
   data: AppData;
-  onChange: (d: AppData) => void;
+  onAdd: (name: string) => Promise<string>;
+  onRemove: (exercise: Exercise) => Promise<void>;
+  sharedReady: boolean;
+  canRemove: boolean;
   techniqueVideos: TechniqueVideos;
   techniqueReady: boolean;
   onSaveTechnique?: (exerciseId: string, url: string) => Promise<void>;
 }) {
   const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState("");
+  const [failed, setFailed] = useState(false);
   const [videoExercise, setVideoExercise] = useState<Exercise | null>(null);
   return (
     <Panel title="Exercise library">
+      <p className="library-sharing-note">
+        {sharedReady
+          ? "Shared with your coach and their athletes. Everyone can add exercises; your coach manages videos and removes exercises."
+          : "Shared exercises will be available after your coach enables the library update. Your current library still works."}
+      </p>
       <form
         className="flex"
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
           const n = name.trim();
-          if (
-            !n ||
-            data.exercises.some((x) => x.name.toLowerCase() === n.toLowerCase())
-          )
-            return;
-          onChange({
-            ...data,
-            exercises: [...data.exercises, { id: id(), name: n, custom: true }],
-          });
-          setName("");
+          if (!n || busy) return;
+          setBusy(true);
+          setFeedback("");
+          setFailed(false);
+          try {
+            await onAdd(n);
+            setName("");
+            setFeedback("Exercise added to the library.");
+          } catch (error) {
+            setFailed(true);
+            setFeedback((error as Error).message);
+          } finally {
+            setBusy(false);
+          }
         }}
       >
         <input
@@ -1949,11 +2090,20 @@ function ExerciseLibrary({
           value={name}
           onChange={(e) => setName(e.target.value)}
           maxLength={100}
+          disabled={busy}
         />
-        <button className="button primary" disabled={!name.trim()}>
-          <Plus size={16} /> Add
+        <button className="button primary" disabled={!name.trim() || busy}>
+          <Plus size={16} /> {busy ? "Saving…" : "Add"}
         </button>
       </form>
+      {feedback && (
+        <p
+          role={failed ? "alert" : "status"}
+          className={failed ? "danger-text" : "positive"}
+        >
+          {feedback}
+        </p>
+      )}
       <div className="library-grid">
         {data.exercises.map((e) => (
           <div className="library-item" key={e.id}>
@@ -1972,28 +2122,40 @@ function ExerciseLibrary({
                   : "Watch technique"}
               </button>
             )}
-            {e.custom ? (
+            {e.custom && canRemove ? (
               <button
                 className="icon-button"
                 aria-label={`Delete custom exercise ${e.name}`}
-                onClick={() =>
-                  onChange({
-                    ...data,
-                    exercises: data.exercises.filter((x) => x.id !== e.id),
-                  })
-                }
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true);
+                  setFailed(false);
+                  setFeedback("");
+                  try {
+                    await onRemove(e);
+                    setFeedback(
+                      "Exercise removed. Logged history is preserved.",
+                    );
+                  } catch (error) {
+                    setFailed(true);
+                    setFeedback((error as Error).message);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
               >
                 <Trash2 size={15} />
               </button>
             ) : (
-              <small>Built-in</small>
+              <small>{e.custom ? "Shared" : "Built-in"}</small>
             )}
           </div>
         ))}
       </div>
       <p className="footnote">
-        Removing a custom exercise from the library preserves its logged
-        history.
+        Removing a custom exercise preserves its logged history.{" "}
+        {sharedReady &&
+          "It removes the entry for the coach’s group. Your coach can re-add the same name to restore it."}
       </p>
       {videoExercise && (
         <Modal

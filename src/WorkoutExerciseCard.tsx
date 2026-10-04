@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Check,
   ChevronDown,
@@ -49,6 +49,17 @@ export function WorkoutExerciseCard({
 }) {
   const [expanded, setExpanded] = useState(initiallyExpanded);
   const [notesOpen, setNotesOpen] = useState(false);
+  const overview = useRef<HTMLButtonElement>(null);
+  const wasExpanded = useRef(expanded);
+  useEffect(() => {
+    if (wasExpanded.current && !expanded) overview.current?.focus();
+    wasExpanded.current = expanded;
+  }, [expanded]);
+  const collapse = () => {
+    if (!canSave || !exercise.name.trim()) return;
+    onSave();
+    setExpanded(false);
+  };
   const completed =
     exercise.kind === "strength"
       ? exercise.sets.filter((set) => set.done).length
@@ -57,12 +68,23 @@ export function WorkoutExerciseCard({
   return (
     <section
       className={`exercise-block ${exercise.kind !== "strength" ? "recovery-block" : ""} ${expanded ? "expanded" : "collapsed"}`}
+      onClick={(event) => {
+        if (!expanded || !(event.target instanceof Element)) return;
+        if (
+          event.target.closest(
+            "button,input,textarea,select,label,a,iframe,[role='button'],.technique-video,.technique-editor",
+          )
+        )
+          return;
+        collapse();
+      }}
     >
       {orderControls}
       {!expanded ? (
         <div className="exercise-overview-row">
           <button
             className="exercise-overview"
+            ref={overview}
             aria-label={`Edit ${exercise.name}`}
             aria-expanded={false}
             onClick={() => setExpanded(true)}
@@ -148,6 +170,17 @@ export function WorkoutExerciseCard({
                 />
               )}
             </div>
+            <button
+              type="button"
+              className="exercise-collapse-toggle"
+              aria-label={`Close ${exercise.name} and save`}
+              aria-expanded={true}
+              disabled={!canSave || !exercise.name.trim()}
+              onClick={collapse}
+            >
+              <ChevronDown size={20} className="rotated" />
+              <span>Close</span>
+            </button>
             {onRemove && (
               <button
                 className="icon-button danger-text"
@@ -270,10 +303,7 @@ export function WorkoutExerciseCard({
             <button
               className="button primary"
               disabled={!canSave || !exercise.name.trim()}
-              onClick={() => {
-                onSave();
-                setExpanded(false);
-              }}
+              onClick={collapse}
             >
               <Save size={17} /> Save exercise
             </button>

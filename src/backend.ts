@@ -3,6 +3,11 @@ import type { AppData, Profile, CoachMessages, TechniqueVideos } from "./types";
 import { DEFAULT_MESSAGES, validateMessages } from "./messages";
 import { driveVideoLink, normalizeTechniqueVideos } from "./technique";
 import { emptyData, validateBackup } from "./model";
+import {
+  mergeLocalLibraries,
+  exerciseNameKey,
+  type SharedLibrary,
+} from "./library";
 const url = import.meta.env.VITE_SUPABASE_URL;
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = url && key ? createClient(url, key) : null;
@@ -20,7 +25,7 @@ export async function loadCloud(owner: string) {
     target_owner: owner,
   });
   if (error) throw error;
-  const [messageResult, nameResult, videoResult] = await Promise.all([
+  const [messageResult, nameResult, videoResult, library] = await Promise.all([
     supabase!
       .from("coach_messages")
       .select("dashboard_message,sidebar_message")
@@ -35,10 +40,15 @@ export async function loadCloud(owner: string) {
       .from("exercise_technique_videos")
       .select("exercise_id,drive_file_id,resource_key")
       .eq("owner_user_id", owner),
+    loadSharedLibrary(owner),
   ]);
   const { data: messages, error: messagesError } = messageResult;
   return {
-    data: validateBackup(data.data),
+    data: {
+      ...validateBackup(data.data),
+      ...(library ? { exercises: library.exercises } : {}),
+    },
+    sharedLibraryReady: Boolean(library),
     revision: Number(data.revision),
     programPreferenceReady:
       typeof data.data?.settings?.useABSplit === "boolean",
@@ -51,16 +61,119 @@ export async function loadCloud(owner: string) {
       : DEFAULT_MESSAGES,
     messagesReady: !messagesError,
     appNameReady: !nameResult.error,
-    techniqueVideos: Object.fromEntries(
-      (videoResult.data || []).map((video) => [
-        video.exercise_id,
-        driveVideoLink(
-          `https://drive.google.com/file/d/${video.drive_file_id}/view${video.resource_key ? `?resourcekey=${video.resource_key}` : ""}`,
-        ).url,
-      ]),
-    ) as TechniqueVideos,
-    techniqueVideosReady: !videoResult.error,
+    techniqueVideos:
+      library?.techniqueVideos ??
+      (Object.fromEntries(
+        (videoResult.data || []).map((video) => [
+          video.exercise_id,
+          driveVideoLink(
+            `https://drive.google.com/file/d/${video.drive_file_id}/view${video.resource_key ? `?resourcekey=${video.resource_key}` : ""}`,
+          ).url,
+        ]),
+      ) as TechniqueVideos),
+    techniqueVideosReady: Boolean(library) || !videoResult.error,
   };
+}
+export async function loadSharedLibrary(
+  owner: string,
+): Promise<SharedLibrary | null> {
+  const { data, error } = await supabase!.rpc("load_exercise_library", {
+    target_owner: owner,
+  });
+  if (error) {
+    if (error.code === "PGRST202" || error.code === "42883") return null;
+    throw error;
+  }
+  return {
+    exercises: data.exercises,
+    techniqueVideos: Object.fromEntries(
+      data.videos.map(
+        (video: {
+          exercise_id: string;
+          drive_file_id: string;
+          resource_key: string | null;
+        }) => [
+          video.exercise_id,
+          driveVideoLink(
+            `https://drive.google.com/file/d/${video.drive_file_id}/view${video.resource_key ? `?resourcekey=${video.resource_key}` : ""}`,
+          ).url,
+        ],
+      ),
+    ),
+  };
+}
+export async function addSharedExercise(
+  owner: string,
+  name: string,
+  id: string,
+) {
+  const { data, error } = await supabase!.rpc("add_shared_exercise", {
+    target_owner: owner,
+    exercise_name: name,
+    client_id: id,
+  });
+  if (error) throw error;
+  return data as string;
+}
+export async function archiveSharedExercise(owner: string, exerciseId: string) {
+  const { error } = await supabase!.rpc("archive_shared_exercise", {
+    target_owner: owner,
+    target_exercise: exerciseId,
+    is_archived: true,
+  });
+  if (error) throw error;
+}
+function demoLibraryState() {
+  return JSON.parse(
+    localStorage.getItem("liftlog-demo-shared-library") ||
+      '{"videos":{},"archived":[]}',
+  ) as { videos: Record<string, string>; archived: string[] };
+}
+export function loadLocalSharedLibrary(owner: string) {
+  const state = demoLibraryState();
+  return mergeLocalLibraries(
+    DEMO_PROFILES.map((p) => ({
+      owner: p.id,
+      data: loadLocal(p.id, p.name),
+      videos: loadLocalTechniqueVideos(p.id),
+    })),
+    owner,
+    state.videos,
+    state.archived,
+  );
+}
+export function saveLocalSharedVideo(
+  owner: string,
+  exerciseId: string,
+  url: string,
+) {
+  const state = demoLibraryState();
+  const member = DEMO_PROFILES.find((p) => p.id === owner)!;
+  const data = loadLocal(owner, member.name);
+  const shared = loadLocalSharedLibrary(owner);
+  const name =
+    shared.exercises.find((e) => e.id === exerciseId)?.name ??
+    data.sessions
+      .flatMap((s) => s.exercises)
+      .find((e) => e.exerciseId === exerciseId)?.name;
+  if (name) state.videos[exerciseNameKey(name)] = url;
+  else {
+    const videos = loadLocalTechniqueVideos(owner);
+    if (url) videos[exerciseId] = url;
+    else delete videos[exerciseId];
+    localStorage.setItem(
+      `liftlog-technique-videos-${owner}`,
+      JSON.stringify(videos),
+    );
+  }
+  localStorage.setItem("liftlog-demo-shared-library", JSON.stringify(state));
+}
+export function setLocalLibraryArchive(name: string, archived: boolean) {
+  const state = demoLibraryState();
+  const key = exerciseNameKey(name);
+  state.archived = state.archived.filter((old) => old !== key);
+  if (archived) state.archived.push(key);
+  localStorage.setItem("liftlog-demo-shared-library", JSON.stringify(state));
 }
 export function loadLocalTechniqueVideos(owner: string): TechniqueVideos {
   try {
