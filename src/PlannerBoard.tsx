@@ -81,7 +81,7 @@ function ExerciseRow({
           aria-expanded={open}
           onClick={() => setOpen(!open)}
         >
-          {exerciseName(e.exerciseId, e.name)}{" "}
+          {exerciseName(e.name, e.exerciseId)}{" "}
           <small>
             {open ? "▴" : "▾"} {same ? t("Edit sets") : t("Varied sets")}
           </small>
@@ -385,7 +385,7 @@ export function PlannerBoard({
                     <option value="">+ {t("Add exercise")}</option>
                     {data.exercises.map((e) => (
                       <option key={e.id} value={e.id}>
-                        {exerciseName(e.id, e.name)}
+                        {exerciseName(e.name, e.id)}
                       </option>
                     ))}
                   </select>

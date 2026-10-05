@@ -4750,10 +4750,9 @@ button.stat-detail-row:hover {
 }
 .planner-exercise-row {
   display: grid;
-  grid-template-columns: minmax(110px, 1.5fr) 90px minmax(65px, 0.65fr) minmax(
-      65px,
-      0.65fr
-    ) minmax(65px, 0.7fr);
+  grid-template-columns:
+    minmax(110px, 1.5fr) 90px minmax(65px, 0.65fr) minmax(65px, 0.65fr)
+    minmax(65px, 0.7fr);
   gap: 10px;
   align-items: center;
 }
@@ -4898,5 +4897,14 @@ button.stat-detail-row:hover {
   }
   .planner-workspace {
     gap: 10px;
+  }
+}
+@media (max-width: 1150px) {
+  .planner-outlook:not(:has(.planner-chart[open])) {
+    position: sticky;
+    top: 78px;
+    z-index: 4;
+    background: #faf7f1;
+    border-radius: 18px;
   }
 }
