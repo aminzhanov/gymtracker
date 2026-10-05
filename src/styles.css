@@ -4908,3 +4908,130 @@ button.stat-detail-row:hover {
     border-radius: 18px;
   }
 }
+
+.planner-session header {
+  display: block;
+}
+.planner-session-identity {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.planner-session-identity h3 {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.planner-status {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #edf0f6;
+  color: #515978;
+  font-weight: 600;
+}
+.planner-status.status-done {
+  background: #d4efdc;
+  color: #276543;
+}
+.planner-session-done {
+  border-color: #8db79c;
+  border-left: 5px solid #6ca880;
+}
+.planner-session-toolbar {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+.planner-session-toolbar > label {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  margin: 0;
+}
+.planner-session-toolbar .date-field {
+  min-height: 44px;
+  padding: 9px 12px;
+}
+.planner-session-toolbar .date-display {
+  font-size: 14px;
+  line-height: 1.4;
+}
+.planner-session-toolbar .button {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.planner-session-actions {
+  align-items: end;
+  flex-wrap: nowrap;
+}
+.planner-week-completion {
+  font-size: 12px;
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #dff0e5;
+  color: #326348;
+}
+.planner-previous {
+  background: #edf2fb;
+  border-radius: 10px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  font-size: 13px;
+  color: #4d5874;
+}
+.planner-previous.previous-done {
+  background: #eaf4ed;
+  color: #3c6350;
+}
+.planner-previous-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+.planner-previous-context {
+  overflow-wrap: anywhere;
+}
+.planner-previous strong {
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+@media (max-width: 600px) {
+  .planner-session-toolbar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .planner-session-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .planner-session-identity {
+    align-items: flex-start;
+  }
+  .planner-status {
+    font-size: 12px;
+    padding: 5px 8px;
+  }
+  .planner-session-toolbar .date-display {
+    font-size: 16px;
+  }
+  .planner-previous {
+    font-size: 13px;
+  }
+}

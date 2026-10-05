@@ -1,4 +1,4 @@
-import type { WorkoutExercise } from "./types.ts";
+import type { Session, WorkoutExercise } from "./types.ts";
 import { id } from "./model.ts";
 export function matchingSets(e: WorkoutExercise) {
   return (
@@ -40,4 +40,31 @@ export function editPrescription(
       !setId || s.id === setId ? { ...s, [field]: value } : s,
     ),
   };
+}
+
+// Date-only sessions have no reliable within-day order. Use strictly earlier
+// dates and the whole history, including plans that are still in the future.
+export function previousPlannerExercise(
+  sessions: Session[],
+  current: Session,
+  exercise: WorkoutExercise,
+) {
+  for (const session of sessions
+    .filter((s) => s.id !== current.id && s.date < current.date)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))) {
+    const matches = session.exercises.filter(
+      (e) => e.exerciseId === exercise.exerciseId && e.kind === exercise.kind,
+    );
+    if (!matches.length) continue;
+    if (exercise.kind === "strength") {
+      const sets = matches
+        .flatMap((e) => e.sets)
+        .filter((s) => session.status !== "done" || s.done);
+      if (!sets.length) continue;
+      return { session, exercise: { ...matches[0], sets } };
+    }
+    const previous = matches.find((e) => session.status !== "done" || e.done);
+    if (previous) return { session, exercise: previous };
+  }
+  return undefined;
 }

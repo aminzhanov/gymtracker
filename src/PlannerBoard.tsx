@@ -1,3 +1,4 @@
+import { CheckCircle2, Clock3 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { AppData, Session, WorkoutExercise } from "./types";
 import { t, exerciseName } from "./i18n";
@@ -5,8 +6,19 @@ import { CalendarVolume } from "./CalendarVolume";
 import { DateField, useMediaQuery } from "./components";
 import { calendarVolume, trainingWeekVolume } from "./planning";
 import { trainingWeeks } from "./trainingWeeks";
-import { shortDate, number, newExercise } from "./model";
-import { matchingSets, resizeSets, editPrescription } from "./plannerEditing";
+import {
+  shortDate,
+  number,
+  newExercise,
+  parseDate,
+  exerciseSummary,
+} from "./model";
+import {
+  matchingSets,
+  resizeSets,
+  editPrescription,
+  previousPlannerExercise,
+} from "./plannerEditing";
 
 function Numeric({
   value,
@@ -63,7 +75,9 @@ function ExerciseRow({
   s,
   onDraft,
   onSave,
+  previous,
 }: {
+  previous: ReturnType<typeof previousPlannerExercise>;
   e: WorkoutExercise;
   s: Session;
   onDraft: (e: WorkoutExercise) => void;
@@ -156,6 +170,36 @@ function ExerciseRow({
               onSave={onSave}
             />
           </label>
+        )}
+      </div>
+      <div
+        className={`planner-previous ${previous?.session.status === "done" ? "previous-done" : ""}`}
+      >
+        {previous ? (
+          <>
+            <span className="planner-previous-label">
+              {previous.session.status === "done" ? (
+                <CheckCircle2 size={15} />
+              ) : (
+                <Clock3 size={15} />
+              )}{" "}
+              {t(
+                previous.session.status === "done"
+                  ? "Previous completed"
+                  : "Previous planned",
+              )}
+            </span>
+            <span className="planner-previous-context">
+              {shortDate(previous.session.date)},{" "}
+              {parseDate(previous.session.date).getFullYear()} ·{" "}
+              {previous.session.name}
+            </span>
+            <strong>{exerciseSummary(previous.exercise)}</strong>
+          </>
+        ) : (
+          <span className="muted">
+            {t("No earlier session for this exercise")}
+          </span>
         )}
       </div>
       {remove !== null && (
@@ -300,49 +344,67 @@ export function PlannerBoard({
               <small>
                 {shortDate(g.from)} – {shortDate(g.to)}
               </small>
+              {!!g.sessions.length && (
+                <span className="planner-week-completion">
+                  {g.sessions.filter((s) => s.status === "done").length}/
+                  {g.sessions.length} {t("completed")}
+                </span>
+              )}
             </h2>
             {g.sessions.map((original) => {
               const s = current(original);
               return (
-                <article className="planner-session" key={s.id}>
+                <article
+                  className={`planner-session ${s.status === "done" ? "planner-session-done" : ""}`}
+                  key={s.id}
+                >
                   <header>
-                    <div>
+                    <div className="planner-session-identity">
                       <h3>
                         {s.icon} {s.name}
                       </h3>
-                      <span className="planner-status">
-                        {t(s.status === "done" ? "✓ Done" : "Planned")}
+                      <span
+                        className={`planner-status ${s.status === "done" ? "status-done" : ""}`}
+                      >
+                        {s.status === "done" ? (
+                          <CheckCircle2 size={17} />
+                        ) : (
+                          <Clock3 size={17} />
+                        )}
+                        {t(s.status === "done" ? "Completed" : "Planned")}
                       </span>
                     </div>
-                    <DateField
-                      label={t("Move to date")}
-                      value={s.date}
-                      onChange={(date) => {
-                        draft({ ...current(s), date });
-                        save(s);
-                      }}
-                    />
-                    <div className="planner-session-actions">
-                      <button
-                        className="button secondary compact"
-                        onClick={() => {
-                          const latest = current(s);
+                    <div className="planner-session-toolbar">
+                      <DateField
+                        label={t("Move to date")}
+                        value={s.date}
+                        onChange={(date) => {
+                          draft({ ...current(s), date });
                           save(s);
-                          onDuplicate(latest);
                         }}
-                      >
-                        {t("Duplicate")}
-                      </button>
-                      <button
-                        className="button secondary compact"
-                        onClick={() => {
-                          const latest = current(s);
-                          save(s);
-                          onOpen(latest);
-                        }}
-                      >
-                        {t("Open full editor")}
-                      </button>
+                      />
+                      <div className="planner-session-actions">
+                        <button
+                          className="button secondary compact"
+                          onClick={() => {
+                            const latest = current(s);
+                            save(s);
+                            onDuplicate(latest);
+                          }}
+                        >
+                          {t("Duplicate")}
+                        </button>
+                        <button
+                          className="button secondary compact"
+                          onClick={() => {
+                            const latest = current(s);
+                            save(s);
+                            onOpen(latest);
+                          }}
+                        >
+                          {t("Open full editor")}
+                        </button>
+                      </div>
                     </div>
                   </header>
                   {s.exercises.map((e) => (
@@ -350,6 +412,7 @@ export function PlannerBoard({
                       key={e.id}
                       e={e}
                       s={s}
+                      previous={previousPlannerExercise(preview.sessions, s, e)}
                       onDraft={(next) => {
                         const latest = current(s);
                         draft({

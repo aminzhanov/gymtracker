@@ -1,4 +1,8 @@
 export const ru: Record<string, string> = {
+  "Previous completed": "Предыдущее выполнение",
+  "Previous planned": "Предыдущий план",
+  "No earlier session for this exercise": "Ранее это упражнение не встречалось",
+  completed: "выполнено",
   Planner: "Планировщик",
   "Training library": "Журнал",
   "Your training library": "Ваш журнал тренировок",
