@@ -77,8 +77,21 @@ test("New exercises can raise a negative average without improved logs; first po
     "2026-09-06",
     "2026-10-05",
   )!;
+  const zeroJoin = strengthPointDetails(
+    [
+      log("2026-09-06", "a", 10),
+      log("2026-09-10", "a", 10),
+      log("2026-09-15", "b", 20),
+      log("2026-10-05", "b", 20),
+    ],
+    "30",
+    "2026-09-15",
+    "2026-10-05",
+  )!;
+  assert.ok(zeroJoin.details.every((row) => !Object.is(row.effect, -0)));
   assert.equal(first.delta, null);
   assert.equal(first.previousDate, null);
+  assert.ok(first.details.every((row) => !Object.is(row.effect, -0)));
   close(first.value, 0);
   assert.equal(
     strengthPointDetails(sessions, "30", "2026-09-17", "2026-10-05"),

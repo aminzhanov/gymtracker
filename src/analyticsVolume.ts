@@ -343,7 +343,7 @@ export function strengthPointDetails(
           previousGrowth,
           joined,
           updated: current.date === date,
-          effect,
+          effect: effect === 0 ? 0 : effect,
         },
       ];
     })
