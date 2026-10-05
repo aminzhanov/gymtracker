@@ -5227,6 +5227,9 @@ button.stat-detail-row:hover {
   align-items: center;
   margin-bottom: 12px;
 }
+.planner-chart {
+  margin: 0;
+}
 .planner-chart > summary {
   display: flex;
   align-items: center;
