@@ -626,4 +626,21 @@ export const ru: Record<string, string> = {
     "Запишите упражнение хотя бы в два разных дня, чтобы увидеть тренд силы.",
   "Each column is one session: warm-up on top and cool-down below. Tap a box for details. Green means done, amber means partial, gray means skipped, pending or not planned. Shows the last 12 sessions with completed sets or activities. Future plans that have not started are excluded.":
     "Каждый столбец — одна тренировка: сверху разминка, снизу заминка. Нажмите на ячейку для подробностей. Зелёный — выполнено, жёлтый — частично, серый — пропущено, ожидается или не запланировано. Показаны последние 12 тренировок с выполненными подходами или активностями. Будущие планы без выполненных активностей исключены.",
+  "View strength breakdown": "Посмотреть динамику силы",
+  "View volume breakdown": "Посмотреть подробности объёма",
+  "View records this month": "Посмотреть рекорды за этот месяц",
+  "New estimated 1RM records this month":
+    "Новые рекорды расчётного 1ПМ за этот месяц",
+  "Each exercise contributes equally. First and latest daily best estimated 1RM are shown below.":
+    "Упражнения имеют равный вклад. Ниже показаны первая и последняя лучшие дневные оценки 1ПМ.",
+  "Only checked strength sets count. Tap a workout to open it.":
+    "Учитываются только выполненные силовые подходы. Нажмите на тренировку, чтобы открыть её.",
+  "Open workout": "Открыть тренировку",
+  "No completed sets yet": "Выполненных подходов пока нет",
+  "Each entry is a new estimated 1RM record, including your first recorded result. Tap to open its workout.":
+    "Каждая запись — новый рекорд расчётного 1ПМ, включая первый записанный результат. Нажмите, чтобы открыть тренировку.",
+  "Open record workout": "Открыть тренировку с рекордом",
+  "No new records this month": "В этом месяце новых рекордов пока нет",
+  "Your next personal record will appear here.":
+    "Ваш следующий личный рекорд появится здесь.",
 };

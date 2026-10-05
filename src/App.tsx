@@ -955,7 +955,12 @@ export default function App() {
               )}
               {page === "Dashboard" && (
                 <>
-                  <DashboardOverview data={data} message={messages.dashboard} />
+                  <DashboardOverview
+                    key={owner}
+                    data={data}
+                    message={messages.dashboard}
+                    onSession={setEditor}
+                  />
                   <div className="dashboard-grid">
                     <Panel
                       title={t("Today's workout")}

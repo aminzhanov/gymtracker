@@ -4439,3 +4439,113 @@ summary {
     min-width: 0;
   }
 }
+
+/* Each stat has a full-card action and a separate explanation button. */
+.welcome-stat-tag {
+  position: relative;
+  isolation: isolate;
+}
+.welcome-stat-hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  z-index: 1;
+}
+.welcome-stat-hit:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.welcome-stat-hit:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+.welcome-stat-tag > svg,
+.welcome-stat-copy {
+  position: relative;
+  z-index: 2;
+  pointer-events: none;
+}
+.welcome-stat-tag .metric-info {
+  position: relative;
+  z-index: 3;
+}
+.stat-detail-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.stat-detail-summary > strong {
+  font-size: 28px;
+  color: #302336;
+}
+.stat-detail-summary > span,
+.stat-detail-caption {
+  color: #676477;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.stat-detail-list {
+  display: grid;
+  gap: 10px;
+}
+.stat-detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  width: 100%;
+  padding: 15px;
+  background: #faf9fc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  text-align: left;
+  color: #302336;
+}
+button.stat-detail-row {
+  cursor: pointer;
+}
+button.stat-detail-row:hover {
+  background: #eef5ff;
+  border-color: #8cb4fc;
+}
+.stat-detail-row > span {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+.stat-detail-row strong {
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+.stat-detail-row small {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #676477;
+  overflow-wrap: anywhere;
+}
+.stat-detail-row b {
+  font-size: 16px;
+  white-space: nowrap;
+}
+.stat-record-value {
+  text-align: right;
+  flex: none;
+}
+@media (max-width: 600px) {
+  .stat-detail-row {
+    gap: 10px;
+    padding: 13px;
+  }
+  .stat-detail-row b {
+    font-size: 15px;
+  }
+  .stat-record-value small {
+    font-size: 12px;
+  }
+}
