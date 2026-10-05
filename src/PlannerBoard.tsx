@@ -319,16 +319,6 @@ export function PlannerBoard({
           .filter((s) => s.date >= r.from && s.date <= r.to)
           .sort((a, b) => a.date.localeCompare(b.date)),
       }));
-  const [pairA, setPairA] = useState("");
-  const [pairB, setPairB] = useState("");
-  const aRows = split
-    ? trainingWeekVolume(preview.sessions, month).filter((r) => r.week === "A")
-    : [];
-  const bRows = split
-    ? trainingWeekVolume(preview.sessions, month).filter((r) => r.week === "B")
-    : [];
-  const a = aRows.find((r) => r.key === pairA) ?? aRows[0];
-  const b = bRows.find((r) => r.key === pairB) ?? bRows[0];
   return (
     <div className="planner-workspace">
       <div className="planner-table-area">
@@ -477,45 +467,6 @@ export function PlannerBoard({
             {number(delta)} kg {t("since opening planner")}
           </span>
         </div>
-        {split && a && b && (
-          <div className="planner-compare">
-            <label>
-              {t("Compare training weeks")}
-              <select
-                aria-label={t("Compare week A")}
-                value={a.key}
-                onChange={(e) => setPairA(e.target.value)}
-              >
-                {aRows.map((r) => (
-                  <option value={r.key} key={r.key}>
-                    {t(r.label)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <select
-              aria-label={t("Compare week B")}
-              value={b.key}
-              onChange={(e) => setPairB(e.target.value)}
-            >
-              {bRows.map((r) => (
-                <option value={r.key} key={r.key}>
-                  {t(r.label)}
-                </option>
-              ))}
-            </select>
-            <p>
-              {t(b.label)} − {t(a.label)}:{" "}
-              <strong>
-                {b.total - a.total >= 0 ? "+" : ""}
-                {number(b.total - a.total)} kg
-                {a.total > 0
-                  ? ` (${((b.total / a.total - 1) * 100).toFixed(1)}%)`
-                  : ""}
-              </strong>
-            </p>
-          </div>
-        )}
         <details className="planner-chart" open={!compact}>
           <summary>{t("Volume outlook")}</summary>
           <CalendarVolume data={preview} month={month} />

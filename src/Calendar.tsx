@@ -3,7 +3,7 @@ import { t } from "./i18n";
 import { useState } from "react";
 import { Plus, ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import type { AppData, Session } from "./types";
-import { Panel, ExerciseNames, useMediaQuery } from "./components";
+import { Panel, useMediaQuery } from "./components";
 import { dateKey, parseDate, addDays, monday, shortDate } from "./model";
 import { PlannerBoard } from "./PlannerBoard";
 import { CalendarVolume } from "./CalendarVolume";
@@ -33,8 +33,16 @@ export function Calendar({
   const first = `${month}-01`;
   const weekStart = monday(focusDate);
   const start = activeView === "week" ? weekStart : monday(first);
-  const days = Array.from({ length: activeView === "week" ? 7 : 42 }, (_, i) =>
-    addDays(start, i),
+  const monthEnd = parseDate(first);
+  monthEnd.setMonth(monthEnd.getMonth() + 1);
+  monthEnd.setDate(0);
+  const monthDays =
+    Math.ceil(
+      (((parseDate(first).getDay() + 6) % 7) + monthEnd.getDate()) / 7,
+    ) * 7;
+  const days = Array.from(
+    { length: activeView === "week" ? 7 : monthDays },
+    (_, i) => addDays(start, i),
   );
   const showWeek = data.settings.useABSplit;
   const title =
@@ -202,7 +210,7 @@ export function Calendar({
                           >
                             <button
                               draggable
-                              className={`calendar-session ${showWeek ? `week-${session.week.toLowerCase()}` : "tint-blue"}`}
+                              className={`calendar-session ${session.status === "done" ? "calendar-session-done" : ""} ${showWeek ? `week-${session.week.toLowerCase()}` : "tint-blue"}`}
                               onDragStart={(event) =>
                                 event.dataTransfer.setData(
                                   "text/liftlog-session",
@@ -216,12 +224,11 @@ export function Calendar({
                                 <strong>{session.name}</strong>
                               </span>
                               <small>
-                                {showWeek && `Week ${session.week} · `}
+                                {showWeek && `${t(`Week ${session.week}`)} · `}
                                 {session.status === "done"
                                   ? t("✓ Done")
                                   : t("Planned")}
                               </small>
-                              <ExerciseNames exercises={session.exercises} />
                             </button>
                             <button
                               className="duplicate-session-button"

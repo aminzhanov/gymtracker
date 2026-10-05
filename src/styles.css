@@ -4844,13 +4844,6 @@ button.stat-detail-row:hover {
 .planner-chart .calendar-volume {
   margin-top: 0;
 }
-.planner-compare {
-  padding: 14px 0;
-}
-.planner-compare select {
-  width: 100%;
-  margin-top: 6px;
-}
 @media (max-width: 1150px) {
   .planner-workspace {
     grid-template-columns: 1fr;
@@ -5033,5 +5026,55 @@ button.stat-detail-row:hover {
   }
   .planner-previous {
     font-size: 13px;
+  }
+}
+
+/* Calendar cards are a compact date overview; exercise detail lives in the table. */
+.calendar-grid .calendar-day {
+  min-height: 124px;
+  padding: 8px;
+}
+.calendar-grid .calendar-date {
+  margin-bottom: 5px;
+}
+.calendar-session {
+  gap: 5px;
+}
+.calendar-session-wrap .calendar-session-title {
+  padding-right: 30px;
+}
+.calendar-session .calendar-session-title strong {
+  line-height: 1.35;
+}
+.calendar-session-wrap .duplicate-session-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.calendar-session small {
+  display: block;
+  line-height: 1.4;
+}
+.calendar-session-done {
+  box-shadow: inset 3px 0 #4c8961;
+}
+.calendar-grid .day-add {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0;
+  min-height: 32px;
+  min-width: 32px;
+}
+.calendar-grid .calendar-workouts {
+  padding-bottom: 0;
+}
+@media (pointer: coarse) {
+  .calendar-session-wrap .duplicate-session-button {
+    width: 44px;
+    height: 44px;
+  }
+  .calendar-session-wrap .calendar-session-title {
+    padding-right: 42px;
   }
 }
