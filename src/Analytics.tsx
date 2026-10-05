@@ -4,6 +4,8 @@ import {
   volumeRows,
   trainingAverages,
   strengthTrend,
+  strengthTrendHistory,
+  completedVolume30,
   filterVolumeRange,
 } from "./analyticsVolume";
 import { readExerciseSelection } from "./chartDomain";
@@ -44,7 +46,7 @@ export function Analytics({
   onChange: (d: AppData) => void;
 }) {
   const [week, setWeek] = useState<"All" | Week>("All");
-  const [period, setPeriod] = useState<"session" | "week" | "month">("week");
+  const [period, setPeriod] = useState<"week" | "month">("week");
   const storageKey = `liftlog:progress-exercises:${preferenceKey}`;
   const [selected, setSelected] = useState<string[]>(() =>
     readExerciseSelection(localStorage, storageKey),
@@ -76,6 +78,8 @@ export function Analytics({
     volumeRange,
   );
   const trend = strengthTrend(sessions);
+  const [strengthRange, setStrengthRange] = useState<"30" | "all">("30");
+  const strengthGraph = strengthTrendHistory(sessions, strengthRange);
   const comp = trainingAverages(data.sessions);
   const prs = records(sessions);
   const allRecords = records(data.sessions);
@@ -111,7 +115,7 @@ export function Analytics({
   const dates = [
     ...new Set(histories.flatMap((h) => h.rows.map((r) => r.date))),
   ].sort();
-  const recovery = recoveryHistory(sessions);
+  const recovery = recoveryHistory(sessions).slice(0, 12);
   const saveBody = () => {
     const weight = Number(bodyValue);
     if (!(weight > 0 && weight <= 600)) return;
@@ -153,29 +157,17 @@ export function Analytics({
             {t("Completed lifting volume")}{" "}
             <InfoButton title={t("Completed lifting volume")}>
               {t(
-                "Total weight × reps for completed strength sets, respecting the program-week filter.",
+                "Total weight × reps for checked strength sets in the last 30 days, respecting the program-week filter. Planned sets and future logs are excluded.",
               )}
             </InfoButton>
           </span>
           <strong>
-            {number(
-              sessions.reduce(
-                (n, s) =>
-                  n +
-                  s.exercises
-                    .filter((e) => e.kind === "strength")
-                    .flatMap((e) => e.sets)
-                    .filter((x) => x.done)
-                    .reduce((a, x) => a + x.weight * x.reps, 0),
-                0,
-              ),
-            )}
+            {number(completedVolume30(sessions))}
             <small>{t(" kg")}</small>
           </strong>
           <p>
-            {effectiveWeek === "All"
-              ? t("All training weeks")
-              : t(`Week ${effectiveWeek} only`)}
+            {t("Last 30 days")}
+            {effectiveWeek !== "All" && ` · ${t(`Week ${effectiveWeek} only`)}`}
           </p>
         </div>
         <div className="metric-card tint-mint">
@@ -206,7 +198,7 @@ export function Analytics({
         }
         action={
           <div className="segmented">
-            {(["session", "week", "month"] as const).map((p) => (
+            {(["week", "month"] as const).map((p) => (
               <button
                 key={p}
                 className={period === p ? "active" : ""}
@@ -289,9 +281,7 @@ export function Analytics({
               range={(row) =>
                 period === "week" && useABSplit
                   ? `${shortDate(row.from)}–${shortDate(row.to)}`
-                  : period === "session"
-                    ? shortDate(row.from)
-                    : row.label
+                  : row.label
               }
             />
             <details className="volume-breakdown">
@@ -360,33 +350,61 @@ export function Analytics({
           />
         )}
       </Panel>
-      <div className="two-col">
-        <Panel
-          title={t("Warm-up checklist")}
-          className="span-full"
-          info={
-            <>
-              <p>
-                {t(
-                  "Each column is one session: warm-up on top and cool-down below. Tap a box for details. Green means done, amber means partial, gray means skipped, pending or not planned. Shows warm-ups and cool-downs for sessions with completed sets or activities. Future plans that have not started are excluded.",
-                )}
-              </p>
-              <p>
-                {t(
-                  "Done means every activity in that routine was marked complete. Partial means only some were completed. Skipped means it was not marked complete in a finished or past training session. Pending means today’s session is still in progress. Not planned means the session contains no activity of that kind.",
-                )}
-              </p>
-              <p>
-                {t(
-                  "Recovery completion stays separate from lifting volume, estimated 1RM and records.",
-                )}
-              </p>
-            </>
-          }
-        >
-          <RecoveryChecklist rows={recovery} />
-        </Panel>
-      </div>
+      <Panel
+        title={t("Combined strength trend")}
+        info={
+          <>
+            <p>
+              {t(
+                "Each exercise starts at 0% from its first daily best estimated 1RM in the selected period. The line averages the changes equally across comparable exercises. An exercise needs at least two logged days in that period. Between logs, its last recorded performance is carried forward.",
+              )}
+            </p>
+            <p>
+              {t(
+                "Exercises join the line on their first recorded day, so the number contributing can grow over time. Planned and zero-weight sets are excluded. The 30-day endpoint matches the strength summary.",
+              )}
+            </p>
+          </>
+        }
+        action={
+          <select
+            aria-label={t("Strength trend range")}
+            value={strengthRange}
+            onChange={(e) => setStrengthRange(e.target.value as "30" | "all")}
+          >
+            <option value="30">{t("Last 30 days")}</option>
+            <option value="all">{t("All history")}</option>
+          </select>
+        }
+      >
+        {strengthGraph.rows.length ? (
+          <>
+            <span className="strength-graph-summary">
+              <strong>{pct(strengthGraph.value)}</strong> ·{" "}
+              {strengthGraph.count} {t("comparable exercises")}
+            </span>
+            <Chart
+              unit="%"
+              labels={strengthGraph.rows.map((row) => shortDate(row.date))}
+              axisDecimals={1}
+              series={[
+                {
+                  name: t("Combined strength trend"),
+                  color: "#1673ff",
+                  values: strengthGraph.rows.map((row) => row.value),
+                },
+              ]}
+            />
+          </>
+        ) : (
+          <Empty
+            title={t("More training needed")}
+            detail={t(
+              "Log an exercise on at least two different days to see its strength trend.",
+            )}
+          />
+        )}
+      </Panel>
       <Panel
         title={t("Exercise progress")}
         info={
@@ -670,6 +688,33 @@ export function Analytics({
           />
         )}
       </Panel>
+      <div className="two-col">
+        <Panel
+          title={t("Warm-up checklist")}
+          className="span-full"
+          info={
+            <>
+              <p>
+                {t(
+                  "Each column is one session: warm-up on top and cool-down below. Tap a box for details. Green means done, amber means partial, gray means skipped, pending or not planned. Shows the last 12 sessions with completed sets or activities. Future plans that have not started are excluded.",
+                )}
+              </p>
+              <p>
+                {t(
+                  "Done means every activity in that routine was marked complete. Partial means only some were completed. Skipped means it was not marked complete in a finished or past training session. Pending means today’s session is still in progress. Not planned means the session contains no activity of that kind.",
+                )}
+              </p>
+              <p>
+                {t(
+                  "Recovery completion stays separate from lifting volume, estimated 1RM and records.",
+                )}
+              </p>
+            </>
+          }
+        >
+          <RecoveryChecklist rows={recovery} />
+        </Panel>
+      </div>
       <Panel
         title={t("Bodyweight")}
         info={

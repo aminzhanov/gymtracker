@@ -1,3 +1,5 @@
+import { CoachInbox } from "./CoachInbox";
+import { syncLocalReviewEvents, capReviewed, type ReviewItem } from "./reviews";
 import {
   t,
   exerciseName,
@@ -13,6 +15,8 @@ import { assignTrainingWeeks } from "./trainingWeeks";
 import { CompletedWorkout, CompletionToast } from "./CompletedWorkout";
 import {
   Home,
+  Bell,
+  Inbox,
   Dumbbell,
   CalendarDays,
   ChartNoAxesCombined,
@@ -48,6 +52,8 @@ import {
   loadCloud,
   saveCloud,
   loadProfiles,
+  loadReviewInbox,
+  saveWorkoutReview,
   loadLocal,
   loadLocalMessages,
   saveCoachMessages,
@@ -82,6 +88,7 @@ import {
   updateSessionExercise,
 } from "./model";
 import {
+  DateField,
   Logo,
   Panel,
   SessionCard,
@@ -106,13 +113,20 @@ import {
   type TrainingScope,
 } from "./planning";
 type Page =
-  "Dashboard" | "Training" | "Calendar" | "Analytics" | "People" | "Settings";
+  | "Dashboard"
+  | "Training"
+  | "Calendar"
+  | "Analytics"
+  | "People"
+  | "Settings"
+  | "Inbox";
 const pages = [
   { name: "Dashboard" as Page, icon: Home },
   { name: "Training" as Page, icon: Dumbbell },
   { name: "Calendar" as Page, icon: CalendarDays },
   { name: "Analytics" as Page, icon: ChartNoAxesCombined },
   { name: "People" as Page, icon: Users },
+  { name: "Inbox" as Page, icon: Inbox },
   { name: "Settings" as Page, icon: Settings },
 ];
 function exportData(data: AppData) {
@@ -247,6 +261,12 @@ export default function App() {
   const messageOwner = useRef(owner);
   messageOwner.current = owner;
   const [page, setPage] = useState<Page>("Dashboard");
+  const [reviewItems, setReviewItems] = useState<ReviewItem[]>([]);
+  const [inboxReady, setInboxReady] = useState(false);
+  const [inboxLoading, setInboxLoading] = useState(false);
+  const [inboxError, setInboxError] = useState("");
+  const reviewRequest = useRef(0);
+  const reviewScope = useRef("");
   const [duplicate, setDuplicate] = useState<Session | null>(null);
   const [editor, setEditor] = useState<Session | null>(null);
   const [templateEditor, setTemplateEditor] = useState<Template | null>(null);
@@ -394,6 +414,8 @@ export default function App() {
           ...result.data,
           sessions: assignTrainingWeeks(result.data.sessions),
         };
+        if (demo)
+          syncLocalReviewEvents(localStorage, owner, loaded.sessions, true);
         dataRef.current = loaded;
         setData(loaded);
       })
@@ -420,6 +442,71 @@ export default function App() {
   const me = demo ? DEMO_PROFILES[0] : profiles.find((p) => p.id === authId);
   const viewing = profiles.find((p) => p.id === owner);
   const coach = me?.role === "coach";
+  const reviewerId = demo ? "demo-self" : (authId ?? "");
+  const refreshReviews = async () => {
+    if (!coach || !reviewerId) return;
+    const request = ++reviewRequest.current;
+    setInboxLoading(true);
+    try {
+      const result = await loadReviewInbox(demo, reviewerId);
+      if (request !== reviewRequest.current) return;
+      setReviewItems(result.items);
+      setInboxReady(result.ready);
+      setInboxError("");
+    } catch (e) {
+      if (request === reviewRequest.current)
+        setInboxError((e as Error).message);
+    } finally {
+      if (request === reviewRequest.current) setInboxLoading(false);
+    }
+  };
+  useEffect(() => {
+    const scope = `${demo ? "demo" : "cloud"}:${reviewerId}:${coach}`;
+    if (scope !== reviewScope.current) {
+      reviewScope.current = scope;
+      setReviewItems([]);
+      setInboxError("");
+      setInboxReady(demo);
+    }
+    if (!coach || !reviewerId) return;
+    void refreshReviews();
+    const refresh = () => {
+      if (document.visibilityState === "visible") void refreshReviews();
+    };
+    const timer = window.setInterval(refresh, 30000);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      reviewRequest.current++;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [demo, reviewerId, coach, saveState]);
+  const setReview = async (item: ReviewItem, reviewed: boolean) => {
+    const scope = reviewScope.current;
+    await saveWorkoutReview(demo, reviewerId, item, reviewed);
+    if (scope !== reviewScope.current) return;
+    setReviewItems((old) =>
+      capReviewed(
+        old.map((current) =>
+          current.ownerId === item.ownerId &&
+          current.session.id === item.session.id &&
+          current.version === item.version
+            ? {
+                ...current,
+                reviewed,
+                reviewedAt: reviewed ? new Date().toISOString() : null,
+              }
+            : current,
+        ),
+      ),
+    );
+    await refreshReviews();
+  };
+  const unreadReviews = reviewItems.filter((item) => !item.reviewed).length;
   const refreshLibrary = async (target = owner) => {
     const request = ++libraryRequest.current;
     const library = demo
@@ -508,6 +595,8 @@ export default function App() {
     if (demo) {
       try {
         localStorage.setItem(`liftlog-v1-${owner}`, JSON.stringify(next));
+        syncLocalReviewEvents(localStorage, owner, next.sessions);
+        void refreshReviews();
         setSaveState("saved");
       } catch {
         setSaveState("error");
@@ -658,7 +747,7 @@ export default function App() {
         <Logo name={messages.appName} />
         <nav>
           {pages
-            .filter((p) => p.name !== "People" || coach)
+            .filter((p) => (p.name !== "People" && p.name !== "Inbox") || coach)
             .map((p) => (
               <button
                 key={t(p.name)}
@@ -724,6 +813,24 @@ export default function App() {
                     : t("All saved")}
             </span>
             {coach && (
+              <button
+                className="icon-button inbox-bell"
+                aria-label={`${t("Inbox")} · ${unreadReviews} ${t("unread")}`}
+                onClick={() => {
+                  setPage("Inbox");
+                  setMenu(false);
+                  setSearch("");
+                }}
+              >
+                <Bell size={20} />
+                {unreadReviews > 0 && (
+                  <span className="inbox-count">
+                    {unreadReviews > 99 ? "99+" : unreadReviews}
+                  </span>
+                )}
+              </button>
+            )}
+            {coach && page !== "Inbox" && (
               <select
                 className="athlete-select"
                 aria-label={t("Switch athlete")}
@@ -786,17 +893,19 @@ export default function App() {
               )}
             </div>
           )}
-          {coach && owner !== (demo ? "demo-self" : authId) && (
-            <div className="viewing-banner">
-              <ShieldCheck size={17} />
-              <strong>
-                {t("Viewing ")}
-                {viewing?.name}
-                {t("'s training")}
-              </strong>
-              <span>{t("You are editing as their coach.")}</span>
-            </div>
-          )}
+          {coach &&
+            page !== "Inbox" &&
+            owner !== (demo ? "demo-self" : authId) && (
+              <div className="viewing-banner">
+                <ShieldCheck size={17} />
+                <strong>
+                  {t("Viewing ")}
+                  {viewing?.name}
+                  {t("'s training")}
+                </strong>
+                <span>{t("You are editing as their coach.")}</span>
+              </div>
+            )}
           {error && (
             <div className="error-banner" role="alert">
               <AlertCircle size={18} />
@@ -834,6 +943,16 @@ export default function App() {
             </div>
           ) : (
             <>
+              {page === "Inbox" && coach && (
+                <CoachInbox
+                  items={reviewItems}
+                  ready={inboxReady}
+                  loading={inboxLoading}
+                  error={inboxError}
+                  onRefresh={refreshReviews}
+                  onSetReview={setReview}
+                />
+              )}
               {page === "Dashboard" && (
                 <>
                   <DashboardOverview data={data} message={messages.dashboard} />
@@ -1320,23 +1439,16 @@ export default function App() {
                       )}
                       {data.settings.useABSplit && (
                         <>
-                          <label>
-                            {t("Week A/B anchor date")}
-                            <input
-                              type="date"
-                              value={data.settings.anchorDate}
-                              onChange={(e) => {
-                                if (e.target.value)
-                                  change({
-                                    ...data,
-                                    settings: {
-                                      ...data.settings,
-                                      anchorDate: e.target.value,
-                                    },
-                                  });
-                              }}
-                            />
-                          </label>
+                          <DateField
+                            label={t("Week A/B anchor date")}
+                            value={data.settings.anchorDate}
+                            onChange={(anchorDate) =>
+                              change({
+                                ...data,
+                                settings: { ...data.settings, anchorDate },
+                              })
+                            }
+                          />
                           <label>
                             {t("Anchor program week")}
                             <select
@@ -1524,7 +1636,12 @@ export default function App() {
           )}
         <nav className="bottom-nav">
           {pages
-            .filter((p) => p.name !== "People" && p.name !== "Settings")
+            .filter(
+              (p) =>
+                p.name !== "People" &&
+                p.name !== "Settings" &&
+                p.name !== "Inbox",
+            )
             .map((p) => (
               <button
                 key={t(p.name)}

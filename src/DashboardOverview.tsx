@@ -1,9 +1,13 @@
 import { t } from "./i18n";
 import type { AppData } from "./types";
-import { activeVolumeGroup } from "./analyticsVolume";
-import { dateKey, doneSets, fullDate, number, records, volume } from "./model";
+import {
+  strengthTrend,
+  completedVolume30,
+  STRENGTH_TREND_INFO,
+} from "./analyticsVolume";
+import { dateKey, fullDate, number, records } from "./model";
 import { InfoButton, DumbbellArt } from "./components";
-import { Dumbbell, Trophy, Layers } from "lucide-react";
+import { Dumbbell, Trophy, TrendingUp } from "lucide-react";
 
 export function DashboardOverview({
   data,
@@ -14,15 +18,8 @@ export function DashboardOverview({
 }) {
   const today = dateKey();
   const actual = data.sessions.filter((s) => s.date <= today);
-  const group = activeVolumeGroup(
-    data.sessions,
-    data.settings.useABSplit,
-    today,
-  );
-  const sets = actual.reduce((sum, s) => sum + doneSets(s).length, 0);
-  const lifting = group.sessions
-    .filter((s) => s.date <= today)
-    .reduce((sum, s) => sum + volume(s), 0);
+  const trend = strengthTrend(actual, today);
+  const lifting = completedVolume30(actual, today);
   const prs = records(actual).events.filter((e) =>
     e.date.startsWith(today.slice(0, 7)),
   ).length;
@@ -39,12 +36,19 @@ export function DashboardOverview({
         </p>
         <span className="welcome-date">{fullDate(today)}</span>
         <div className="welcome-stat-tags">
-          <span className="welcome-stat-tag welcome-stat-sets">
-            <Layers size={18} />
+          <span className="welcome-stat-tag welcome-stat-strength">
+            <TrendingUp size={18} />
             <span className="welcome-stat-copy">
-              <strong>{number(sets)}</strong>
-              <span>{t("completed sets · all time")}</span>
+              <strong>
+                {trend.value === null
+                  ? "—"
+                  : `${trend.value >= 0 ? "+" : ""}${number(trend.value, 1)}%`}
+              </strong>
+              <span>{t("Strength · 30 days")}</span>
             </span>
+            <InfoButton title={t("Strength trend")}>
+              {t(STRENGTH_TREND_INFO)}
+            </InfoButton>
           </span>
           <span className="welcome-stat-tag welcome-stat-volume">
             <Dumbbell size={18} />
@@ -53,11 +57,11 @@ export function DashboardOverview({
                 {number(lifting)}
                 {t(" kg")}
               </strong>
-              <span>{t(group.label)}</span>
+              <span>{t("Volume · 30 days")}</span>
             </span>
             <InfoButton title={t("Training volume")}>
               {t(
-                "Checked strength sets in the active training week. Planned sets are excluded.",
+                "Checked strength sets in the last 30 days, including today. Planned sets and future logs are excluded.",
               )}
             </InfoButton>
           </span>

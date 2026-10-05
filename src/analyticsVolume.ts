@@ -140,31 +140,70 @@ export function volumeRows(
     return row;
   });
 }
-export function strengthTrend(sessions: Session[], today = dateKey()) {
+export const STRENGTH_TREND_INFO =
+  "Average percentage change in daily best estimated 1RM from each exercise's first to latest log within the last 30 days. Each exercise needs at least two different logged days and receives equal weight. Checked strength sets only; plans and zero-weight sets are excluded. This is an estimate from your logs, not a measured change in maximal strength.";
+export function last30Sessions(sessions: Session[], today = dateKey()) {
   const from = addDays(today, -29);
-  const actual = sessions.filter((s) => s.date >= from && s.date <= today);
+  return sessions.filter((s) => s.date >= from && s.date <= today);
+}
+export function completedVolume30(sessions: Session[], today = dateKey()) {
+  return last30Sessions(sessions, today).reduce(
+    (sum, s) =>
+      sum + doneSets(s).reduce((n, set) => n + set.weight * set.reps, 0),
+    0,
+  );
+}
+export function strengthTrendHistory(
+  sessions: Session[],
+  range: "30" | "all" = "30",
+  today = dateKey(),
+) {
+  const actual =
+    range === "30"
+      ? last30Sessions(sessions, today)
+      : sessions.filter((s) => s.date <= today);
   const ids = [
     ...new Set(actual.flatMap((s) => doneSets(s).map((set) => set.exerciseId))),
   ];
-  const exercises = ids.flatMap((id) => {
+  const histories = ids.flatMap((id) => {
     const history = exerciseHistory(actual, id, "e1rm");
-    if (history.length < 2) return [];
-    const first = history[0],
-      last = history.at(-1)!;
-    const change = changePercent(last.value, first.value);
-    return change === null
-      ? []
-      : [{ id, change, first: first.value, latest: last.value }];
+    return history.length < 2 ? [] : [{ id, history }];
   });
+  const changes = new Map<string, { id: string; value: number }[]>();
+  for (const { id, history } of histories)
+    for (const point of history) {
+      const day = changes.get(point.date) ?? [];
+      day.push({ id, value: changePercent(point.value, history[0].value)! });
+      changes.set(point.date, day);
+    }
+  const dates = [...changes.keys()].sort();
+  const latest = new Map<string, number>();
+  const rows = dates.map((date) => {
+    for (const { id, value } of changes.get(date)!) latest.set(id, value);
+    const values = [...latest.values()];
+    return {
+      date,
+      value: values.reduce((sum, value) => sum + value, 0) / values.length,
+      count: values.length,
+    };
+  });
+  const exercises = histories.map(({ id, history }) => ({
+    id,
+    change: changePercent(history.at(-1)!.value, history[0].value)!,
+    first: history[0].value,
+    latest: history.at(-1)!.value,
+  }));
   return {
-    value: exercises.length
-      ? exercises.reduce((sum, e) => sum + e.change, 0) / exercises.length
-      : null,
-    count: exercises.length,
+    rows,
     exercises,
-    from,
+    value: rows.at(-1)?.value ?? null,
+    count: histories.length,
+    from: range === "30" ? addDays(today, -29) : (dates[0] ?? today),
     to: today,
   };
+}
+export function strengthTrend(sessions: Session[], today = dateKey()) {
+  return strengthTrendHistory(sessions, "30", today);
 }
 
 export function filterVolumeRange<T extends { from: string; to: string }>(

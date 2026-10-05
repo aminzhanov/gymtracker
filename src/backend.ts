@@ -1,3 +1,4 @@
+import { localReviewInbox, setLocalReview, type ReviewItem } from "./reviews";
 import { readLanguage } from "./i18n";
 import { createClient } from "@supabase/supabase-js";
 import type { AppData, Profile, CoachMessages, TechniqueVideos } from "./types";
@@ -250,4 +251,37 @@ export const DEMO_PROFILES: Profile[] = [
 export function loadLocal(owner: string, name: string) {
   const raw = localStorage.getItem(`liftlog-v1-${owner}`);
   return raw ? validateBackup(JSON.parse(raw)) : emptyData(name);
+}
+
+export async function loadReviewInbox(demo: boolean, coachId: string) {
+  if (demo)
+    return {
+      ready: true,
+      items: localReviewInbox(localStorage, coachId, DEMO_PROFILES, loadLocal),
+    };
+  const { data, error } = await supabase!.rpc("load_review_inbox");
+  if (error) {
+    if (error.code === "PGRST202" || error.code === "42883")
+      return { ready: false, items: [] as ReviewItem[] };
+    throw error;
+  }
+  return { ready: true, items: data.items as ReviewItem[] };
+}
+export async function saveWorkoutReview(
+  demo: boolean,
+  coachId: string,
+  item: ReviewItem,
+  reviewed: boolean,
+) {
+  if (demo) {
+    setLocalReview(localStorage, coachId, item, reviewed);
+    return;
+  }
+  const { error } = await supabase!.rpc("set_workout_review", {
+    target_owner: item.ownerId,
+    target_session: item.session.id,
+    expected_version: item.version,
+    is_reviewed: reviewed,
+  });
+  if (error) throw error;
 }

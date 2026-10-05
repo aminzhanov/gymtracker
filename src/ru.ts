@@ -1,4 +1,9 @@
 export const ru: Record<string, string> = {
+  "completed sets": "выполненных подходов",
+  min: "мин",
+  "Last 30 days": "Последние 30 дней",
+  "More training needed": "Нужно больше тренировок",
+  Exercises: "Упражнения",
   Dashboard: "Главная",
   Training: "Тренировки",
   Calendar: "Календарь",
@@ -571,4 +576,54 @@ export const ru: Record<string, string> = {
   "Search exercises": "Поиск упражнений",
   "Clear selection": "Снять выбор",
   "No matching exercises": "Упражнения не найдены",
+  Inbox: "Входящие",
+  unread: "непрочитанных",
+  Unread: "Непрочитанные",
+  Reviewed: "Просмотренные",
+  "COACH CHECK-IN": "ОБЗОР ТРЕНЕРА",
+  "Workout inbox": "Тренировки на проверку",
+  "New completed workouts and later changes appear here.":
+    "Здесь появляются новые завершённые тренировки и последующие изменения.",
+  Refresh: "Обновить",
+  "Coach inbox needs an account update before notifications can appear.":
+    "Для уведомлений нужно обновить настройки аккаунта.",
+  "Inbox tabs": "Разделы входящих",
+  "Inbox athlete filter": "Фильтр по спортсмену",
+  "All athletes": "Все спортсмены",
+  "The latest three reviewed workouts per athlete are shown here. Older review status is kept.":
+    "Здесь показаны последние три просмотренные тренировки каждого спортсмена. Статус более ранних проверок сохранён.",
+  "Notes left": "Есть заметки",
+  Updated: "Обновлено",
+  New: "Новое",
+  "Loading inbox…": "Загружаем входящие…",
+  "All caught up": "Всё просмотрено",
+  "No reviewed workouts yet": "Просмотренных тренировок пока нет",
+  "New completions will appear here. Existing workout history stays in Training.":
+    "Здесь появятся новые завершённые тренировки. Прежняя история остаётся в разделе «Тренировки».",
+  "Open an unread workout to review its exercises and notes.":
+    "Откройте непрочитанную тренировку, чтобы посмотреть упражнения и заметки.",
+  "Saving review…": "Сохраняем просмотр…",
+  "Session notes": "Заметки к тренировке",
+  "Not done": "Не выполнено",
+  "Mark unread": "Отметить непрочитанной",
+  "This workout is no longer in the inbox":
+    "Этой тренировки больше нет во входящих",
+  "Workout changed. Refresh the inbox before reviewing.":
+    "Тренировка изменилась. Обновите входящие перед просмотром.",
+  "Strength · 30 days": "Сила · 30 дней",
+  "Volume · 30 days": "Объём · 30 дней",
+  "Checked strength sets in the last 30 days, including today. Planned sets and future logs are excluded.":
+    "Выполненные силовые подходы за последние 30 дней, включая сегодня. Планы и будущие записи не учитываются.",
+  "Total weight × reps for checked strength sets in the last 30 days, respecting the program-week filter. Planned sets and future logs are excluded.":
+    "Сумма веса × повторений для выполненных силовых подходов за последние 30 дней с учётом фильтра недель. Планы и будущие записи не учитываются.",
+  "Combined strength trend": "Общий тренд силы",
+  "Strength trend range": "Период тренда силы",
+  "Each exercise starts at 0% from its first daily best estimated 1RM in the selected period. The line averages the changes equally across comparable exercises. An exercise needs at least two logged days in that period. Between logs, its last recorded performance is carried forward.":
+    "Для каждого упражнения 0% — это первая лучшая дневная оценка 1ПМ за выбранный период. Линия показывает среднее изменение с равным вкладом сопоставимых упражнений. Нужно минимум два дня записей за этот период. Между записями используется последний результат.",
+  "Exercises join the line on their first recorded day, so the number contributing can grow over time. Planned and zero-weight sets are excluded. The 30-day endpoint matches the strength summary.":
+    "Упражнения входят в расчёт с первого дня записи, поэтому их количество может расти. Планы и подходы с нулевым весом исключены. Итог за 30 дней совпадает с карточкой силы.",
+  "Log an exercise on at least two different days to see its strength trend.":
+    "Запишите упражнение хотя бы в два разных дня, чтобы увидеть тренд силы.",
+  "Each column is one session: warm-up on top and cool-down below. Tap a box for details. Green means done, amber means partial, gray means skipped, pending or not planned. Shows the last 12 sessions with completed sets or activities. Future plans that have not started are excluded.":
+    "Каждый столбец — одна тренировка: сверху разминка, снизу заминка. Нажмите на ячейку для подробностей. Зелёный — выполнено, жёлтый — частично, серый — пропущено, ожидается или не запланировано. Показаны последние 12 тренировок с выполненными подходами или активностями. Будущие планы без выполненных активностей исключены.",
 };
