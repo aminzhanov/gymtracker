@@ -1,4 +1,25 @@
 export const ru: Record<string, string> = {
+  "Search sessions and exercises": "Поиск тренировок и упражнений",
+  "Find a session or exercise…": "Найти тренировку или упражнение…",
+  "Open search": "Открыть поиск",
+  "FIND. ADJUST. PROGRESS.": "НАЙТИ. ИЗМЕНИТЬ. ПРОГРЕССИРОВАТЬ.",
+  "Search your training": "Поиск по тренировкам",
+  "Find workouts or edit an exercise across your history and plans.":
+    "Находите тренировки и изменяйте упражнение в истории и планах.",
+  "Search result type": "Тип результатов поиска",
+  "Search status filter": "Статус результатов поиска",
+  "Search month filter": "Месяц результатов поиска",
+  "Matching exercise": "Найденное упражнение",
+  "All matching exercises": "Все найденные упражнения",
+  "matching sessions": "найденных тренировок",
+  "exercise occurrences": "выполнений и планов упражнения",
+  "Type a workout or exercise name to search all your sessions.":
+    "Введите название тренировки или упражнения для поиска по всей истории и планам.",
+  "No matches. Try another name or change the filters.":
+    "Ничего не найдено. Попробуйте другое название или измените фильтры.",
+  "Volume outlook month": "Месяц прогноза объёма",
+  "Outlook includes every exercise in this month’s sessions, not just search matches.":
+    "Прогноз включает все упражнения в тренировках за этот месяц, а не только результаты поиска.",
   "Previous completed": "Предыдущее выполнение",
   "Previous planned": "Предыдущий план",
   "No earlier session for this exercise": "Ранее это упражнение не встречалось",

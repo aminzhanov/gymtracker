@@ -1,3 +1,4 @@
+import { SearchResults } from "./SearchResults";
 import { CoachInbox } from "./CoachInbox";
 import { syncLocalReviewEvents, capReviewed, type ReviewItem } from "./reviews";
 import {
@@ -113,6 +114,7 @@ import {
   type TrainingScope,
 } from "./planning";
 type Page =
+  | "Search"
   | "Dashboard"
   | "Training"
   | "Calendar"
@@ -692,6 +694,7 @@ export default function App() {
       return;
     }
     setOwner(next);
+    setSearch("");
     setDuplicate(null);
     setEditor(null);
     setPage("Dashboard");
@@ -800,15 +803,22 @@ export default function App() {
           <div className="search-field">
             <Search size={18} />
             <input
-              aria-label={t("Search sessions")}
-              placeholder={t("Find a session…")}
+              aria-label={t("Search sessions and exercises")}
+              placeholder={t("Find a session or exercise…")}
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                if (e.target.value) setPage("Training");
+                if (e.target.value.trim()) setPage("Search");
               }}
             />
           </div>
+          <button
+            className="icon-button mobile-search-button"
+            aria-label={t("Open search")}
+            onClick={() => setPage("Search")}
+          >
+            <Search size={20} />
+          </button>
           <div className="topbar-right">
             <span className={`save-status ${saveState}`} aria-live="polite">
               {demo ? <FlaskConical size={14} /> : <Cloud size={14} />}{" "}
@@ -1162,6 +1172,17 @@ export default function App() {
                     </div>
                   </div>
                 </>
+              )}
+              {page === "Search" && (
+                <SearchResults
+                  key={`${demo ? "demo" : authId}:${owner}`}
+                  data={data}
+                  query={search}
+                  onQuery={setSearch}
+                  onSave={saveSession}
+                  onOpen={setEditor}
+                  onDuplicate={setDuplicate}
+                />
               )}
               {page === "Training" && (
                 <Training

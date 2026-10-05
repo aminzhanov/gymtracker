@@ -70,7 +70,7 @@ function Numeric({
     />
   );
 }
-function ExerciseRow({
+export function ExerciseRow({
   e,
   s,
   onDraft,
