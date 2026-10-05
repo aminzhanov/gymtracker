@@ -1,4 +1,5 @@
 import { SearchResults } from "./SearchResults";
+import { librarySessionWeeks } from "./libraryWeeks";
 import { CoachInbox } from "./CoachInbox";
 import { syncLocalReviewEvents, capReviewed, type ReviewItem } from "./reviews";
 import {
@@ -2151,15 +2152,50 @@ function Training({
                     {t(group.sessions.length === 1 ? "session" : "sessions")}
                   </span>
                 </div>
-                <div className="training-list">
-                  {group.sessions.map((s) => (
-                    <SessionCard
-                      key={s.id}
-                      session={s}
-                      showWeek={data.settings.useABSplit}
-                      onOpen={onOpen}
-                      onDuplicate={onDuplicate}
-                    />
+                <div className="training-week-groups">
+                  {librarySessionWeeks(
+                    data.sessions,
+                    group.sessions,
+                    group.month,
+                    data.settings.useABSplit,
+                  ).map((week) => (
+                    <section
+                      className="training-week-group"
+                      key={week.key}
+                      aria-label={t(week.label)}
+                    >
+                      <div className="training-week-heading">
+                        <h3>
+                          <span
+                            className={`training-week-label ${week.week ? `training-week-${week.week.toLowerCase()}` : ""}`}
+                          >
+                            {t(week.label)}
+                          </span>
+                          <small>
+                            {shortDate(week.from)}
+                            {week.to !== week.from &&
+                              ` – ${shortDate(week.to)}`}
+                          </small>
+                        </h3>
+                        <span>
+                          {week.sessions.length}{" "}
+                          {t(
+                            week.sessions.length === 1 ? "session" : "sessions",
+                          )}
+                        </span>
+                      </div>
+                      <div className="training-list">
+                        {week.sessions.map((s) => (
+                          <SessionCard
+                            key={s.id}
+                            session={s}
+                            showWeek={data.settings.useABSplit}
+                            onOpen={onOpen}
+                            onDuplicate={onDuplicate}
+                          />
+                        ))}
+                      </div>
+                    </section>
                   ))}
                 </div>
               </section>

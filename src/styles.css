@@ -5475,3 +5475,58 @@ button.stat-detail-row:hover {
     font-size: 16px;
   }
 }
+
+/* Library keeps month totals, then groups session cards by the active week system. */
+.training-week-groups {
+  display: grid;
+  gap: 18px;
+}
+.training-week-group {
+  min-width: 0;
+}
+.training-week-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 8px;
+}
+.training-week-heading h3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 16px;
+  margin: 0;
+}
+.training-week-label {
+  padding: 4px 9px;
+  background: #f0efed;
+  border-radius: 8px;
+}
+.training-week-a {
+  background: #dcebff;
+  color: #285d9a;
+}
+.training-week-b {
+  background: #f6e3f0;
+  color: #854c78;
+}
+.training-week-heading small,
+.training-week-heading > span {
+  font:
+    400 13px/1.4 "DM Sans",
+    system-ui,
+    sans-serif;
+  letter-spacing: 0;
+  color: #767184;
+}
+@media (max-width: 650px) {
+  .training-week-groups {
+    gap: 14px;
+  }
+  .training-week-heading h3 {
+    font-size: 15px;
+  }
+}

@@ -32,6 +32,7 @@ export function t(text: string): string {
       (_, week, n) => `Неделя ${week}${n ? ` · ${n}` : ""}`,
     ],
     [/^([+\-]?[\d\s.,]+) kg$/, (_, value) => `${value} кг`],
+    [/^Week (\d+)$/, (_, n) => `Неделя ${n}`],
     [/^Week ([AB]) only$/, (_, week) => `Только неделя ${week}`],
     [/^About (.+)$/, (_, title) => `О разделе «${t(title)}»`],
     [/^Personal app for (.+)$/, (_, name) => `Личное приложение: ${name}`],
