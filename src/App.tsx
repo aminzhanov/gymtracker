@@ -767,7 +767,7 @@ export default function App() {
                     p.name === "Calendar"
                       ? "Planner"
                       : p.name === "Training"
-                        ? "Training library"
+                        ? "Library"
                         : p.name,
                   )}
                 </span>
@@ -1694,7 +1694,7 @@ export default function App() {
                     p.name === "Calendar"
                       ? "Planner"
                       : p.name === "Training"
-                        ? "Training library"
+                        ? "Library"
                         : p.name,
                   )}
                 </span>
@@ -2045,7 +2045,7 @@ function Training({
         <div>
           <span className="eyebrow">{t("SHOW UP. LIFT. REPEAT.")}</span>
           <h1>
-            {t("Your training library ")}
+            {t("Your library ")}
             <span>✦</span>
           </h1>
           <p>{t("A place for every session and every small win.")}</p>

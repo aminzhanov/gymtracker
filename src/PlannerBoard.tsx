@@ -320,158 +320,164 @@ export function PlannerBoard({
           .sort((a, b) => a.date.localeCompare(b.date)),
       }));
   return (
-    <div className="planner-workspace">
-      <div className="planner-table-area">
+    <>
+      <div className="planner-live-summary">
+        <strong>{number(rows.reduce((v, r) => v + r.total, 0))} kg</strong>
+        <span>
+          {t("Projection")} · {delta >= 0 ? "+" : ""}
+          {number(delta)} kg {t("since opening planner")}
+        </span>
         <p className="muted">
           {t(
             "Edit weight and reps here. Changes preview immediately and save when you leave a field.",
           )}
         </p>
-        {groups.map((g) => (
-          <section className="planner-week" key={g.key}>
-            <h2>
-              {t(g.label)}{" "}
-              <small>
-                {shortDate(g.from)} – {shortDate(g.to)}
-              </small>
-              {!!g.sessions.length && (
-                <span className="planner-week-completion">
-                  {g.sessions.filter((s) => s.status === "done").length}/
-                  {g.sessions.length} {t("completed")}
-                </span>
-              )}
-            </h2>
-            {g.sessions.map((original) => {
-              const s = current(original);
-              return (
-                <article
-                  className={`planner-session ${s.status === "done" ? "planner-session-done" : ""}`}
-                  key={s.id}
-                >
-                  <header>
-                    <div className="planner-session-identity">
-                      <h3>
-                        {s.icon} {s.name}
-                      </h3>
-                      <span
-                        className={`planner-status ${s.status === "done" ? "status-done" : ""}`}
-                      >
-                        {s.status === "done" ? (
-                          <CheckCircle2 size={17} />
-                        ) : (
-                          <Clock3 size={17} />
-                        )}
-                        {t(s.status === "done" ? "Completed" : "Planned")}
-                      </span>
-                    </div>
-                    <div className="planner-session-toolbar">
-                      <DateField
-                        label={t("Move to date")}
-                        value={s.date}
-                        onChange={(date) => {
-                          draft({ ...current(s), date });
-                          save(s);
-                        }}
-                      />
-                      <div className="planner-session-actions">
-                        <button
-                          className="button secondary compact"
-                          onClick={() => {
-                            const latest = current(s);
-                            save(s);
-                            onDuplicate(latest);
-                          }}
-                        >
-                          {t("Duplicate")}
-                        </button>
-                        <button
-                          className="button secondary compact"
-                          onClick={() => {
-                            const latest = current(s);
-                            save(s);
-                            onOpen(latest);
-                          }}
-                        >
-                          {t("Open full editor")}
-                        </button>
-                      </div>
-                    </div>
-                  </header>
-                  {s.exercises.map((e) => (
-                    <ExerciseRow
-                      key={e.id}
-                      e={e}
-                      s={s}
-                      previous={previousPlannerExercise(preview.sessions, s, e)}
-                      onDraft={(next) => {
-                        const latest = current(s);
-                        draft({
-                          ...latest,
-                          exercises: latest.exercises.map((x) =>
-                            x.id === e.id ? next : x,
-                          ),
-                        });
-                      }}
-                      onSave={() => save(s)}
-                    />
-                  ))}
-                  <select
-                    aria-label={`${t("Add exercise")} · ${s.name}`}
-                    value=""
-                    onChange={(ev) => {
-                      const found = data.exercises.find(
-                        (x) => x.id === ev.target.value,
-                      );
-                      if (found) {
-                        const latest = current(s);
-                        draft({
-                          ...latest,
-                          exercises: [
-                            ...latest.exercises,
-                            newExercise(found.id, found.name),
-                          ],
-                        });
-                        save(s);
-                      }
-                    }}
-                  >
-                    <option value="">+ {t("Add exercise")}</option>
-                    {data.exercises.map((e) => (
-                      <option key={e.id} value={e.id}>
-                        {exerciseName(e.name, e.id)}
-                      </option>
-                    ))}
-                  </select>
-                </article>
-              );
-            })}
-            {!g.sessions.length && (
-              <p className="muted">{t("No session planned")}</p>
-            )}
-            <button
-              className="button secondary compact"
-              onClick={() =>
-                onCreate(g.from.startsWith(month) ? g.from : `${month}-01`)
-              }
-            >
-              + {t("Add session")}
-            </button>
-          </section>
-        ))}
       </div>
-      <aside className="planner-outlook">
-        <div className="planner-live-summary">
-          <strong>{number(rows.reduce((v, r) => v + r.total, 0))} kg</strong>
-          <span>
-            {t("Projection")} · {delta >= 0 ? "+" : ""}
-            {number(delta)} kg {t("since opening planner")}
-          </span>
+      <div className="planner-workspace">
+        <div className="planner-table-area">
+          {groups.map((g) => (
+            <section className="planner-week" key={g.key}>
+              <h2>
+                {t(g.label)}{" "}
+                <small>
+                  {shortDate(g.from)} – {shortDate(g.to)}
+                </small>
+                {!!g.sessions.length && (
+                  <span className="planner-week-completion">
+                    {g.sessions.filter((s) => s.status === "done").length}/
+                    {g.sessions.length} {t("completed")}
+                  </span>
+                )}
+              </h2>
+              {g.sessions.map((original) => {
+                const s = current(original);
+                return (
+                  <article
+                    className={`planner-session ${s.status === "done" ? "planner-session-done" : ""}`}
+                    key={s.id}
+                  >
+                    <header>
+                      <div className="planner-session-identity">
+                        <h3>
+                          {s.icon} {s.name}
+                        </h3>
+                        <span
+                          className={`planner-status ${s.status === "done" ? "status-done" : ""}`}
+                        >
+                          {s.status === "done" ? (
+                            <CheckCircle2 size={17} />
+                          ) : (
+                            <Clock3 size={17} />
+                          )}
+                          {t(s.status === "done" ? "Completed" : "Planned")}
+                        </span>
+                      </div>
+                      <div className="planner-session-toolbar">
+                        <DateField
+                          label={t("Move to date")}
+                          value={s.date}
+                          onChange={(date) => {
+                            draft({ ...current(s), date });
+                            save(s);
+                          }}
+                        />
+                        <div className="planner-session-actions">
+                          <button
+                            className="button secondary compact"
+                            onClick={() => {
+                              const latest = current(s);
+                              save(s);
+                              onDuplicate(latest);
+                            }}
+                          >
+                            {t("Duplicate")}
+                          </button>
+                          <button
+                            className="button secondary compact"
+                            onClick={() => {
+                              const latest = current(s);
+                              save(s);
+                              onOpen(latest);
+                            }}
+                          >
+                            {t("Open full editor")}
+                          </button>
+                        </div>
+                      </div>
+                    </header>
+                    {s.exercises.map((e) => (
+                      <ExerciseRow
+                        key={e.id}
+                        e={e}
+                        s={s}
+                        previous={previousPlannerExercise(
+                          preview.sessions,
+                          s,
+                          e,
+                        )}
+                        onDraft={(next) => {
+                          const latest = current(s);
+                          draft({
+                            ...latest,
+                            exercises: latest.exercises.map((x) =>
+                              x.id === e.id ? next : x,
+                            ),
+                          });
+                        }}
+                        onSave={() => save(s)}
+                      />
+                    ))}
+                    <select
+                      aria-label={`${t("Add exercise")} · ${s.name}`}
+                      value=""
+                      onChange={(ev) => {
+                        const found = data.exercises.find(
+                          (x) => x.id === ev.target.value,
+                        );
+                        if (found) {
+                          const latest = current(s);
+                          draft({
+                            ...latest,
+                            exercises: [
+                              ...latest.exercises,
+                              newExercise(found.id, found.name),
+                            ],
+                          });
+                          save(s);
+                        }
+                      }}
+                    >
+                      <option value="">+ {t("Add exercise")}</option>
+                      {data.exercises.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {exerciseName(e.name, e.id)}
+                        </option>
+                      ))}
+                    </select>
+                  </article>
+                );
+              })}
+              {!g.sessions.length && (
+                <p className="muted">{t("No session planned")}</p>
+              )}
+              <button
+                className="button secondary compact"
+                onClick={() =>
+                  onCreate(g.from.startsWith(month) ? g.from : `${month}-01`)
+                }
+              >
+                + {t("Add session")}
+              </button>
+            </section>
+          ))}
         </div>
-        <details className="planner-chart" open={!compact}>
-          <summary>{t("Volume outlook")}</summary>
-          <CalendarVolume data={preview} month={month} />
-        </details>
-      </aside>
-    </div>
+        <aside className="planner-outlook">
+          <details className="planner-chart" open={!compact}>
+            <summary>{t("Volume outlook")}</summary>
+            <CalendarVolume data={preview} month={month} />
+          </details>
+        </aside>
+      </div>
+    </>
   );
 }

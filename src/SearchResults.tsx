@@ -2,13 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { Search, CheckCircle2, Clock3 } from "lucide-react";
 import type { AppData, Session } from "./types";
 import { t, exerciseName } from "./i18n";
-import { dateKey, fullDate } from "./model";
+import { fullDate } from "./model";
 import { monthLabel, trainingMonths } from "./planning";
 import { trainingWeeks } from "./trainingWeeks";
 import { previousPlannerExercise } from "./plannerEditing";
 import { ExerciseRow } from "./PlannerBoard";
-import { SessionCard, useMediaQuery } from "./components";
-import { CalendarVolume } from "./CalendarVolume";
+import { SessionCard } from "./components";
 import {
   exerciseMatches,
   searchSessions,
@@ -34,8 +33,6 @@ export function SearchResults({
   const [status, setStatus] = useState("all");
   const [month, setMonth] = useState("all");
   const [selected, setSelected] = useState("");
-  const [outlookMonth, setOutlookMonth] = useState(dateKey().slice(0, 7));
-  const compact = useMediaQuery("(max-width: 1150px)");
   const [drafts, setDrafts] = useState<Record<string, Session>>({});
   const draftRef = useRef(drafts);
   const dataRef = useRef(data);
@@ -97,7 +94,6 @@ export function SearchResults({
     ),
   );
   const available = trainingMonths(data.sessions);
-  const chartMonth = month === "all" ? outlookMonth : month;
   return (
     <>
       <div className="page-head">
@@ -199,7 +195,7 @@ export function SearchResults({
           <div
             className={
               mode === "exercises"
-                ? "planner-workspace"
+                ? "search-exercise-results"
                 : "search-session-results"
             }
           >
@@ -297,35 +293,6 @@ export function SearchResults({
                 </section>
               ))}
             </div>
-            {mode === "exercises" && (
-              <aside className="planner-outlook search-volume-outlook">
-                {month === "all" && (
-                  <label>
-                    {t("Volume outlook month")}
-                    <select
-                      aria-label={t("Volume outlook month")}
-                      value={outlookMonth}
-                      onChange={(e) => setOutlookMonth(e.target.value)}
-                    >
-                      {available.map((m) => (
-                        <option key={m} value={m}>
-                          {monthLabel(m)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                <p className="footnote">
-                  {t(
-                    "Outlook includes every exercise in this month’s sessions, not just search matches.",
-                  )}
-                </p>
-                <details className="planner-chart" open={!compact}>
-                  <summary>{t("Volume outlook")}</summary>
-                  <CalendarVolume data={preview} month={chartMonth} />
-                </details>
-              </aside>
-            )}
           </div>
         </>
       )}

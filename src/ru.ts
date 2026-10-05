@@ -17,16 +17,13 @@ export const ru: Record<string, string> = {
     "Введите название тренировки или упражнения для поиска по всей истории и планам.",
   "No matches. Try another name or change the filters.":
     "Ничего не найдено. Попробуйте другое название или измените фильтры.",
-  "Volume outlook month": "Месяц прогноза объёма",
-  "Outlook includes every exercise in this month’s sessions, not just search matches.":
-    "Прогноз включает все упражнения в тренировках за этот месяц, а не только результаты поиска.",
   "Previous completed": "Предыдущее выполнение",
   "Previous planned": "Предыдущий план",
   "No earlier session for this exercise": "Ранее это упражнение не встречалось",
   completed: "выполнено",
   Planner: "Планировщик",
-  "Training library": "Журнал",
-  "Your training library": "Ваш журнал тренировок",
+  Library: "Библиотека",
+  "Your library": "Ваша библиотека",
   "Your planner": "Ваш планировщик",
   "Planner view": "Вид планировщика",
   "Table planner": "Таблица",
