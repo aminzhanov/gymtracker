@@ -759,7 +759,15 @@ export default function App() {
                 }}
               >
                 <p.icon size={21} />
-                <span>{t(p.name)}</span>
+                <span>
+                  {t(
+                    p.name === "Calendar"
+                      ? "Planner"
+                      : p.name === "Training"
+                        ? "Training library"
+                        : p.name,
+                  )}
+                </span>
               </button>
             ))}
         </nav>
@@ -1091,7 +1099,7 @@ export default function App() {
                             className="text-button"
                             onClick={() => setPage("Calendar")}
                           >
-                            {t("Calendar ")}
+                            {t("Planner ")}
                             <ArrowRight size={15} />
                           </button>
                         }
@@ -1182,6 +1190,8 @@ export default function App() {
               )}
               {page === "Calendar" && (
                 <Calendar
+                  key={`${demo ? "demo" : authId}:${owner}`}
+                  onSave={saveSession}
                   onDuplicate={setDuplicate}
                   data={data}
                   onOpen={setEditor}
@@ -1207,7 +1217,7 @@ export default function App() {
                     <div>
                       <span className="eyebrow">{t("STRONGER TOGETHER")}</span>
                       <h1>
-                        {t("Your training crew ")}
+                        {t("Your training library crew ")}
                         <span>✦</span>
                       </h1>
                       <p>
@@ -1658,7 +1668,15 @@ export default function App() {
                 }}
               >
                 <p.icon size={20} />
-                <span>{t(p.name)}</span>
+                <span>
+                  {t(
+                    p.name === "Calendar"
+                      ? "Planner"
+                      : p.name === "Training"
+                        ? "Training library"
+                        : p.name,
+                  )}
+                </span>
               </button>
             ))}
           <button
@@ -2006,7 +2024,7 @@ function Training({
         <div>
           <span className="eyebrow">{t("SHOW UP. LIFT. REPEAT.")}</span>
           <h1>
-            {t("Your training ")}
+            {t("Your training library ")}
             <span>✦</span>
           </h1>
           <p>{t("A place for every session and every small win.")}</p>

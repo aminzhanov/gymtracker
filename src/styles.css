@@ -4667,3 +4667,236 @@ button.stat-detail-row:hover {
     padding: 13px;
   }
 }
+
+.planner-view-switch {
+  margin-bottom: 16px;
+  width: fit-content;
+}
+.planner-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(330px, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.planner-table-area,
+.planner-outlook {
+  min-width: 0;
+}
+.planner-outlook {
+  position: sticky;
+  top: 90px;
+}
+.planner-live-summary {
+  background: #fff0b7;
+  border: 2px solid #dac377;
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.planner-live-summary strong {
+  font-size: 26px;
+}
+.planner-week {
+  margin: 22px 0;
+}
+.planner-week h2 {
+  font-size: 21px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: baseline;
+}
+.planner-week h2 small {
+  font-size: 13px;
+  font-weight: 400;
+}
+.planner-session {
+  border: 1px solid var(--border, #ddd);
+  border-radius: 18px;
+  background: var(--surface, #fffdf8);
+  margin: 12px 0;
+  padding: 16px;
+  overflow: hidden;
+}
+.planner-session header {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.planner-session h3 {
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+.planner-session header > label {
+  flex: 1;
+  min-width: 170px;
+  max-width: 260px;
+}
+.planner-status {
+  font-size: 13px;
+}
+.planner-session-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.planner-exercise {
+  border-top: 1px solid #e4dfdb;
+  padding: 12px 0;
+}
+.planner-exercise-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1.5fr) 90px minmax(65px, 0.65fr) minmax(
+      65px,
+      0.65fr
+    ) minmax(65px, 0.7fr);
+  gap: 10px;
+  align-items: center;
+}
+.planner-exercise-name {
+  background: none;
+  border: 0;
+  text-align: left;
+  font-weight: 700;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.planner-exercise-name small {
+  display: block;
+  font-weight: 400;
+  margin-top: 5px;
+}
+.planner-exercise-row label,
+.planner-set label {
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.planner-number {
+  width: 100%;
+  min-width: 0;
+  font-size: 16px !important;
+  padding: 9px !important;
+}
+.planner-number[aria-invalid="true"] {
+  border-color: #b45353;
+}
+.planner-count > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+}
+.planner-count button {
+  border: 1px solid #cbc6c0;
+  border-radius: 8px;
+  background: #fff;
+  padding: 7px 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.planner-field-label,
+.planner-row-volume small {
+  display: block;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+.planner-row-volume strong {
+  font-size: 14px;
+}
+.planner-varied {
+  grid-column: span 2;
+}
+.planner-set-list {
+  padding: 10px 0 0 20px;
+}
+.planner-set {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0;
+}
+.planner-remove {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  background: #fff0b7;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 10px;
+}
+.planner-session > select {
+  width: 100%;
+  font-size: 16px;
+}
+.planner-chart > summary {
+  cursor: pointer;
+  padding: 14px 0;
+  font-weight: 700;
+}
+.planner-chart .calendar-volume {
+  margin-top: 0;
+}
+.planner-compare {
+  padding: 14px 0;
+}
+.planner-compare select {
+  width: 100%;
+  margin-top: 6px;
+}
+@media (max-width: 1150px) {
+  .planner-workspace {
+    grid-template-columns: 1fr;
+  }
+  .planner-outlook {
+    position: static;
+    grid-row: 1;
+  }
+  .planner-chart .calendar-volume {
+    max-width: 100%;
+  }
+}
+@media (max-width: 600px) {
+  .planner-session {
+    padding: 12px;
+  }
+  .planner-exercise-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .planner-exercise-name {
+    grid-column: 1/-1;
+    font-size: 16px;
+  }
+  .planner-row-volume {
+    grid-column: 1/-1;
+    text-align: right;
+  }
+  .planner-row-volume small {
+    display: inline;
+    margin-right: 8px;
+  }
+  .planner-session header > label {
+    max-width: 100%;
+  }
+  .planner-count button {
+    min-height: 40px;
+  }
+  .planner-set-list {
+    padding-left: 0;
+  }
+  .planner-week h2 small {
+    font-size: 14px;
+  }
+  .planner-workspace {
+    gap: 10px;
+  }
+}

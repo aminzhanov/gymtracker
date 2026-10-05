@@ -5,6 +5,7 @@ import { Plus, ChevronLeft, ChevronRight, Copy } from "lucide-react";
 import type { AppData, Session } from "./types";
 import { Panel, ExerciseNames, useMediaQuery } from "./components";
 import { dateKey, parseDate, addDays, monday, shortDate } from "./model";
+import { PlannerBoard } from "./PlannerBoard";
 import { CalendarVolume } from "./CalendarVolume";
 
 export function Calendar({
@@ -13,17 +14,21 @@ export function Calendar({
   onCreate,
   onMove,
   onDuplicate,
+  onSave,
 }: {
   data: AppData;
   onOpen: (session: Session) => void;
   onCreate: (date: string) => void;
   onMove: (id: string, date: string) => void;
   onDuplicate: (s: Session) => void;
+  onSave: (s: Session) => void;
 }) {
+  const [workspace, setWorkspace] = useState<"calendar" | "table">("calendar");
   const compact = useMediaQuery("(max-width: 850px)");
   const [view, setView] = useState<"month" | "week" | null>(null);
   const [focusDate, setFocusDate] = useState(dateKey());
-  const activeView = view ?? (compact ? "week" : "month");
+  const activeView =
+    workspace === "table" ? "month" : (view ?? (compact ? "week" : "month"));
   const month = focusDate.slice(0, 7);
   const first = `${month}-01`;
   const weekStart = monday(focusDate);
@@ -53,7 +58,7 @@ export function Calendar({
         <div>
           <span className="eyebrow">{t("PLAN. TRAIN. PROGRESS.")}</span>
           <h1>
-            {t("Your training calendar ")}
+            {t("Your planner ")}
             <span>↗</span>
           </h1>
           <p>{t("Make a little space for getting stronger.")}</p>
@@ -63,27 +68,48 @@ export function Calendar({
           {t(" Add session")}
         </button>
       </div>
+      <div
+        className="segmented planner-view-switch"
+        aria-label={t("Planner view")}
+      >
+        <button
+          aria-pressed={workspace === "calendar"}
+          className={workspace === "calendar" ? "active" : ""}
+          onClick={() => setWorkspace("calendar")}
+        >
+          {t("Calendar")}
+        </button>
+        <button
+          aria-pressed={workspace === "table"}
+          className={workspace === "table" ? "active" : ""}
+          onClick={() => setWorkspace("table")}
+        >
+          {t("Table planner")}
+        </button>
+      </div>
       <Panel
         title={title}
         className="calendar-panel"
         action={
           <div className="calendar-controls">
-            <div className="segmented" aria-label={t("Calendar view")}>
-              <button
-                aria-pressed={activeView === "week"}
-                className={activeView === "week" ? "active" : ""}
-                onClick={() => setView("week")}
-              >
-                {t("Week")}
-              </button>
-              <button
-                aria-pressed={activeView === "month"}
-                className={activeView === "month" ? "active" : ""}
-                onClick={() => setView("month")}
-              >
-                {t("Month")}
-              </button>
-            </div>
+            {workspace === "calendar" && (
+              <div className="segmented" aria-label={t("Calendar view")}>
+                <button
+                  aria-pressed={activeView === "week"}
+                  className={activeView === "week" ? "active" : ""}
+                  onClick={() => setView("week")}
+                >
+                  {t("Week")}
+                </button>
+                <button
+                  aria-pressed={activeView === "month"}
+                  className={activeView === "month" ? "active" : ""}
+                  onClick={() => setView("month")}
+                >
+                  {t("Month")}
+                </button>
+              </div>
+            )}
             <div className="flex">
               <button
                 className="icon-button"
@@ -109,126 +135,145 @@ export function Calendar({
           </div>
         }
       >
-        <div
-          className={`calendar-scroll ${activeView === "week" ? "agenda-scroll" : ""}`}
-        >
-          <div
-            className={
-              activeView === "week" ? "calendar-agenda" : "calendar-grid"
-            }
-          >
-            {activeView === "month" &&
-              [
-                t("Mon"),
-                t("Tue"),
-                t("Wed"),
-                t("Thu"),
-                t("Fri"),
-                t("Sat"),
-                t("Sun"),
-              ].map((day) => (
-                <div className="calendar-label" key={t(day)}>
-                  {t(day)}
-                </div>
-              ))}
-            {days.map((date) => {
-              const sessions = data.sessions.filter(
-                (session) => session.date === date,
-              );
-              return (
-                <div
-                  key={date}
-                  className={`calendar-day ${activeView === "month" && date.slice(0, 7) !== month ? "other-month" : ""} ${date === dateKey() ? "today" : ""}`}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const id = event.dataTransfer.getData(
-                      "text/liftlog-session",
-                    );
-                    if (id) onMove(id, date);
-                  }}
-                >
-                  <div className="calendar-date">
-                    <button
-                      className="day-number"
-                      aria-label={t(`Create session on ${date}`)}
-                      onClick={() => onCreate(date)}
+        {workspace === "calendar" && (
+          <>
+            <div
+              className={`calendar-scroll ${activeView === "week" ? "agenda-scroll" : ""}`}
+            >
+              <div
+                className={
+                  activeView === "week" ? "calendar-agenda" : "calendar-grid"
+                }
+              >
+                {activeView === "month" &&
+                  [
+                    t("Mon"),
+                    t("Tue"),
+                    t("Wed"),
+                    t("Thu"),
+                    t("Fri"),
+                    t("Sat"),
+                    t("Sun"),
+                  ].map((day) => (
+                    <div className="calendar-label" key={t(day)}>
+                      {t(day)}
+                    </div>
+                  ))}
+                {days.map((date) => {
+                  const sessions = data.sessions.filter(
+                    (session) => session.date === date,
+                  );
+                  return (
+                    <div
+                      key={date}
+                      className={`calendar-day ${activeView === "month" && date.slice(0, 7) !== month ? "other-month" : ""} ${date === dateKey() ? "today" : ""}`}
+                      onDragOver={(event) => event.preventDefault()}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const id = event.dataTransfer.getData(
+                          "text/liftlog-session",
+                        );
+                        if (id) onMove(id, date);
+                      }}
                     >
-                      {parseDate(date).getDate()}
-                    </button>
-                    {activeView === "week" && (
-                      <span>
-                        {parseDate(date).toLocaleDateString(appLocale(), {
-                          weekday: "long",
-                          month: "short",
-                        })}
-                        {date === dateKey() && <small>{t("Today")}</small>}
-                      </span>
-                    )}
-                  </div>
-                  <div className="calendar-workouts">
-                    {sessions.map((session) => (
-                      <div className="calendar-session-wrap" key={session.id}>
+                      <div className="calendar-date">
                         <button
-                          draggable
-                          className={`calendar-session ${showWeek ? `week-${session.week.toLowerCase()}` : "tint-blue"}`}
-                          onDragStart={(event) =>
-                            event.dataTransfer.setData(
-                              "text/liftlog-session",
-                              session.id,
-                            )
-                          }
-                          onClick={() => onOpen(session)}
+                          className="day-number"
+                          aria-label={t(`Create session on ${date}`)}
+                          onClick={() => onCreate(date)}
                         >
-                          <span className="calendar-session-title">
-                            <span aria-hidden="true">{session.icon}</span>
-                            <strong>{session.name}</strong>
+                          {parseDate(date).getDate()}
+                        </button>
+                        {activeView === "week" && (
+                          <span>
+                            {parseDate(date).toLocaleDateString(appLocale(), {
+                              weekday: "long",
+                              month: "short",
+                            })}
+                            {date === dateKey() && <small>{t("Today")}</small>}
                           </span>
-                          <small>
-                            {showWeek && `Week ${session.week} · `}
-                            {session.status === "done"
-                              ? t("✓ Done")
-                              : t("Planned")}
-                          </small>
-                          <ExerciseNames exercises={session.exercises} />
-                        </button>
-                        <button
-                          className="duplicate-session-button"
-                          aria-label={t(
-                            `Duplicate ${session.name} on ${session.date}`,
-                          )}
-                          title={t("Duplicate session")}
-                          onClick={() => onDuplicate(session)}
-                        >
-                          <Copy size={16} />
-                        </button>
+                        )}
                       </div>
-                    ))}
-                    {activeView === "week" && !sessions.length && (
-                      <span className="calendar-rest">
-                        {t("No session planned")}
-                      </span>
-                    )}
-                  </div>
-                  <button
-                    className="day-add"
-                    aria-label={t(`Add session on ${date}`)}
-                    onClick={() => onCreate(date)}
-                  >
-                    <Plus size={17} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <p className="footnote">
-          {t(
-            "Tap a date to plan, or a session to open it. Drag a session to reschedule on desktop. Use “Move to date” in the editor on mobile.",
-          )}
-        </p>
+                      <div className="calendar-workouts">
+                        {sessions.map((session) => (
+                          <div
+                            className="calendar-session-wrap"
+                            key={session.id}
+                          >
+                            <button
+                              draggable
+                              className={`calendar-session ${showWeek ? `week-${session.week.toLowerCase()}` : "tint-blue"}`}
+                              onDragStart={(event) =>
+                                event.dataTransfer.setData(
+                                  "text/liftlog-session",
+                                  session.id,
+                                )
+                              }
+                              onClick={() => onOpen(session)}
+                            >
+                              <span className="calendar-session-title">
+                                <span aria-hidden="true">{session.icon}</span>
+                                <strong>{session.name}</strong>
+                              </span>
+                              <small>
+                                {showWeek && `Week ${session.week} · `}
+                                {session.status === "done"
+                                  ? t("✓ Done")
+                                  : t("Planned")}
+                              </small>
+                              <ExerciseNames exercises={session.exercises} />
+                            </button>
+                            <button
+                              className="duplicate-session-button"
+                              aria-label={t(
+                                `Duplicate ${session.name} on ${session.date}`,
+                              )}
+                              title={t("Duplicate session")}
+                              onClick={() => onDuplicate(session)}
+                            >
+                              <Copy size={16} />
+                            </button>
+                          </div>
+                        ))}
+                        {activeView === "week" && !sessions.length && (
+                          <span className="calendar-rest">
+                            {t("No session planned")}
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        className="day-add"
+                        aria-label={t(`Add session on ${date}`)}
+                        onClick={() => onCreate(date)}
+                      >
+                        <Plus size={17} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <p className="footnote">
+              {t(
+                "Tap a date to plan, or a session to open it. Drag a session to reschedule on desktop. Use “Move to date” in the editor on mobile.",
+              )}
+            </p>
+          </>
+        )}
       </Panel>
-      <CalendarVolume data={data} month={month} />
+      {workspace === "table" ? (
+        <PlannerBoard
+          key={`${month}:${showWeek}`}
+          data={data}
+          month={month}
+          onSave={onSave}
+          onOpen={onOpen}
+          onCreate={onCreate}
+          onDuplicate={onDuplicate}
+        />
+      ) : (
+        <CalendarVolume data={data} month={month} />
+      )}
     </>
   );
 }
