@@ -97,7 +97,7 @@ export function Calendar({
       </div>
       <Panel
         title={title}
-        className="calendar-panel"
+        className={`calendar-panel ${workspace === "table" ? "planner-month-panel" : ""}`}
         action={
           <div className="calendar-controls">
             {workspace === "calendar" && (

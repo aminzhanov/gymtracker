@@ -5280,3 +5280,198 @@ button.stat-detail-row:hover {
     margin: 0;
   }
 }
+
+/* Compact planner rows retain readable inputs and touch-sized edit controls. */
+.planner-month-panel {
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+.planner-month-panel .panel-title {
+  margin-bottom: 0;
+  align-items: center;
+}
+.planner-workspace {
+  gap: 16px;
+}
+.planner-week {
+  margin-bottom: 16px;
+}
+.planner-week h2 {
+  margin-bottom: 8px;
+}
+.planner-chart > summary {
+  margin-bottom: 8px;
+}
+.planner-session {
+  padding: 12px;
+  margin: 8px 0;
+  border-radius: 14px;
+}
+.planner-session header {
+  margin-bottom: 8px;
+}
+.planner-session-identity {
+  margin-bottom: 8px;
+  gap: 8px;
+}
+.planner-session-toolbar {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+}
+.planner-session-toolbar > label {
+  gap: 0;
+}
+.planner-session-toolbar .date-field {
+  height: 100%;
+}
+.planner-session-actions .button {
+  gap: 6px;
+}
+.planner-session-actions svg {
+  display: none;
+}
+.planner-exercise {
+  padding: 8px 0;
+}
+.planner-exercise-row {
+  gap: 6px 8px;
+}
+.planner-exercise-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  min-width: 0;
+  min-height: 44px;
+  line-height: 1.3;
+  padding: 0;
+}
+.planner-exercise-name small {
+  margin-top: 0;
+  font-size: 12px;
+}
+.planner-recovery-row {
+  grid-template-columns: minmax(0, 1fr) 100px;
+}
+.planner-recovery-row .planner-exercise-name {
+  grid-column: auto;
+}
+.planner-previous {
+  display: block;
+  margin: 4px 0 0;
+  padding: 0;
+  border-radius: 8px;
+}
+.planner-previous > summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  margin: 0;
+  padding: 5px 8px;
+  min-height: 32px;
+  line-height: 1.4;
+  cursor: pointer;
+  list-style: none;
+}
+.planner-previous > summary::-webkit-details-marker {
+  display: none;
+}
+.planner-previous > summary::after {
+  content: "▾";
+  margin-left: auto;
+}
+.planner-previous[open] > summary::after {
+  content: "▴";
+}
+.planner-previous strong {
+  width: auto;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.planner-previous-context {
+  padding: 0 8px 6px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.planner-set-list {
+  padding: 4px 0 0;
+}
+.planner-set {
+  gap: 8px;
+  margin: 6px 0;
+}
+@media (max-width: 1150px) {
+  .planner-outlook:not(:has(.planner-chart[open])) {
+    border-radius: 8px;
+  }
+  .planner-chart:not([open]) > summary {
+    margin: 0;
+    padding: 0 8px;
+  }
+}
+@media (max-width: 600px) {
+  .planner-session {
+    padding: 10px;
+  }
+  .planner-session-actions {
+    display: flex;
+  }
+  .planner-session-actions .button {
+    width: 44px;
+    min-height: 44px;
+    padding: 0;
+  }
+  .planner-session-actions svg {
+    display: block;
+  }
+  .planner-session-actions .button > span {
+    display: none;
+  }
+  .planner-session-toolbar .date-field {
+    padding: 6px 8px;
+  }
+  .planner-session-toolbar .date-display {
+    font-size: 16px;
+    line-height: 1.2;
+  }
+  .planner-exercise-name {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    min-height: 32px;
+  }
+  .planner-edit-label {
+    display: none;
+  }
+  .planner-row-volume {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+  }
+  .planner-row-volume small {
+    display: none;
+  }
+  .planner-row-volume strong {
+    min-height: 0;
+    font-size: 13px;
+  }
+  .planner-count > div {
+    gap: 2px;
+  }
+  .planner-count button {
+    width: 40px;
+    padding: 0;
+  }
+  .planner-previous > summary {
+    min-height: 44px;
+  }
+  .planner-recovery-row {
+    grid-template-columns: minmax(0, 1fr) 90px;
+    align-items: center;
+  }
+  .planner-recovery-row .planner-exercise-name {
+    grid-row: auto;
+    font-size: 16px;
+  }
+}

@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock3 } from "lucide-react";
+import { CheckCircle2, Clock3, Copy, SquarePen } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { AppData, Session, WorkoutExercise } from "./types";
 import { t, exerciseName } from "./i18n";
@@ -89,17 +89,29 @@ export function ExerciseRow({
   const total = e.sets.reduce((v, z) => v + z.weight * z.reps, 0);
   return (
     <div className="planner-exercise">
-      <div className="planner-exercise-row">
-        <button
-          className="planner-exercise-name"
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
-          {exerciseName(e.name, e.exerciseId)}{" "}
-          <small>
-            {open ? "▴" : "▾"} {same ? t("Edit sets") : t("Varied sets")}
-          </small>
-        </button>
+      <div
+        className={`planner-exercise-row ${e.kind !== "strength" ? "planner-recovery-row" : ""}`}
+      >
+        {e.kind === "strength" ? (
+          <button
+            className="planner-exercise-name"
+            aria-label={`${t(same ? "Edit sets" : "Edit individual sets")} · ${exerciseName(e.name, e.exerciseId)}`}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            <span>{exerciseName(e.name, e.exerciseId)}</span>
+            <small>
+              {open ? "▴" : "▾"}{" "}
+              <span className="planner-edit-label">
+                {same ? t("Edit sets") : t("Varied sets")}
+              </span>
+            </small>
+          </button>
+        ) : (
+          <span className="planner-exercise-name">
+            {exerciseName(e.name, e.exerciseId)}
+          </span>
+        )}
         {e.kind === "strength" ? (
           <>
             <div className="planner-count">
@@ -172,36 +184,33 @@ export function ExerciseRow({
           </label>
         )}
       </div>
-      <div
-        className={`planner-previous ${previous?.session.status === "done" ? "previous-done" : ""}`}
-      >
-        {previous ? (
-          <>
+      {previous && (
+        <details
+          className={`planner-previous ${previous.session.status === "done" ? "previous-done" : ""}`}
+        >
+          <summary>
             <span className="planner-previous-label">
               {previous.session.status === "done" ? (
                 <CheckCircle2 size={15} />
               ) : (
                 <Clock3 size={15} />
-              )}{" "}
+              )}
               {t(
                 previous.session.status === "done"
                   ? "Previous completed"
                   : "Previous planned",
               )}
             </span>
-            <span className="planner-previous-context">
-              {shortDate(previous.session.date)},{" "}
-              {parseDate(previous.session.date).getFullYear()} ·{" "}
-              {previous.session.name}
-            </span>
+            <span>{shortDate(previous.session.date)}</span>
             <strong>{exerciseSummary(previous.exercise)}</strong>
-          </>
-        ) : (
-          <span className="muted">
-            {t("No earlier session for this exercise")}
-          </span>
-        )}
-      </div>
+          </summary>
+          <p className="planner-previous-context">
+            {shortDate(previous.session.date)},{" "}
+            {parseDate(previous.session.date).getFullYear()} ·{" "}
+            {previous.session.name}
+          </p>
+        </details>
+      )}
       {remove !== null && (
         <div className="planner-remove">
           {t("Remove last set")} · {e.sets.at(-1)?.weight} kg ×{" "}
@@ -357,6 +366,7 @@ export function PlannerBoard({
                       </div>
                       <div className="planner-session-toolbar">
                         <DateField
+                          hideLabel
                           label={t("Move to date")}
                           value={s.date}
                           onChange={(date) => {
@@ -367,23 +377,29 @@ export function PlannerBoard({
                         <div className="planner-session-actions">
                           <button
                             className="button secondary compact"
+                            aria-label={t("Duplicate")}
+                            title={t("Duplicate")}
                             onClick={() => {
                               const latest = current(s);
                               save(s);
                               onDuplicate(latest);
                             }}
                           >
-                            {t("Duplicate")}
+                            <Copy size={17} aria-hidden="true" />
+                            <span>{t("Duplicate")}</span>
                           </button>
                           <button
                             className="button secondary compact"
+                            aria-label={t("Open full editor")}
+                            title={t("Open full editor")}
                             onClick={() => {
                               const latest = current(s);
                               save(s);
                               onOpen(latest);
                             }}
                           >
-                            {t("Open full editor")}
+                            <SquarePen size={17} aria-hidden="true" />
+                            <span>{t("Open full editor")}</span>
                           </button>
                         </div>
                       </div>

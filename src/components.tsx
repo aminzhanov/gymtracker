@@ -54,14 +54,16 @@ export function DateField({
   label,
   value,
   onChange,
+  hideLabel = false,
 }: {
   label: string;
+  hideLabel?: boolean;
   value: string;
   onChange: (date: string) => void;
 }) {
   return (
     <label>
-      {label}
+      <span className={hideLabel ? "sr-only" : undefined}>{label}</span>
       <span className="date-field">
         <span className="date-display">{fullDate(value)}</span>
         <CalendarDays size={19} aria-hidden="true" />
