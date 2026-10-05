@@ -4,7 +4,7 @@ import type { AppData, Session, WorkoutExercise } from "./types";
 import { t, exerciseName } from "./i18n";
 import { CalendarVolume } from "./CalendarVolume";
 import { DateField, useMediaQuery } from "./components";
-import { calendarVolume, trainingWeekVolume } from "./planning";
+import { calendarVolume } from "./planning";
 import { trainingWeeks } from "./trainingWeeks";
 import {
   shortDate,
@@ -303,11 +303,6 @@ export function PlannerBoard({
     sessions: data.sessions.map((s) => drafts[s.id] ?? s),
   };
   const split = data.settings.useABSplit;
-  const rows = split
-    ? trainingWeekVolume(preview.sessions, month)
-    : calendarVolume(preview.sessions, month);
-  const initial = useRef(rows.reduce((v, r) => v + r.total, 0));
-  const delta = rows.reduce((v, r) => v + r.total, 0) - initial.current;
   const groups = split
     ? trainingWeeks(preview.sessions).filter((g) =>
         g.sessions.some((s) => s.date.startsWith(month)),
@@ -321,18 +316,6 @@ export function PlannerBoard({
       }));
   return (
     <>
-      <div className="planner-live-summary">
-        <strong>{number(rows.reduce((v, r) => v + r.total, 0))} kg</strong>
-        <span>
-          {t("Projection")} · {delta >= 0 ? "+" : ""}
-          {number(delta)} kg {t("since opening planner")}
-        </span>
-        <p className="muted">
-          {t(
-            "Edit weight and reps here. Changes preview immediately and save when you leave a field.",
-          )}
-        </p>
-      </div>
       <div className="planner-workspace">
         <div className="planner-table-area">
           {groups.map((g) => (

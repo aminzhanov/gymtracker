@@ -4686,18 +4686,6 @@ button.stat-detail-row:hover {
   position: sticky;
   top: 90px;
 }
-.planner-live-summary {
-  background: #fff0b7;
-  border: 2px solid #dac377;
-  border-radius: 18px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.planner-live-summary strong {
-  font-size: 26px;
-}
 .planner-week {
   margin: 22px 0;
 }
@@ -5204,21 +5192,6 @@ button.stat-detail-row:hover {
   min-height: 44px;
   font-size: 14px;
 }
-.planner-live-summary {
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 20px;
-  margin-bottom: 20px;
-}
-.planner-live-summary strong {
-  flex-shrink: 0;
-}
-.planner-live-summary .muted {
-  margin-left: auto;
-  max-width: 540px;
-  font-size: 14px;
-}
 .planner-week {
   margin: 0 0 24px;
 }
@@ -5295,10 +5268,6 @@ button.stat-detail-row:hover {
   .training-search-filters select {
     min-width: 0;
     flex: 1;
-  }
-  .planner-live-summary .muted {
-    flex-basis: 100%;
-    margin-left: 0;
   }
 }
 @media (max-width: 600px) {
