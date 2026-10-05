@@ -5,6 +5,7 @@ import {
   trainingAverages,
   strengthTrend,
   strengthTrendHistory,
+  strengthPointDetails,
   completedVolume30,
   filterVolumeRange,
 } from "./analyticsVolume";
@@ -18,7 +19,7 @@ import {
   Trash2,
   ListFilter,
 } from "lucide-react";
-import type { AppData, Week } from "./types";
+import type { AppData, Week, Session } from "./types";
 import { Chart, Panel, Empty, Modal, InfoButton } from "./components";
 import {
   filterSessions,
@@ -29,9 +30,11 @@ import {
   recoveryHistory,
   number,
   shortDate,
+  fullDate,
   dateKey,
   changePercent,
 } from "./model";
+import { StrengthPointDetail } from "./StrengthPointDetail";
 import { RecoveryChecklist } from "./RecoveryChecklist";
 const colors = ["#1673ff", "#f17bb4", "#16b895", "#ad80ed", "#f2ad32"];
 const pct = (n: number | null) =>
@@ -40,10 +43,12 @@ export function Analytics({
   data,
   onChange,
   preferenceKey,
+  onSession,
 }: {
   preferenceKey: string;
   data: AppData;
   onChange: (d: AppData) => void;
+  onSession: (session: Session) => void;
 }) {
   const [week, setWeek] = useState<"All" | Week>("All");
   const [period, setPeriod] = useState<"week" | "month">("week");
@@ -80,6 +85,11 @@ export function Analytics({
   const trend = strengthTrend(sessions);
   const [strengthRange, setStrengthRange] = useState<"30" | "all">("30");
   const strengthGraph = strengthTrendHistory(sessions, strengthRange);
+  const [strengthDate, setStrengthDate] = useState("");
+  useEffect(() => setStrengthDate(""), [strengthRange, effectiveWeek]);
+  const strengthDetail = strengthDate
+    ? strengthPointDetails(sessions, strengthRange, strengthDate)
+    : null;
   const comp = trainingAverages(data.sessions);
   const prs = records(sessions);
   const allRecords = records(data.sessions);
@@ -386,6 +396,15 @@ export function Analytics({
             <Chart
               unit="%"
               labels={strengthGraph.rows.map((row) => shortDate(row.date))}
+              onPointClick={(index) =>
+                setStrengthDate(strengthGraph.rows[index].date)
+              }
+              selectedPoint={strengthGraph.rows.findIndex(
+                (row) => row.date === strengthDate,
+              )}
+              pointLabel={(index) =>
+                `${t("View strength changes")}: ${fullDate(strengthGraph.rows[index].date)}, ${pct(strengthGraph.rows[index].value)}`
+              }
               axisDecimals={1}
               series={[
                 {
@@ -395,6 +414,32 @@ export function Analytics({
                 },
               ]}
             />
+            <label className="strength-date-picker">
+              {t("Tap a point or choose a date")}
+              <select
+                aria-label={t("Strength trend date")}
+                value={strengthDate}
+                onChange={(event) => setStrengthDate(event.target.value)}
+              >
+                <option value="">{t("Choose a date")}</option>
+                {strengthGraph.rows.map((row) => (
+                  <option key={row.date} value={row.date}>
+                    {fullDate(row.date)} · {pct(row.value)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {strengthDetail && (
+              <StrengthPointDetail
+                detail={strengthDetail}
+                onClose={() => setStrengthDate("")}
+                onSession={(id) => {
+                  const session = data.sessions.find((s) => s.id === id);
+                  setStrengthDate("");
+                  if (session) onSession(session);
+                }}
+              />
+            )}
           </>
         ) : (
           <Empty

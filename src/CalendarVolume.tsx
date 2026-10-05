@@ -15,8 +15,7 @@ export function CalendarVolume({
 }) {
   const [view, setView] = useState<"bars" | "line">("bars");
   const split = data.settings.useABSplit;
-  const [grouping, setGrouping] = useState<"training" | "calendar">("training");
-  const training = split && grouping === "training";
+  const training = split;
   const rows = training
     ? trainingWeekVolume(data.sessions, month)
     : calendarVolume(data.sessions, month).map((row) => ({
@@ -55,27 +54,9 @@ export function CalendarVolume({
         </div>
       }
     >
-      {split && (
-        <div
-          className="segmented volume-grouping"
-          aria-label={t("Volume week grouping")}
-        >
-          <button
-            aria-pressed={training}
-            className={training ? "active" : ""}
-            onClick={() => setGrouping("training")}
-          >
-            {t("Training weeks")}
-          </button>
-          <button
-            aria-pressed={!training}
-            className={!training ? "active" : ""}
-            onClick={() => setGrouping("calendar")}
-          >
-            {t("Calendar weeks")}
-          </button>
-        </div>
-      )}
+      <p className="volume-group-label">
+        {t(training ? "Training weeks" : "Calendar weeks")}
+      </p>
       <div className="volume-outlook-summary">
         <span>
           <strong>

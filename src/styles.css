@@ -4549,3 +4549,121 @@ button.stat-detail-row:hover {
     font-size: 12px;
   }
 }
+.volume-group-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #676477;
+  margin: 0 0 14px;
+}
+.chart-clickable-point {
+  cursor: pointer;
+  outline: none;
+}
+.chart-clickable-point:hover .chart-point-dot,
+.chart-clickable-point:focus-visible .chart-point-dot {
+  stroke: #302336;
+  stroke-width: 3;
+}
+.chart-clickable-point:focus-visible .chart-point-hit {
+  fill: #1673ff18;
+  stroke: #1673ff;
+  stroke-width: 1;
+}
+.strength-date-picker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  color: #676477;
+  font-size: 13px;
+  margin-top: 12px;
+}
+.strength-date-picker select {
+  min-width: 0;
+  max-width: 100%;
+}
+.strength-point-summary {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.strength-point-summary > strong {
+  font-size: 28px;
+  color: var(--blue);
+}
+.strength-point-summary > span {
+  font-weight: 700;
+}
+.strength-point-summary > small {
+  color: #676477;
+  font-size: 13px;
+}
+.strength-driver-list {
+  display: grid;
+  gap: 12px;
+}
+.strength-driver {
+  padding: 16px;
+  background: #faf9fc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 0;
+}
+.strength-driver-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 12px;
+  font-size: 16px;
+}
+.strength-driver-head strong {
+  overflow-wrap: anywhere;
+}
+.strength-driver-head b {
+  white-space: nowrap;
+}
+.strength-driver-reason,
+.strength-driver-growth {
+  font-size: 14px;
+  color: #676477;
+  line-height: 1.5;
+}
+.strength-log-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.strength-log-comparison > span {
+  display: grid;
+  gap: 5px;
+}
+.strength-log-comparison small {
+  font-size: 13px;
+  color: #676477;
+  line-height: 1.5;
+}
+.strength-driver .text-button {
+  text-align: left;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+.strength-full-breakdown {
+  margin: 18px 0;
+}
+.strength-full-breakdown > summary {
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 10px 0;
+}
+@media (max-width: 600px) {
+  .strength-date-picker {
+    display: grid;
+  }
+  .strength-date-picker select {
+    width: 100%;
+  }
+  .strength-driver {
+    padding: 13px;
+  }
+}

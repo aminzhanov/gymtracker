@@ -438,6 +438,9 @@ export function Chart({
   connectGaps = false,
   zeroBaseline = true,
   axisDecimals,
+  onPointClick,
+  pointLabel,
+  selectedPoint,
 }: {
   series: { name: string; color: string; values: (number | null)[] }[];
   bar?: boolean;
@@ -446,6 +449,9 @@ export function Chart({
   connectGaps?: boolean;
   zeroBaseline?: boolean;
   axisDecimals?: number;
+  onPointClick?: (index: number, seriesIndex: number) => void;
+  pointLabel?: (index: number, seriesIndex: number) => string;
+  selectedPoint?: number;
 }) {
   const compact = useMediaQuery("(max-width: 640px)");
   const values = series.flatMap((s) =>
@@ -471,7 +477,7 @@ export function Chart({
     <div className="chart-wrap">
       <svg
         viewBox={`0 0 ${width} ${height}`}
-        role="img"
+        role={onPointClick ? "group" : "img"}
         aria-label={t(`${series.map((s) => s.name).join(" and ")} in ${unit}`)}
       >
         <title>
@@ -551,11 +557,55 @@ export function Chart({
               {s.values.map(
                 (v, i) =>
                   v !== null && (
-                    <circle key={i} cx={x(i)} cy={y(v)} r="3.5" fill={s.color}>
-                      <title>
-                        {labels[i]}: {number(v, 1)} {unit}
-                      </title>
-                    </circle>
+                    <g
+                      key={i}
+                      className={
+                        onPointClick ? "chart-clickable-point" : undefined
+                      }
+                      role={onPointClick ? "button" : undefined}
+                      tabIndex={onPointClick ? 0 : undefined}
+                      aria-label={
+                        onPointClick
+                          ? (pointLabel?.(i, si) ??
+                            `${labels[i]}: ${number(v, 1)} ${unit}`)
+                          : undefined
+                      }
+                      aria-haspopup={onPointClick ? "dialog" : undefined}
+                      onClick={
+                        onPointClick ? () => onPointClick(i, si) : undefined
+                      }
+                      onKeyDown={
+                        onPointClick
+                          ? (event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                onPointClick(i, si);
+                              }
+                            }
+                          : undefined
+                      }
+                    >
+                      {onPointClick && (
+                        <circle
+                          className="chart-point-hit"
+                          cx={x(i)}
+                          cy={y(v)}
+                          r="16"
+                          fill="transparent"
+                        />
+                      )}
+                      <circle
+                        className="chart-point-dot"
+                        cx={x(i)}
+                        cy={y(v)}
+                        r={onPointClick && selectedPoint === i ? 5 : 3.5}
+                        fill={s.color}
+                      >
+                        <title>
+                          {labels[i]}: {number(v, 1)} {unit}
+                        </title>
+                      </circle>
+                    </g>
                   ),
               )}
             </g>

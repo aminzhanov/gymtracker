@@ -643,4 +643,31 @@ export const ru: Record<string, string> = {
   "No new records this month": "В этом месяце новых рекордов пока нет",
   "Your next personal record will appear here.":
     "Ваш следующий личный рекорд появится здесь.",
+  pp: "п.п.",
+  "New exercise joined at its 0% baseline.":
+    "Новое упражнение вошло в расчёт с базовым значением 0%.",
+  "Daily best estimated 1RM updated.": "Лучшая дневная оценка 1ПМ обновилась.",
+  "Previous performance carried forward; no effect on this change.":
+    "Использован предыдущий результат; на это изменение он не повлиял.",
+  "Previous log": "Предыдущая запись",
+  "Latest log": "Последняя запись",
+  "Growth from baseline": "Изменение от базового значения",
+  "Starting point": "Начальная точка",
+  "Change from previous point": "Изменение от предыдущей точки",
+  "Previous point": "Предыдущая точка",
+  "Contributions below add up to the movement of the combined line. Percentage points describe the change in that average.":
+    "Вклад упражнений ниже в сумме даёт изменение общей линии. Процентные пункты показывают изменение этого среднего.",
+  "New exercises enter at 0%. Adding them can pull a positive average down, or a negative average up, even without a lower logged performance.":
+    "Новые упражнения входят с 0%. Их добавление может снизить положительное среднее или повысить отрицательное даже без снижения записанных результатов.",
+  "This is the first plotted date. Exercises begin at their own 0% baselines; there is no previous point to compare.":
+    "Это первая дата на графике. Упражнения начинают со своих базовых значений 0%; предыдущей точки для сравнения нет.",
+  "No exercise changed its contribution at this point.":
+    "В этой точке вклад ни одного упражнения не изменился.",
+  "Show full breakdown": "Показать полный расчёт",
+  "This explains recorded performance, not measured strength loss. Lighter weights or fewer reps may reflect a deliberately easier workout.":
+    "Это объяснение записанных результатов, а не измеренная потеря силы. Меньший вес или меньше повторений могут отражать намеренно лёгкую тренировку.",
+  "View strength changes": "Посмотреть причины изменения силы",
+  "Tap a point or choose a date": "Нажмите на точку или выберите дату",
+  "Strength trend date": "Дата на графике силы",
+  "Choose a date": "Выберите дату",
 };

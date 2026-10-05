@@ -10,6 +10,7 @@ import {
   volume,
   exerciseHistory,
   doneSets,
+  estimatedMax,
 } from "./model.ts";
 import { trainingWeeks } from "./trainingWeeks.ts";
 
@@ -260,4 +261,104 @@ export function activeVolumeGroup(
     groups.filter((g) => g.from <= today).at(-1) ??
     groups[0] ?? { label: "This training week", sessions: [] }
   );
+}
+
+/** Explain a plotted point, including dilution from exercises joining at 0%. */
+export function strengthPointDetails(
+  sessions: Session[],
+  range: "30" | "all",
+  date: string,
+  today = dateKey(),
+) {
+  const graph = strengthTrendHistory(sessions, range, today);
+  const index = graph.rows.findIndex((row) => row.date === date);
+  if (index < 0) return null;
+  const point = graph.rows[index],
+    previous = graph.rows[index - 1];
+  const actual =
+    range === "30"
+      ? last30Sessions(sessions, today)
+      : sessions.filter((s) => s.date <= today);
+  const details = graph.exercises
+    .flatMap((exercise) => {
+      const daily = new Map<
+        string,
+        {
+          date: string;
+          value: number;
+          weight: number;
+          reps: number;
+          sessionId: string;
+          sessionName: string;
+          name: string;
+        }
+      >();
+      for (const session of actual)
+        for (const set of doneSets(session)) {
+          if (
+            set.exerciseId !== exercise.id ||
+            set.weight <= 0 ||
+            set.reps <= 0
+          )
+            continue;
+          const value = estimatedMax(set.weight, set.reps);
+          if (
+            !daily.has(session.date) ||
+            value > daily.get(session.date)!.value
+          )
+            daily.set(session.date, {
+              date: session.date,
+              value,
+              weight: set.weight,
+              reps: set.reps,
+              sessionId: session.id,
+              sessionName: session.name,
+              name: set.name,
+            });
+        }
+      const logs = [...daily.values()].sort((a, b) =>
+        a.date.localeCompare(b.date),
+      );
+      const current = logs.filter((log) => log.date <= date).at(-1);
+      if (!current) return [];
+      const prior = logs.filter((log) => log.date < date).at(-1);
+      const growth = changePercent(current.value, logs[0].value)!;
+      const previousGrowth = prior
+        ? changePercent(prior.value, logs[0].value)!
+        : null;
+      const joined = !prior;
+      // All new contributors enter at zero. Dividing each existing delta by
+      // the new count, plus -oldMean/newCount for each join, reconciles exactly.
+      const effect = previous
+        ? joined
+          ? -previous.value / point.count
+          : (growth - previousGrowth!) / point.count
+        : 0;
+      return [
+        {
+          id: exercise.id,
+          current,
+          prior: prior ?? null,
+          growth,
+          previousGrowth,
+          joined,
+          updated: current.date === date,
+          effect,
+        },
+      ];
+    })
+    .sort(
+      (a, b) =>
+        Math.abs(b.effect) - Math.abs(a.effect) || a.id.localeCompare(b.id),
+    );
+  return {
+    ...point,
+    previousValue: previous?.value ?? null,
+    previousDate: previous?.date ?? null,
+    delta: previous ? point.value - previous.value : null,
+    details,
+    affected: details.filter(
+      (row) => row.joined || Math.abs(row.effect) > 1e-9,
+    ),
+  };
 }

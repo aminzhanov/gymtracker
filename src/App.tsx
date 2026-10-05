@@ -1196,6 +1196,7 @@ export default function App() {
                 <Analytics
                   key={`${demo ? "demo" : authId}:${owner}`}
                   preferenceKey={`${demo ? "demo" : authId}:${owner}`}
+                  onSession={setEditor}
                   data={data}
                   onChange={change}
                 />
