@@ -19,7 +19,8 @@ import {
   Trash2,
   ListFilter,
 } from "lucide-react";
-import type { AppData, Week, Session } from "./types";
+import { IllustratedPageHead } from "./SectionIllustrations";
+import type { AppData, Week, Session, ProfileIllustration } from "./types";
 import { Chart, Panel, Empty, Modal, InfoButton } from "./components";
 import {
   filterSessions,
@@ -43,12 +44,14 @@ const pct = (n: number | null) =>
   n === null ? t("No previous data") : `${n >= 0 ? "+" : ""}${number(n, 1)}%`;
 export function Analytics({
   data,
+  illustration,
   onChange,
   preferenceKey,
   onSession,
 }: {
   preferenceKey: string;
   data: AppData;
+  illustration: ProfileIllustration;
   onChange: (d: AppData) => void;
   onSession: (session: Session) => void;
 }) {
@@ -168,27 +171,23 @@ export function Analytics({
   };
   return (
     <>
-      <div className="page-head">
-        <div>
-          <span className="eyebrow">{t("THE BIGGER PICTURE")}</span>
-          <h1>
-            {t("Small steps. Stronger you ")}
-            <span>↗</span>
-          </h1>
-          <p>{t("Your progress, from every rep to every week.")}</p>
-        </div>
-        {useABSplit && (
-          <select
-            aria-label={t("Analytics week filter")}
-            value={week}
-            onChange={(e) => setWeek(e.target.value as "All" | Week)}
-          >
-            <option value="All">{t("All weeks")}</option>
-            <option value="A">{t("Week A")}</option>
-            <option value="B">{t("Week B")}</option>
-          </select>
-        )}
-      </div>
+      <IllustratedPageHead
+        kind="analytics"
+        illustration={illustration}
+        action={
+          useABSplit && (
+            <select
+              aria-label={t("Analytics week filter")}
+              value={week}
+              onChange={(e) => setWeek(e.target.value as "All" | Week)}
+            >
+              <option value="All">{t("All weeks")}</option>
+              <option value="A">{t("Week A")}</option>
+              <option value="B">{t("Week B")}</option>
+            </select>
+          )
+        }
+      />
       <div className="analytics-top">
         <div className="metric-card tint-blue">
           <span className="metric-label">

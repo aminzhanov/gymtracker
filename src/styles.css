@@ -5820,3 +5820,109 @@ button.stat-detail-row:hover {
     gap: 4px 10px;
   }
 }
+
+/* Profile art slots and outside-tap navigation dismissal. */
+.nav-backdrop {
+  display: none;
+}
+.illustrated-page-head {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(120px, 1fr) auto;
+  gap: 16px;
+}
+.illustrated-page-head .head-copy,
+.illustrated-page-head .head-action {
+  min-width: 0;
+}
+.illustrated-page-head .head-action {
+  justify-self: end;
+}
+.illustrated-page-head.without-art {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.section-art {
+  position: relative;
+  height: 145px;
+  min-width: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.section-art img {
+  position: absolute;
+  width: calc(140px * var(--art-scale, 1));
+  max-width: none;
+  height: auto;
+  left: calc(50% + var(--art-x, 0px));
+  top: calc(50% + var(--art-y, 0px));
+  transform: translate(-50%, -50%);
+}
+.personalized-empty .section-art {
+  height: 165px;
+  max-width: 320px;
+  margin: 0 auto 12px;
+}
+.personalized-empty .section-art img {
+  width: calc(160px * var(--art-scale, 1));
+}
+.illustration-visible {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 12px 0;
+}
+.illustration-visible input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+@media (max-width: 650px) {
+  .nav-backdrop {
+    display: block;
+    position: fixed;
+    inset: 75px 0 0;
+    z-index: 25;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: rgba(34, 31, 47, 0.16);
+    touch-action: manipulation;
+  }
+  .page-head.illustrated-page-head {
+    grid-template-columns: minmax(0, 1fr) minmax(100px, 135px);
+    gap: 8px 12px;
+    align-items: center;
+  }
+  .illustrated-page-head .head-copy {
+    grid-column: 1 / -1;
+  }
+  .illustrated-page-head .head-action {
+    grid-row: 2;
+    grid-column: 1;
+    justify-self: start;
+  }
+  .illustrated-page-head .section-art {
+    grid-column: 2;
+    grid-row: 2;
+    height: 108px;
+  }
+  .illustrated-page-head .head-action > .button {
+    font-size: 12px;
+    min-height: 41px;
+    padding: 10px 13px;
+  }
+  .section-art img {
+    width: calc(103px * var(--art-phone-scale, 1));
+    left: calc(50% + var(--art-phone-x, 0px));
+    top: calc(50% + var(--art-phone-y, 0px));
+  }
+  .personalized-empty .section-art {
+    height: 145px;
+  }
+  .personalized-empty .section-art img {
+    width: calc(140px * var(--art-phone-scale, 1));
+  }
+  .page-head.illustrated-page-head.without-art {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+}

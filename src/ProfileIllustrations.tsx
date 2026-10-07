@@ -1,7 +1,14 @@
 import { useState, type CSSProperties } from "react";
-import { Save } from "lucide-react";
+import { Save, Plus } from "lucide-react";
 import { t } from "./i18n";
 import type { ProfileIllustrations, CoachMessages, AppData } from "./types";
+import {
+  IllustratedPageHead,
+  TodayEmpty,
+  InboxEmpty,
+} from "./SectionIllustrations";
+import { Panel } from "./components";
+import type { IllustrationSlot } from "./illustrations";
 import { DashboardIllustrationPreview } from "./DashboardIllustrationPreview";
 import {
   DEFAULT_ILLUSTRATIONS,
@@ -14,18 +21,20 @@ import catBack from "./assets/cat-back.webp";
 export function IllustrationEditor({
   value,
   ready,
+  sectionsReady,
   messages,
   data,
   onSave,
 }: {
   value: ProfileIllustrations;
   ready: boolean;
+  sectionsReady: boolean;
   messages: CoachMessages;
   data: AppData;
   onSave: (value: ProfileIllustrations) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(value);
-  const [target, setTarget] = useState<"dashboard" | "menu">("dashboard");
+  const [target, setTarget] = useState<IllustrationSlot>("dashboard");
   const [mode, setMode] = useState<"desktop" | "phone">("desktop");
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -82,9 +91,21 @@ export function IllustrationEditor({
             >
               <option value="dashboard">{t("Dashboard")}</option>
               <option value="menu">{t("Menu message")}</option>
+              <option value="planner" disabled={!sectionsReady}>
+                {t("Planner header")}
+              </option>
+              <option value="analytics" disabled={!sectionsReady}>
+                {t("Analytics header")}
+              </option>
+              <option value="inboxEmpty" disabled={!sectionsReady}>
+                {t("Unread inbox · empty")}
+              </option>
+              <option value="todayEmpty" disabled={!sectionsReady}>
+                {t("Today's workout · empty")}
+              </option>
             </select>
           </label>
-          {target === "dashboard" && (
+          {target !== "menu" && (
             <label>
               {t("Layout")}
               <select
@@ -130,13 +151,76 @@ export function IllustrationEditor({
           </label>
         </div>
         <div className="illustration-preview-wrap">
-          {target === "dashboard" ? (
+          {target !== "menu" ? (
             <DashboardIllustrationPreview
+              key={target}
               data={data}
               message={messages.dashboard}
               illustration={item}
               mode={mode}
-            />
+              title={
+                target === "dashboard"
+                  ? "Dashboard"
+                  : target === "planner"
+                    ? "Planner header"
+                    : target === "analytics"
+                      ? "Analytics header"
+                      : target === "inboxEmpty"
+                        ? "Unread inbox · empty"
+                        : "Today's workout · empty"
+              }
+              selector={
+                target === "dashboard"
+                  ? ".dashboard-welcome"
+                  : target === "planner" || target === "analytics"
+                    ? ".illustrated-page-head"
+                    : ".illustration-preview-panel"
+              }
+            >
+              {target === "planner" ? (
+                <IllustratedPageHead
+                  kind="planner"
+                  illustration={item}
+                  action={
+                    <button className="button primary">
+                      <Plus size={17} />
+                      {t(" Add session")}
+                    </button>
+                  }
+                />
+              ) : target === "analytics" ? (
+                <IllustratedPageHead
+                  kind="analytics"
+                  illustration={item}
+                  action={
+                    data.settings.useABSplit ? (
+                      <select aria-label={t("Analytics week filter")}>
+                        <option>{t("All weeks")}</option>
+                      </select>
+                    ) : undefined
+                  }
+                />
+              ) : target === "inboxEmpty" ? (
+                <section className="panel illustration-preview-panel">
+                  <InboxEmpty illustration={item} />
+                </section>
+              ) : target === "todayEmpty" ? (
+                <div className="dashboard-grid">
+                  <Panel
+                    title={t("Today's workout")}
+                    className="today-panel illustration-preview-panel"
+                    action={
+                      <button className="text-button">
+                        <Plus size={16} />
+                        {t(" Plan")}
+                      </button>
+                    }
+                  >
+                    <TodayEmpty illustration={item} onPlan={() => {}} />
+                  </Panel>
+                </div>
+              ) : undefined}
+            </DashboardIllustrationPreview>
           ) : (
             <div className="illustration-menu-preview">
               <div className="sidebar-cheer-scene">
@@ -157,6 +241,22 @@ export function IllustrationEditor({
             </div>
           )}
         </div>
+        {target !== "dashboard" && target !== "menu" && (
+          <label className="illustration-visible">
+            <input
+              type="checkbox"
+              checked={item.enabled !== false}
+              onChange={(e) => {
+                setDraft((old) => ({
+                  ...old,
+                  [target]: { ...old[target], enabled: e.target.checked },
+                }));
+                setFeedback("");
+              }}
+            />
+            {t("Show illustration")}
+          </label>
+        )}
         <div className="illustration-controls">
           {(
             [
@@ -186,7 +286,7 @@ export function IllustrationEditor({
         </div>
         <p className="footnote">
           {t(
-            "Move right or down with positive values. Dashboard phone placement is saved separately.",
+            "Move right or down with positive values. Phone placement is saved separately.",
           )}
         </p>
         <div className="flex wrap">
@@ -213,6 +313,13 @@ export function IllustrationEditor({
         <p className="muted">
           {t(
             "Illustration controls will be available after the account update.",
+          )}
+        </p>
+      )}
+      {ready && !sectionsReady && (
+        <p className="notice">
+          {t(
+            "New placements need the illustration sections account update (012).",
           )}
         </p>
       )}

@@ -172,16 +172,20 @@ export function Empty({
   title,
   detail,
   action,
+  visual,
 }: {
   title: string;
   detail?: string;
   action?: ReactNode;
+  visual?: ReactNode;
 }) {
   return (
     <div className="empty">
-      <div className="empty-icon">
-        <Sparkles size={28} />
-      </div>
+      {visual ?? (
+        <div className="empty-icon">
+          <Sparkles size={28} />
+        </div>
+      )}
       <h3>{t(title)}</h3>
       {detail && <p>{t(detail)}</p>}
       {action}

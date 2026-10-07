@@ -755,4 +755,14 @@ export const ru: Record<string, string> = {
   "Expand completed session": "Развернуть выполненную тренировку",
   "Collapse completed session": "Свернуть выполненную тренировку",
   Collapse: "Свернуть",
+  "Close navigation": "Закрыть меню",
+  "Planner header": "Заголовок планировщика",
+  "Analytics header": "Заголовок аналитики",
+  "Unread inbox · empty": "Входящие · нет непрочитанных",
+  "Today's workout · empty": "Сегодняшняя тренировка · пусто",
+  "Show illustration": "Показывать иллюстрацию",
+  "Move right or down with positive values. Phone placement is saved separately.":
+    "Положительные значения сдвигают вправо или вниз. Положение на телефоне сохраняется отдельно.",
+  "New placements need the illustration sections account update (012).":
+    "Для новых областей иллюстраций обновите базу данных (012).",
 };

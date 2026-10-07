@@ -2,7 +2,8 @@ import { appLocale } from "./i18n";
 import { t } from "./i18n";
 import { useState } from "react";
 import { Plus, ChevronLeft, ChevronRight, Copy } from "lucide-react";
-import type { AppData, Session } from "./types";
+import { IllustratedPageHead } from "./SectionIllustrations";
+import type { AppData, Session, ProfileIllustration } from "./types";
 import { Panel, useMediaQuery } from "./components";
 import { dateKey, parseDate, addDays, monday, shortDate } from "./model";
 import { PlannerBoard } from "./PlannerBoard";
@@ -10,6 +11,7 @@ import { CalendarVolume } from "./CalendarVolume";
 
 export function Calendar({
   data,
+  illustration,
   onOpen,
   onCreate,
   onMove,
@@ -17,6 +19,7 @@ export function Calendar({
   onSave,
 }: {
   data: AppData;
+  illustration: ProfileIllustration;
   onOpen: (session: Session) => void;
   onCreate: (date: string) => void;
   onMove: (id: string, date: string) => void;
@@ -62,20 +65,19 @@ export function Calendar({
   };
   return (
     <>
-      <div className="page-head">
-        <div>
-          <span className="eyebrow">{t("PLAN. TRAIN. PROGRESS.")}</span>
-          <h1>
-            {t("Your planner ")}
-            <span>↗</span>
-          </h1>
-          <p>{t("Make a little space for getting stronger.")}</p>
-        </div>
-        <button className="button primary" onClick={() => onCreate(dateKey())}>
-          <Plus size={17} />
-          {t(" Add session")}
-        </button>
-      </div>
+      <IllustratedPageHead
+        kind="planner"
+        illustration={illustration}
+        action={
+          <button
+            className="button primary"
+            onClick={() => onCreate(dateKey())}
+          >
+            <Plus size={17} />
+            {t(" Add session")}
+          </button>
+        }
+      />
       <div
         className="segmented planner-view-switch"
         aria-label={t("Planner view")}

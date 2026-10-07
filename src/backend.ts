@@ -83,6 +83,7 @@ export async function loadCloud(owner: string) {
     appNameReady: !nameResult.error,
     illustrations: illustrations.value,
     illustrationsReady: illustrations.ready,
+    illustrationSectionsReady: illustrations.sectionsReady,
     techniqueVideos:
       library?.techniqueVideos ??
       (Object.fromEntries(
@@ -250,6 +251,18 @@ export function loadLocalIllustrations(owner: string): ProfileIllustrations {
   }
 }
 export async function loadProfileIllustrations(owner: string) {
+  const result = await supabase!.rpc("load_profile_illustrations", {
+    target_owner: owner,
+  });
+  if (!result.error)
+    return {
+      value: result.data?.illustrations
+        ? validateIllustrations(result.data.illustrations)
+        : DEFAULT_ILLUSTRATIONS,
+      ready: true,
+      sectionsReady: true,
+    };
+  if (!["PGRST202", "42883"].includes(result.error.code)) throw result.error;
   const { data, error } = await supabase!
     .from("profile_illustrations")
     .select("illustrations")
@@ -261,15 +274,20 @@ export async function loadProfileIllustrations(owner: string) {
       ? validateIllustrations(data.illustrations)
       : DEFAULT_ILLUSTRATIONS,
     ready: !error,
+    sectionsReady: false,
   };
 }
 export async function saveProfileIllustrations(
   owner: string,
   value: ProfileIllustrations,
+  sectionsReady = false,
 ) {
+  const validated = validateIllustrations(value);
   const { error } = await supabase!.rpc("save_profile_illustrations", {
     target_owner: owner,
-    payload: validateIllustrations(value),
+    payload: sectionsReady
+      ? validated
+      : { dashboard: validated.dashboard, menu: validated.menu },
   });
   if (error) throw new Error(error.message || "Could not save illustrations.");
 }

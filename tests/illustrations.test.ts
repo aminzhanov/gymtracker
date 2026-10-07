@@ -6,6 +6,7 @@ import {
   DEFAULT_ILLUSTRATIONS,
   validateIllustrations,
   illustrationVariables,
+  ILLUSTRATION_SLOTS,
 } from "../src/illustrations.ts";
 test("illustration settings keep phone and desktop independent and reject unsafe or oversized images", () => {
   const value = structuredClone(DEFAULT_ILLUSTRATIONS);
@@ -41,6 +42,45 @@ test("illustration settings keep phone and desktop independent and reject unsafe
         dashboard: { ...value.dashboard, phone },
       }),
     );
+});
+test("legacy profiles gain new placements without changing original art, and every slot is validated", () => {
+  const legacy = {
+    dashboard: structuredClone(DEFAULT_ILLUSTRATIONS.dashboard),
+    menu: structuredClone(DEFAULT_ILLUSTRATIONS.menu),
+  };
+  legacy.dashboard.phone.y = -17;
+  const upgraded = validateIllustrations(legacy);
+  assert.deepEqual(upgraded.dashboard, legacy.dashboard);
+  assert.deepEqual(upgraded.planner, DEFAULT_ILLUSTRATIONS.planner);
+  upgraded.planner.phone.x = 99;
+  assert.equal(DEFAULT_ILLUSTRATIONS.planner.phone.x, 0);
+  for (const slot of ILLUSTRATION_SLOTS) {
+    assert.throws(() =>
+      validateIllustrations({
+        ...upgraded,
+        [slot]: { ...upgraded[slot], enabled: "yes" },
+      }),
+    );
+    assert.throws(() =>
+      validateIllustrations({
+        ...upgraded,
+        [slot]: { ...upgraded[slot], image: "https://example.test/image" },
+      }),
+    );
+    assert.throws(() =>
+      validateIllustrations({
+        ...upgraded,
+        [slot]: { ...upgraded[slot], phone: { scale: 100, x: 0, y: -101 } },
+      }),
+    );
+  }
+  assert.equal(
+    validateIllustrations({
+      ...upgraded,
+      todayEmpty: { ...upgraded.todayEmpty, enabled: false },
+    }).todayEmpty.enabled,
+    false,
+  );
 });
 test("illustration migration is rerunnable, coach scoped, and separate from training", async () => {
   const db = new PGlite();
@@ -90,12 +130,72 @@ test("illustration migration is rerunnable, coach scoped, and separate from trai
         owner,
         JSON.stringify(value),
       ]);
+    // A real pre-update row must survive migration, not just a normalized fixture.
+    const legacy = {
+      dashboard: structuredClone(DEFAULT_ILLUSTRATIONS.dashboard),
+      menu: structuredClone(DEFAULT_ILLUSTRATIONS.menu),
+    };
+    legacy.dashboard.phone.y = -31;
+    await db.query(
+      "insert into public.profile_illustrations values($1,$2::jsonb)",
+      [athlete, JSON.stringify(legacy)],
+    );
+    const sectionsMigration = await readFile(
+      new URL(
+        "../supabase/migrations/012_illustration_sections.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+    await db.exec(sectionsMigration);
+    await db.exec(sectionsMigration);
+    await login(coach);
+    const load = (id: string) =>
+      db.query<{
+        load_profile_illustrations: {
+          sectionsReady: boolean;
+          illustrations: unknown;
+        };
+      }>("select public.load_profile_illustrations($1)", [id]);
+    assert.deepEqual((await load(athlete)).rows[0].load_profile_illustrations, {
+      sectionsReady: true,
+      illustrations: legacy,
+    });
     const settings = structuredClone(DEFAULT_ILLUSTRATIONS);
-    settings.dashboard.image = "data:image/webp;base64,AAAA";
+    for (const slot of ILLUSTRATION_SLOTS)
+      settings[slot].image = "data:image/webp;base64," + "A".repeat(240000);
+    settings.planner.phone = { scale: 85, x: 20, y: -12 };
+    settings.inboxEmpty.enabled = false;
     settings.dashboard.phone.y = -20;
     await login(coach);
     await save(athlete, settings);
     await save(coach, DEFAULT_ILLUSTRATIONS);
+    await save(athlete, { dashboard: settings.dashboard, menu: settings.menu });
+    assert.deepEqual(
+      (await load(athlete)).rows[0].load_profile_illustrations.illustrations,
+      settings,
+    );
+    for (const slot of ILLUSTRATION_SLOTS) {
+      await assert.rejects(
+        () =>
+          save(athlete, {
+            ...settings,
+            [slot]: {
+              ...settings[slot],
+              image: "data:image/svg+xml;base64,AAAA",
+            },
+          }),
+        /Invalid illustration/,
+      );
+      await assert.rejects(
+        () =>
+          save(athlete, {
+            ...settings,
+            [slot]: { ...settings[slot], enabled: 1 },
+          }),
+        /Invalid illustration/,
+      );
+    }
     assert.equal(
       (await db.query("select * from public.profile_illustrations")).rows
         .length,
@@ -146,6 +246,7 @@ test("illustration migration is rerunnable, coach scoped, and separate from trai
       /permission denied/,
     );
     await login(stranger);
+    await assert.rejects(() => load(athlete), /Access denied/);
     assert.equal(
       (await db.query("select * from public.profile_illustrations")).rows
         .length,

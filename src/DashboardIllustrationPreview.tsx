@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { DashboardOverview } from "./DashboardOverview";
 import { t } from "./i18n";
@@ -14,11 +14,17 @@ export function DashboardIllustrationPreview({
   message,
   illustration,
   mode,
+  children,
+  selector = ".dashboard-welcome",
+  title = "Dashboard",
 }: {
   data: AppData;
   message: string;
   illustration: ProfileIllustration;
   mode: "desktop" | "phone";
+  children?: ReactNode;
+  selector?: string;
+  title?: string;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [doc, setDoc] = useState<Document | null>(null);
@@ -62,7 +68,7 @@ export function DashboardIllustrationPreview({
   }, []);
 
   useEffect(() => {
-    const hero = doc?.querySelector(".dashboard-welcome");
+    const hero = doc?.querySelector(selector);
     if (!hero) return;
     const measure = () => {
       const { width, height, left } = hero.getBoundingClientRect();
@@ -76,7 +82,7 @@ export function DashboardIllustrationPreview({
     observer.observe(hero);
     measure();
     return () => observer.disconnect();
-  }, [doc, frameWidth, contentWidth]);
+  }, [doc, frameWidth, contentWidth, selector]);
 
   const scale =
     card.width && available ? Math.min(1, available / card.width) : 1;
@@ -88,7 +94,7 @@ export function DashboardIllustrationPreview({
       style={{ height: card.height ? card.height * scale : 200 }}
     >
       <iframe
-        title={t("Dashboard")}
+        title={t(title)}
         tabIndex={-1}
         sandbox="allow-same-origin"
         srcDoc={previewDocument}
@@ -108,7 +114,7 @@ export function DashboardIllustrationPreview({
             .forEach((node) => document.head.appendChild(node.cloneNode(true)));
           const style = document.createElement("style");
           style.textContent =
-            "html,body{background:transparent;overflow:hidden}main{padding-block:0!important}.dashboard-welcome{margin-bottom:0}";
+            "html,body{background:transparent;overflow:hidden}main{padding-block:0!important}.dashboard-welcome,.illustrated-page-head{margin-block:0!important}";
           document.head.appendChild(style);
           setDoc(document);
         }}
@@ -118,12 +124,14 @@ export function DashboardIllustrationPreview({
           <div style={{ width: contentWidth }} inert>
             <div className="main-shell">
               <main>
-                <DashboardOverview
-                  data={data}
-                  message={message}
-                  illustration={illustration}
-                  onSession={() => {}}
-                />
+                {children ?? (
+                  <DashboardOverview
+                    data={data}
+                    message={message}
+                    illustration={illustration}
+                    onSession={() => {}}
+                  />
+                )}
               </main>
             </div>
           </div>,

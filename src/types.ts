@@ -84,10 +84,15 @@ export interface IllustrationPlacement {
 }
 export interface ProfileIllustration {
   image: string | null;
+  enabled?: boolean;
   desktop: IllustrationPlacement;
   phone: IllustrationPlacement;
 }
 export interface ProfileIllustrations {
   dashboard: ProfileIllustration;
   menu: ProfileIllustration;
+  planner: ProfileIllustration;
+  analytics: ProfileIllustration;
+  inboxEmpty: ProfileIllustration;
+  todayEmpty: ProfileIllustration;
 }

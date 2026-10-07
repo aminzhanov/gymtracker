@@ -1,3 +1,4 @@
+import { TodayEmpty } from "./SectionIllustrations";
 import catBack from "./assets/cat-back.webp";
 import { IllustrationEditor } from "./ProfileIllustrations";
 import { DEFAULT_ILLUSTRATIONS, illustrationVariables } from "./illustrations";
@@ -257,6 +258,8 @@ export default function App() {
     DEFAULT_ILLUSTRATIONS,
   );
   const [illustrationsReady, setIllustrationsReady] = useState(!supabase);
+  const [illustrationSectionsReady, setIllustrationSectionsReady] =
+    useState(!supabase);
   const [messagesReady, setMessagesReady] = useState(!supabase);
   const [languageReady, setLanguageReady] = useState(!supabase);
   const [appNameReady, setAppNameReady] = useState(!supabase);
@@ -314,6 +317,14 @@ export default function App() {
   );
   const [newPassword, setNewPassword] = useState("");
   const [menu, setMenu] = useState(false);
+  useEffect(() => {
+    if (!menu) return;
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenu(false);
+    };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [menu]);
   const fileRef = useRef<HTMLInputElement>(null);
   const revision = useRef(0);
   const dataRef = useRef<AppData | null>(null);
@@ -383,6 +394,7 @@ export default function App() {
     setMessages(DEFAULT_MESSAGES);
     setIllustrations(DEFAULT_ILLUSTRATIONS);
     setIllustrationsReady(false);
+    setIllustrationSectionsReady(false);
     setMessagesReady(false);
     setLanguageReady(false);
     setAppNameReady(false);
@@ -409,6 +421,7 @@ export default function App() {
           messages: loadLocalMessages(owner),
           illustrations: loadLocalIllustrations(owner),
           illustrationsReady: true,
+          illustrationSectionsReady: true,
           messagesReady: true,
           appNameReady: true,
           techniqueVideos: loadLocalSharedLibrary(owner).techniqueVideos,
@@ -424,6 +437,7 @@ export default function App() {
         setMessages(result.messages);
         setIllustrations(result.illustrations);
         setIllustrationsReady(result.illustrationsReady);
+        setIllustrationSectionsReady(result.illustrationSectionsReady);
         setMessagesReady(result.messagesReady);
         setAppNameReady(result.appNameReady);
         setLanguageReady(result.languageReady);
@@ -794,7 +808,15 @@ export default function App() {
   if (!demo && !authId) return <Auth onDemo={() => setDemo(true)} />;
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${menu ? "open" : ""}`}>
+      {menu && (
+        <button
+          type="button"
+          className="nav-backdrop"
+          aria-label={t("Close navigation")}
+          onClick={() => setMenu(false)}
+        />
+      )}
+      <aside id="main-navigation" className={`sidebar ${menu ? "open" : ""}`}>
         <Logo name={messages.appName} />
         <nav>
           {pages
@@ -852,7 +874,9 @@ export default function App() {
         <header className="topbar">
           <button
             className="icon-button mobile-menu"
-            aria-label={t("Open navigation")}
+            aria-label={t(menu ? "Close navigation" : "Open navigation")}
+            aria-expanded={menu}
+            aria-controls="main-navigation"
             onClick={() => setMenu(!menu)}
           >
             {menu ? <X /> : <Menu />}
@@ -1024,6 +1048,7 @@ export default function App() {
               {page === "Inbox" && coach && (
                 <CoachInbox
                   items={reviewItems}
+                  illustration={illustrations.inboxEmpty}
                   ready={inboxReady}
                   loading={inboxLoading}
                   error={inboxError}
@@ -1147,20 +1172,9 @@ export default function App() {
                           ),
                         )
                       ) : (
-                        <Empty
-                          title={t("A fresh page for today")}
-                          detail={t(
-                            "Plan a session, or enjoy your recovery day.",
-                          )}
-                          action={
-                            <button
-                              className="button primary"
-                              onClick={() => setCreateDate(today)}
-                            >
-                              <Plus size={16} />
-                              {t(" Plan today's session")}
-                            </button>
-                          }
+                        <TodayEmpty
+                          illustration={illustrations.todayEmpty}
+                          onPlan={() => setCreateDate(today)}
                         />
                       )}
                     </Panel>
@@ -1274,6 +1288,7 @@ export default function App() {
               )}
               {page === "Calendar" && (
                 <Calendar
+                  illustration={illustrations.planner}
                   key={`${demo ? "demo" : authId}:${owner}`}
                   onSave={saveSession}
                   onDuplicate={setDuplicate}
@@ -1288,6 +1303,7 @@ export default function App() {
               )}
               {page === "Analytics" && (
                 <Analytics
+                  illustration={illustrations.analytics}
                   key={`${demo ? "demo" : authId}:${owner}`}
                   preferenceKey={`${demo ? "demo" : authId}:${owner}`}
                   onSession={setEditor}
@@ -1470,6 +1486,7 @@ export default function App() {
                         key={`illustrations-${owner}`}
                         value={illustrations}
                         ready={illustrationsReady}
+                        sectionsReady={illustrationSectionsReady}
                         messages={messages}
                         data={data}
                         onSave={async (next) => {
@@ -1478,7 +1495,12 @@ export default function App() {
                               `liftlog-illustrations-${owner}`,
                               JSON.stringify(next),
                             );
-                          else await saveProfileIllustrations(owner, next);
+                          else
+                            await saveProfileIllustrations(
+                              owner,
+                              next,
+                              illustrationSectionsReady,
+                            );
                           if (messageOwner.current === owner)
                             setIllustrations(next);
                         }}

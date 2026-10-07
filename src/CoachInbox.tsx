@@ -1,3 +1,5 @@
+import { InboxEmpty } from "./SectionIllustrations";
+import type { ProfileIllustration } from "./types";
 import { useRef, useState } from "react";
 import {
   Inbox,
@@ -20,6 +22,7 @@ import {
 import type { ReviewItem } from "./reviews";
 export function CoachInbox({
   items,
+  illustration,
   ready,
   loading,
   error,
@@ -27,6 +30,7 @@ export function CoachInbox({
   onSetReview,
 }: {
   items: ReviewItem[];
+  illustration: ProfileIllustration;
   ready: boolean;
   loading: boolean;
   error: string;
@@ -207,23 +211,29 @@ export function CoachInbox({
         </div>
       ) : (
         <section className="panel">
-          <Empty
-            title={
-              loading
-                ? t("Loading inbox…")
-                : tab === "unread"
-                  ? t("All caught up")
-                  : t("No reviewed workouts yet")
-            }
-            detail={
-              tab === "unread"
-                ? t(
-                    "New completions will appear here. Existing workout history stays in Training.",
-                  )
-                : t("Open an unread workout to review its exercises and notes.")
-            }
-            action={<Inbox size={28} aria-hidden="true" />}
-          />
+          {ready && !loading && !error && tab === "unread" && unread === 0 ? (
+            <InboxEmpty illustration={illustration} />
+          ) : (
+            <Empty
+              title={
+                loading
+                  ? t("Loading inbox…")
+                  : tab === "unread"
+                    ? t("All caught up")
+                    : t("No reviewed workouts yet")
+              }
+              detail={
+                tab === "unread"
+                  ? t(
+                      "New completions will appear here. Existing workout history stays in Training.",
+                    )
+                  : t(
+                      "Open an unread workout to review its exercises and notes.",
+                    )
+              }
+              action={<Inbox size={28} aria-hidden="true" />}
+            />
+          )}
         </section>
       )}
       {selected && (

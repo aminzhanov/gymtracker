@@ -1,26 +1,42 @@
 import type { ProfileIllustrations, ProfileIllustration } from "./types.ts";
 
+export const ILLUSTRATION_SLOTS = [
+  "dashboard",
+  "menu",
+  "planner",
+  "analytics",
+  "inboxEmpty",
+  "todayEmpty",
+] as const;
+export type IllustrationSlot = (typeof ILLUSTRATION_SLOTS)[number];
+const defaultIllustration = (): ProfileIllustration => ({
+  image: null,
+  desktop: { scale: 100, x: 0, y: 0 },
+  phone: { scale: 100, x: 0, y: 0 },
+});
 export const DEFAULT_ILLUSTRATIONS: ProfileIllustrations = {
-  dashboard: {
-    image: null,
-    desktop: { scale: 100, x: 0, y: 0 },
-    phone: { scale: 100, x: 0, y: 0 },
-  },
-  menu: {
-    image: null,
-    desktop: { scale: 100, x: 0, y: 0 },
-    phone: { scale: 100, x: 0, y: 0 },
-  },
+  dashboard: defaultIllustration(),
+  menu: defaultIllustration(),
+  planner: defaultIllustration(),
+  analytics: defaultIllustration(),
+  inboxEmpty: defaultIllustration(),
+  todayEmpty: defaultIllustration(),
 };
 export function validateIllustrations(value: unknown): ProfileIllustrations {
   if (!value || typeof value !== "object")
     throw new Error("Invalid illustration settings.");
   const source = value as ProfileIllustrations;
   const result = {} as ProfileIllustrations;
-  for (const target of ["dashboard", "menu"] as const) {
+  for (const target of ILLUSTRATION_SLOTS) {
+    // Profiles saved before the new placements retain their existing images.
+    if (!(target in source) && target !== "dashboard" && target !== "menu") {
+      result[target] = structuredClone(DEFAULT_ILLUSTRATIONS[target]);
+      continue;
+    }
     const item = source[target];
     if (
       !item ||
+      (item.enabled !== undefined && typeof item.enabled !== "boolean") ||
       (item.image !== null &&
         (typeof item.image !== "string" ||
           item.image.length > 250000 ||
@@ -31,6 +47,7 @@ export function validateIllustrations(value: unknown): ProfileIllustrations {
       );
     result[target] = {
       image: item.image,
+      ...(item.enabled === undefined ? {} : { enabled: item.enabled }),
       desktop: { ...item.desktop },
       phone: { ...item.phone },
     };
