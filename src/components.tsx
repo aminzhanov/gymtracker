@@ -1,4 +1,5 @@
 import { t, exerciseName } from "./i18n";
+import { counterValue, stepCounter } from "./numericInput";
 import { bodyweightDomain, chartLabelIndices } from "./chartDomain";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
@@ -272,35 +273,48 @@ export function Counter({
   step,
   label,
   max,
+  unit,
+  onCommit,
 }: {
   value: number;
   onChange: (n: number) => void;
   step: number;
   label: string;
   max: number;
+  unit?: string;
+  onCommit?: () => void;
 }) {
   const [draft, setDraft] = useState(String(value));
   useEffect(() => setDraft(String(value)), [value]);
   const commit = () => {
-    const n = Number(draft);
-    if (draft !== "" && Number.isFinite(n) && n >= 0 && n <= max)
-      onChange(step === 1 ? Math.round(n) : n);
+    const n = counterValue(draft, step, max);
+    if (n !== null) onChange(n);
     else setDraft(String(value));
+    onCommit?.();
+  };
+  const adjust = (direction: number) => {
+    const n = stepCounter(
+      counterValue(draft, step, max) ?? value,
+      direction * step,
+      max,
+    );
+    setDraft(String(n));
+    onChange(n);
+    onCommit?.();
   };
   return (
     <div className="counter">
       <button
         aria-label={t(`Decrease ${label}`)}
-        onClick={() =>
-          onChange(Math.max(0, Math.round((value - step) * 100) / 100))
-        }
+        type="button"
+        onClick={() => adjust(-1)}
       >
         <Minus size={14} />
       </button>
       <input
         aria-label={label}
-        inputMode="decimal"
-        type="number"
+        inputMode={step === 1 ? "numeric" : "decimal"}
+        type="text"
         min="0"
         max={max}
         step={step}
@@ -311,12 +325,13 @@ export function Counter({
           if (e.key === "Enter") e.currentTarget.blur();
         }}
       />
-      <span className="counter-unit">{step === 1 ? "reps" : t("kg")}</span>
+      <span className="counter-unit">
+        {unit ?? (step === 1 ? t("reps") : t("kg"))}
+      </span>
       <button
         aria-label={t(`Increase ${label}`)}
-        onClick={() =>
-          onChange(Math.min(max, Math.round((value + step) * 100) / 100))
-        }
+        type="button"
+        onClick={() => adjust(1)}
       >
         <Plus size={14} />
       </button>
@@ -443,6 +458,7 @@ export function Chart({
   onPointClick,
   pointLabel,
   selectedPoint,
+  selectedSeries,
 }: {
   series: { name: string; color: string; values: (number | null)[] }[];
   bar?: boolean;
@@ -454,6 +470,7 @@ export function Chart({
   onPointClick?: (index: number, seriesIndex: number) => void;
   pointLabel?: (index: number, seriesIndex: number) => string;
   selectedPoint?: number;
+  selectedSeries?: number;
 }) {
   const compact = useMediaQuery("(max-width: 640px)");
   const values = series.flatMap((s) =>
@@ -600,7 +617,14 @@ export function Chart({
                         className="chart-point-dot"
                         cx={x(i)}
                         cy={y(v)}
-                        r={onPointClick && selectedPoint === i ? 5 : 3.5}
+                        r={
+                          onPointClick &&
+                          selectedPoint === i &&
+                          (selectedSeries === undefined ||
+                            selectedSeries === si)
+                            ? 5
+                            : 3.5
+                        }
                         fill={s.color}
                       >
                         <title>

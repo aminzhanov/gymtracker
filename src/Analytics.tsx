@@ -34,6 +34,8 @@ import {
   dateKey,
   changePercent,
 } from "./model";
+import { ExercisePointDetail } from "./ExercisePointDetail";
+import { exercisePointDetails } from "./exercisePoints";
 import { StrengthPointDetail } from "./StrengthPointDetail";
 import { RecoveryChecklist } from "./RecoveryChecklist";
 const colors = ["#1673ff", "#f17bb4", "#16b895", "#ad80ed", "#f2ad32"];
@@ -65,7 +67,7 @@ export function Analytics({
   }, [selected, storageKey]);
   const [volumeView, setVolumeView] = useState<"bars" | "line">("bars");
   const [metric, setMetric] = useState<"e1rm" | "weight">("e1rm");
-  const [scale, setScale] = useState<"kg" | "percent">("kg");
+  const [scale, setScale] = useState<"kg" | "percent" | "volume">("kg");
   const [progressMonth, setProgressMonth] = useState("");
   const [exerciseSearch, setExerciseSearch] = useState("");
   const useABSplit = data.settings.useABSplit;
@@ -114,13 +116,39 @@ export function Analytics({
   ]
     .sort()
     .reverse();
+  const progressMetric = scale === "volume" ? "volume" : metric;
+  const progressScale = scale === "percent" ? "percent" : "kg";
+  const [progressPoint, setProgressPoint] = useState<{
+    id: string;
+    date: string;
+  } | null>(null);
+  useEffect(
+    () => setProgressPoint(null),
+    [metric, scale, progressMonth, effectiveWeek, selected],
+  );
+  const progressDetail = progressPoint
+    ? exercisePointDetails(
+        sessions,
+        progressPoint.id,
+        progressMetric,
+        progressScale,
+        progressMonth,
+        progressPoint.date,
+      )
+    : null;
   const histories = selected.map((eid) => ({
     id: eid,
     name: exerciseName(
       exerciseOptions.find((e) => e.id === eid)?.name || eid,
       eid,
     ),
-    ...exerciseProgress(sessions, eid, metric, scale, progressMonth),
+    ...exerciseProgress(
+      sessions,
+      eid,
+      progressMetric,
+      progressScale,
+      progressMonth,
+    ),
   }));
   const dates = [
     ...new Set(histories.flatMap((h) => h.rows.map((r) => r.date))),
@@ -463,7 +491,12 @@ export function Analytics({
               {t(
                 "Epley estimate: weight × (1 + reps ÷ 30). Bodyweight movements need a entered lifting weight to produce a weight-based estimate.",
               )}
-            </p>{" "}
+            </p>
+            <p>
+              {t(
+                "Tap a point to see its completed sets, previous result and original workout. Volume sums weight × reps for completed sets of each exercise per day.",
+              )}
+            </p>
             {scale === "percent" && (
               <div className="progress-baselines">
                 <p className="muted">
@@ -495,14 +528,16 @@ export function Analytics({
           </>
         }
         action={
-          <select
-            aria-label={t("Exercise progress metric")}
-            value={metric}
-            onChange={(e) => setMetric(e.target.value as "e1rm" | "weight")}
-          >
-            <option value="e1rm">{t("Estimated 1RM")}</option>
-            <option value="weight">{t("Top weight")}</option>
-          </select>
+          scale !== "volume" ? (
+            <select
+              aria-label={t("Exercise progress metric")}
+              value={metric}
+              onChange={(e) => setMetric(e.target.value as "e1rm" | "weight")}
+            >
+              <option value="e1rm">{t("Estimated 1RM")}</option>
+              <option value="weight">{t("Top weight")}</option>
+            </select>
+          ) : undefined
         }
       >
         <div className="progress-controls">
@@ -512,12 +547,13 @@ export function Analytics({
               aria-label={t("Exercise progress scale")}
               value={scale}
               onChange={(event) => {
-                const next = event.target.value as "kg" | "percent";
+                const next = event.target.value as "kg" | "percent" | "volume";
                 setScale(next);
               }}
             >
               <option value="kg">{t("Weight (kg)")}</option>
               <option value="percent">{t("Growth (%)")}</option>
+              <option value="volume">{t("Volume (kg)")}</option>
             </select>
           </label>
           <label>
@@ -611,6 +647,23 @@ export function Analytics({
           <>
             <Chart
               connectGaps
+              onPointClick={(index, seriesIndex) =>
+                setProgressPoint({
+                  id: histories[seriesIndex].id,
+                  date: dates[index],
+                })
+              }
+              pointLabel={(index, seriesIndex) =>
+                `${histories[seriesIndex].name} · ${fullDate(dates[index])} · ${number(histories[seriesIndex].rows.find((r) => r.date === dates[index])?.value ?? 0, 1)} ${scale === "percent" ? "%" : t("kg")}`
+              }
+              selectedPoint={
+                progressPoint ? dates.indexOf(progressPoint.date) : undefined
+              }
+              selectedSeries={
+                progressPoint
+                  ? histories.findIndex((h) => h.id === progressPoint.id)
+                  : undefined
+              }
               unit={scale === "percent" ? "%" : t("kg")}
               labels={dates.map(shortDate)}
               series={histories.map((h, i) => ({
@@ -621,6 +674,48 @@ export function Analytics({
                 ),
               }))}
             />
+            <label className="strength-date-picker">
+              {t("Inspect a progress point")}
+              <select
+                aria-label={t("Inspect a progress point")}
+                value={progressPoint ? JSON.stringify(progressPoint) : ""}
+                onChange={(e) =>
+                  setProgressPoint(
+                    e.target.value ? JSON.parse(e.target.value) : null,
+                  )
+                }
+              >
+                <option value="">{t("Choose a point")}</option>
+                {histories.flatMap((h) =>
+                  h.rows.map((row) => (
+                    <option
+                      key={`${h.id}:${row.date}`}
+                      value={JSON.stringify({ id: h.id, date: row.date })}
+                    >
+                      {h.name} · {fullDate(row.date)} ·{" "}
+                      {scale === "percent"
+                        ? pct(row.value)
+                        : `${number(row.value, 1)} ${t("kg")}`}
+                    </option>
+                  )),
+                )}
+              </select>
+            </label>
+            {progressDetail && (
+              <ExercisePointDetail
+                detail={progressDetail}
+                name={
+                  histories.find((h) => h.id === progressDetail.exerciseId)
+                    ?.name ?? progressDetail.exerciseId
+                }
+                onClose={() => setProgressPoint(null)}
+                onSession={(id) => {
+                  const session = data.sessions.find((s) => s.id === id);
+                  setProgressPoint(null);
+                  if (session) onSession(session);
+                }}
+              />
+            )}
             <details className="volume-breakdown progress-breakdown">
               <summary>{t("Show breakdown")}</summary>
               <div className="table-scroll">

@@ -9,8 +9,9 @@ import {
   Timer,
   Trash2,
 } from "lucide-react";
-import type { Session, WorkoutExercise } from "./types";
-import { LastTime, SetRow } from "./components";
+import type { Session, WorkoutExercise, Exercise } from "./types";
+import { LastTime, SetRow, Counter } from "./components";
+import { ExerciseIdentityField } from "./ExerciseIdentityField";
 import { TechniqueVideo, TechniqueVideoEditor } from "./TechniqueVideo";
 import {
   exerciseSummary,
@@ -33,6 +34,8 @@ export function WorkoutExerciseCard({
   techniqueReady = false,
   onSaveTechnique,
   orderControls,
+  library = [],
+  onCustom,
 }: {
   exercise: WorkoutExercise;
   session: Session;
@@ -47,8 +50,11 @@ export function WorkoutExerciseCard({
   techniqueReady?: boolean;
   onSaveTechnique?: (url: string) => Promise<void>;
   orderControls?: ReactNode;
+  library?: Exercise[];
+  onCustom?: (name: string) => Promise<string>;
 }) {
   const [expanded, setExpanded] = useState(initiallyExpanded);
+  const [identityBusy, setIdentityBusy] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
   const overview = useRef<HTMLButtonElement>(null);
   const wasExpanded = useRef(expanded);
@@ -57,7 +63,7 @@ export function WorkoutExerciseCard({
     wasExpanded.current = expanded;
   }, [expanded]);
   const collapse = () => {
-    if (!canSave || !exercise.name.trim()) return;
+    if (!canSave || identityBusy || !exercise.name.trim()) return;
     onSave();
     setExpanded(false);
   };
@@ -73,7 +79,7 @@ export function WorkoutExerciseCard({
         if (!expanded || !(event.target instanceof Element)) return;
         if (
           event.target.closest(
-            "button,input,textarea,select,label,a,iframe,[role='button'],.technique-video,.technique-editor",
+            "button,input,textarea,select,label,a,iframe,[role='button'],.technique-video,.technique-editor,.exercise-identity-editor",
           )
         )
           return;
@@ -155,18 +161,13 @@ export function WorkoutExerciseCard({
               )}
             </span>
             <div className="grow">
-              <label className="exercise-name-label">
-                {t("Exercise name")}
-                <input
-                  aria-label={t("Exercise name")}
-                  className="exercise-name"
-                  value={exercise.name}
-                  maxLength={100}
-                  onChange={(event) =>
-                    onChange({ ...exercise, name: event.target.value })
-                  }
-                />
-              </label>
+              <ExerciseIdentityField
+                exercise={exercise}
+                library={library}
+                onCustom={onCustom}
+                onChange={onChange}
+                onBusy={setIdentityBusy}
+              />
               {exercise.kind === "strength" && !isTemplate && (
                 <LastTime
                   exercise={exercise}
@@ -180,7 +181,7 @@ export function WorkoutExerciseCard({
               className="exercise-collapse-toggle"
               aria-label={t(`Close ${exercise.name} and save`)}
               aria-expanded={true}
-              disabled={!canSave || !exercise.name.trim()}
+              disabled={!canSave || identityBusy || !exercise.name.trim()}
               onClick={collapse}
             >
               <ChevronDown size={20} className="rotated" />
@@ -250,20 +251,13 @@ export function WorkoutExerciseCard({
             <div className="recovery-fields">
               <label>
                 {t("Duration (minutes)")}
-                <input
-                  type="number"
-                  min="0"
-                  max="1440"
+                <Counter
                   value={exercise.duration}
-                  onChange={(event) =>
-                    onChange({
-                      ...exercise,
-                      duration: Math.max(
-                        0,
-                        Math.min(1440, Number(event.target.value)),
-                      ),
-                    })
-                  }
+                  step={5}
+                  max={1440}
+                  unit={t("min")}
+                  label={t("Duration (minutes)")}
+                  onChange={(duration) => onChange({ ...exercise, duration })}
                 />
               </label>
               {!isTemplate && (
@@ -308,7 +302,7 @@ export function WorkoutExerciseCard({
           <div className="exercise-save">
             <button
               className="button primary"
-              disabled={!canSave || !exercise.name.trim()}
+              disabled={!canSave || identityBusy || !exercise.name.trim()}
               onClick={collapse}
             >
               <Save size={17} />

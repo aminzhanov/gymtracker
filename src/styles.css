@@ -5530,3 +5530,104 @@ button.stat-detail-row:hover {
     font-size: 15px;
   }
 }
+
+/* Recovery controls allow clearing the number without shrinking touch targets. */
+.recovery-fields label:first-child {
+  width: min(100%, 240px);
+}
+.recovery-fields .counter {
+  max-width: none;
+  width: 100%;
+  height: 46px;
+}
+.recovery-fields .counter button {
+  width: 44px;
+  min-width: 44px;
+  height: 46px;
+}
+.recovery-fields .counter input {
+  min-width: 30px;
+  padding: 6px 0;
+  font-size: 16px;
+}
+.recovery-fields .counter-unit,
+.planner-recovery-row .counter-unit {
+  display: block;
+  flex: none;
+  padding: 0 5px;
+  font-size: 13px;
+  color: #676276;
+}
+.planner-recovery-row {
+  grid-template-columns: minmax(0, 1fr) 190px;
+}
+.planner-recovery-row .counter {
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+}
+.planner-recovery-row .counter button {
+  width: 40px;
+  min-width: 40px;
+  min-height: 44px;
+}
+.planner-recovery-row .counter input {
+  font-size: 16px;
+}
+.exercise-identity > strong {
+  display: block;
+  font-size: 16px;
+}
+.exercise-identity > .text-button {
+  min-height: 36px;
+  font-size: 13px;
+}
+.exercise-identity-editor {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+.exercise-identity-editor label,
+.exercise-identity-editor p {
+  margin: 0;
+}
+.exercise-identity-editor input,
+.exercise-identity-editor select {
+  font-size: 16px;
+  min-height: 44px;
+  width: 100%;
+}
+.exercise-identity-editor .flex {
+  flex-wrap: wrap;
+}
+.exercise-point-sets {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+.exercise-point-sets > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px;
+  border-radius: 8px;
+}
+.exercise-point-sets > div.contributing-set {
+  background: #e7f1ff;
+}
+.exercise-point-sets span {
+  color: #676477;
+  font-size: 13px;
+}
+@media (max-width: 650px) {
+  .planner-recovery-row {
+    grid-template-columns: minmax(0, 1fr) 165px;
+  }
+  .exercise-identity-editor .button {
+    min-height: 44px;
+  }
+  .exercise-identity > .text-button {
+    min-height: 44px;
+  }
+}

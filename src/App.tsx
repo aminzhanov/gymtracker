@@ -1034,6 +1034,8 @@ export default function App() {
                                 <WorkoutExerciseCard
                                   key={exercise.id}
                                   exercise={exercise}
+                                  library={data.exercises}
+                                  onCustom={addCustom}
                                   session={s}
                                   sessions={data.sessions}
                                   isTemplate={false}

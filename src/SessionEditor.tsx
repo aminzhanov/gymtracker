@@ -200,6 +200,8 @@ export function SessionEditor({
               <WorkoutExerciseCard
                 key={exercise.id}
                 exercise={exercise}
+                library={data.exercises}
+                onCustom={onCustom}
                 session={s}
                 sessions={data.sessions}
                 isTemplate={isTemplate}

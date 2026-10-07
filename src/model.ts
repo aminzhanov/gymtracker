@@ -457,20 +457,31 @@ export function weekComparison(sessions: Session[]) {
 export function exerciseHistory(
   sessions: Session[],
   eid: string,
-  metric: "e1rm" | "weight",
+  metric: "e1rm" | "weight" | "volume",
 ) {
   const daily = new Map<string, number>();
   for (const s of sessions) {
     const sets = doneSets(s).filter(
-      (x) => x.exerciseId === eid && x.weight > 0 && x.reps > 0,
+      (x) =>
+        x.exerciseId === eid &&
+        (metric === "volume" ? x.weight >= 0 : x.weight > 0) &&
+        x.reps > 0,
     );
     if (!sets.length) continue;
-    const value = Math.max(
-      ...sets.map((x) =>
-        metric === "e1rm" ? estimatedMax(x.weight, x.reps) : x.weight,
-      ),
+    const value =
+      metric === "volume"
+        ? sets.reduce((sum, set) => sum + set.weight * set.reps, 0)
+        : Math.max(
+            ...sets.map((x) =>
+              metric === "e1rm" ? estimatedMax(x.weight, x.reps) : x.weight,
+            ),
+          );
+    daily.set(
+      s.date,
+      metric === "volume"
+        ? (daily.get(s.date) ?? 0) + value
+        : Math.max(daily.get(s.date) ?? 0, value),
     );
-    daily.set(s.date, Math.max(daily.get(s.date) ?? 0, value));
   }
   return [...daily]
     .sort(([a], [b]) => a.localeCompare(b))
@@ -479,7 +490,7 @@ export function exerciseHistory(
 export function exerciseProgress(
   sessions: Session[],
   eid: string,
-  metric: "e1rm" | "weight",
+  metric: "e1rm" | "weight" | "volume",
   scale: "kg" | "percent",
   month: string,
 ) {

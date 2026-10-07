@@ -711,4 +711,22 @@ export const ru: Record<string, string> = {
   "Tap a point or choose a date": "Нажмите на точку или выберите дату",
   "Strength trend date": "Дата на графике силы",
   "Choose a date": "Выберите дату",
+  "Change exercise": "Заменить упражнение",
+  "Choose or create exercise": "Выберите или создайте упражнение",
+  "Choose from exercise library": "Выбрать из библиотеки упражнений",
+  "Use exercise": "Использовать упражнение",
+  "Create and use exercise": "Создать и использовать",
+  "Changes this exercise in this workout only. Sets and notes are kept; search and analytics use the new exercise.":
+    "Заменяется только упражнение в этой тренировке. Подходы и заметки сохраняются; поиск и аналитика используют новое упражнение.",
+  "Volume (kg)": "Объём (кг)",
+  "Inspect a progress point": "Посмотреть точку прогресса",
+  "Choose a point": "Выберите точку",
+  "Volume adds weight × reps for all completed sets of this exercise on this day, across workouts. Unchecked sets are excluded.":
+    "Объём — сумма веса × повторений всех выполненных подходов этого упражнения за день, во всех тренировках. Невыполненные подходы не учитываются.",
+  "This point uses the best completed set on this day. Highlighted sets determine the plotted value; unchecked sets are excluded.":
+    "Точка показывает лучший выполненный подход за день. Выделенные подходы определяют значение на графике; невыполненные не учитываются.",
+  "Lighter weights or fewer reps may reflect a deliberately easier workout. This chart describes your logs.":
+    "Меньший вес или меньше повторений могут отражать намеренно лёгкую тренировку. График показывает ваши записи.",
+  "Tap a point to see its completed sets, previous result and original workout. Volume sums weight × reps for completed sets of each exercise per day.":
+    "Нажмите на точку, чтобы увидеть выполненные подходы, предыдущий результат и тренировку. Объём — сумма веса × повторений выполненных подходов упражнения за день.",
 };

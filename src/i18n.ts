@@ -42,6 +42,11 @@ export function t(text: string): string {
     ],
     [/^Duplicate (.+)$/, (_, name) => `Дублировать ${name}`],
     [/^Edit workout: (.+)$/, (_, name) => `Изменить тренировку: ${name}`],
+    [
+      /^(Decrease|Increase) (.+)$/,
+      (_, action, label) =>
+        `${action === "Decrease" ? "Уменьшить" : "Увеличить"}: ${t(label)}`,
+    ],
     [/^Edit (.+)$/, (_, name) => `Изменить ${name}`],
     [/^Close (.+) and save$/, (_, name) => `Закрыть ${name} и сохранить`],
     [/^Remove (.+)$/, (_, name) => `Удалить ${name}`],

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { AppData, Session, WorkoutExercise } from "./types";
 import { t, exerciseName } from "./i18n";
 import { CalendarVolume } from "./CalendarVolume";
-import { DateField, useMediaQuery } from "./components";
+import { DateField, useMediaQuery, Counter } from "./components";
 import { calendarVolume } from "./planning";
 import { trainingWeeks } from "./trainingWeeks";
 import {
@@ -175,11 +175,14 @@ export function ExerciseRow({
         ) : (
           <label>
             {t("Minutes")}
-            <Numeric
+            <Counter
               label={`${e.name} · ${t("Minutes")}`}
               value={e.duration}
-              onDraft={(v) => onDraft({ ...e, duration: v })}
-              onSave={onSave}
+              step={5}
+              max={1440}
+              unit={t("min")}
+              onChange={(v) => onDraft({ ...e, duration: v })}
+              onCommit={onSave}
             />
           </label>
         )}
