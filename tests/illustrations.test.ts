@@ -14,7 +14,10 @@ test("illustration settings keep phone and desktop independent and reject unsafe
   value.dashboard.phone = { scale: 80, x: 12, y: -25 };
   value.dashboard.image = "data:image/webp;base64,AAAA";
   const saved = validateIllustrations(value);
-  assert.deepEqual(saved.dashboard.desktop, { scale: 100, x: 0, y: 0 });
+  assert.deepEqual(
+    saved.dashboard.desktop,
+    DEFAULT_ILLUSTRATIONS.dashboard.desktop,
+  );
   assert.equal(
     illustrationVariables(saved.dashboard)["--art-phone-scale"],
     0.8,
@@ -221,8 +224,10 @@ test("illustration migration is rerunnable, coach scoped, and separate from trai
       illustrations: legacy,
     });
     const settings = structuredClone(DEFAULT_ILLUSTRATIONS);
-    for (const slot of ILLUSTRATION_SLOTS)
+    for (const slot of ILLUSTRATION_SLOTS) {
       settings[slot].image = "data:image/webp;base64," + "A".repeat(240000);
+      delete settings[slot].preset;
+    }
     settings.planner.phone = { scale: 85, x: 20, y: -12 };
     settings.inboxEmpty.enabled = false;
     settings.dashboard.phone.y = -20;
