@@ -38,12 +38,31 @@ const defaultIllustration = (): ProfileIllustration => ({
   phone: { scale: 100, x: 0, y: 0 },
 });
 export const DEFAULT_ILLUSTRATIONS: ProfileIllustrations = {
-  dashboard: defaultIllustration(),
-  menu: defaultIllustration(),
-  planner: defaultIllustration(),
-  analytics: defaultIllustration(),
-  inboxEmpty: defaultIllustration(),
-  todayEmpty: defaultIllustration(),
+  dashboard: {
+    image: null,
+    desktop: { scale: 106, x: -40, y: -52 },
+    phone: { scale: 101, x: -35, y: 0 },
+  },
+  menu: {
+    image: null,
+    preset: "cat-back",
+    desktop: { scale: 100, x: 0, y: -22 },
+    phone: { scale: 100, x: 0, y: 0 },
+  },
+  planner: { ...defaultIllustration(), enabled: false },
+  analytics: { ...defaultIllustration(), enabled: false },
+  inboxEmpty: {
+    image: null,
+    preset: "sticker18",
+    desktop: { scale: 78, x: -39, y: 17 },
+    phone: { scale: 80, x: -47, y: 37 },
+  },
+  todayEmpty: {
+    image: null,
+    preset: "sticker21",
+    desktop: { scale: 100, x: 62, y: 51, rotation: 0 },
+    phone: { scale: 103, x: 41, y: 67, rotation: -4 },
+  },
 };
 export function validateIllustrations(value: unknown): ProfileIllustrations {
   if (!value || typeof value !== "object")
