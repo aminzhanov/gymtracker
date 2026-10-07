@@ -1,3 +1,4 @@
+import { illustrationSource } from "./illustrationAssets";
 import type { CSSProperties, ReactNode } from "react";
 import { Plus } from "lucide-react";
 import { Empty } from "./components";
@@ -18,7 +19,7 @@ export function SectionArt({
   return (
     <div className="section-art" aria-hidden="true">
       <img
-        src={illustration.image || (back ? catBack : catFace)}
+        src={illustrationSource(illustration, back ? catBack : catFace)}
         style={illustrationVariables(illustration) as CSSProperties}
         alt=""
         draggable={false}

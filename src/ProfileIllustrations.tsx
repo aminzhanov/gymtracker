@@ -1,3 +1,4 @@
+import { illustrationSource, ILLUSTRATION_PRESETS } from "./illustrationAssets";
 import { useState, type CSSProperties } from "react";
 import { Save, Plus } from "lucide-react";
 import { t } from "./i18n";
@@ -134,7 +135,7 @@ export function IllustrationEditor({
                   const image = await prepareIllustration(file);
                   setDraft((old) => ({
                     ...old,
-                    [slot]: { ...old[slot], image },
+                    [slot]: { ...old[slot], image, preset: undefined },
                   }));
                 } catch (error) {
                   setFailed(true);
@@ -150,6 +151,55 @@ export function IllustrationEditor({
             />
           </label>
         </div>
+        <details className="illustration-library">
+          <summary>
+            {t("Image library")} <span>{ILLUSTRATION_PRESETS.length}</span>
+          </summary>
+          <div
+            className="illustration-gallery"
+            role="group"
+            aria-label={t("Choose an image")}
+          >
+            {ILLUSTRATION_PRESETS.map((preset) => {
+              const active =
+                !item.image &&
+                (item.preset ||
+                  (["menu", "planner", "inboxEmpty"].includes(target)
+                    ? "cat-back"
+                    : "cat-face")) === preset.id;
+              return (
+                <button
+                  type="button"
+                  key={preset.id}
+                  className={active ? "selected" : ""}
+                  aria-label={`${t("Choose an image")}: ${t(preset.name)}`}
+                  aria-pressed={active}
+                  onClick={() => {
+                    setDraft((old) => ({
+                      ...old,
+                      [target]: {
+                        ...old[target],
+                        image: null,
+                        preset: preset.id,
+                      },
+                    }));
+                    setFeedback("");
+                  }}
+                >
+                  <img
+                    src={preset.src}
+                    alt=""
+                    loading="lazy"
+                    width={512}
+                    height={512}
+                    draggable={false}
+                  />
+                  <span>{t(preset.name)}</span>
+                </button>
+              );
+            })}
+          </div>
+        </details>
         <div className="illustration-preview-wrap">
           {target !== "menu" ? (
             <DashboardIllustrationPreview
@@ -226,7 +276,7 @@ export function IllustrationEditor({
               <div className="sidebar-cheer-scene">
                 <img
                   className="sidebar-cat"
-                  src={item.image || catBack}
+                  src={illustrationSource(item, catBack)}
                   style={illustrationVariables(item) as CSSProperties}
                   alt=""
                   draggable={false}

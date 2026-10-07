@@ -1,3 +1,4 @@
+import { illustrationSource } from "./illustrationAssets";
 import { TodayEmpty } from "./SectionIllustrations";
 import catBack from "./assets/cat-back.webp";
 import { IllustrationEditor } from "./ProfileIllustrations";
@@ -847,7 +848,7 @@ export default function App() {
         <div className="sidebar-cheer-scene">
           <img
             className="sidebar-cat"
-            src={illustrations.menu.image || catBack}
+            src={illustrationSource(illustrations.menu, catBack)}
             style={illustrationVariables(illustrations.menu) as CSSProperties}
             width={512}
             height={512}
@@ -1803,6 +1804,7 @@ export default function App() {
                 className={page === p.name ? "active" : ""}
                 onClick={() => {
                   setPage(p.name);
+                  setMenu(false);
                   setSearch("");
                 }}
               >

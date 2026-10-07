@@ -84,6 +84,7 @@ export interface IllustrationPlacement {
 }
 export interface ProfileIllustration {
   image: string | null;
+  preset?: string;
   enabled?: boolean;
   desktop: IllustrationPlacement;
   phone: IllustrationPlacement;

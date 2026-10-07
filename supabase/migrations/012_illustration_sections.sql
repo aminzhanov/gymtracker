@@ -13,6 +13,11 @@ begin
   if not (value ? slot) and slot not in ('dashboard','menu') then continue; end if;
   item:=value->slot;
   if jsonb_typeof(item) is distinct from 'object' then return false; end if;
+  if item ? 'preset' and (jsonb_typeof(item->'preset') is distinct from 'string' or
+    item->>'preset' not in ('cat-face','cat-back','sticker','sticker2','sticker3','sticker4','5',
+      'sticker6','sticker7','sticker8','sticker9','sticker10','sticker11','sticker12','sticker13',
+      'sticker15','sticker17','sticker18','sticker19','sticker20','sticker21') or
+    jsonb_typeof(item->'image') is distinct from 'null') then return false; end if;
   if item ? 'enabled' and jsonb_typeof(item->'enabled') is distinct from 'boolean' then return false; end if;
   if not coalesce(jsonb_typeof(item->'image')='null' or
     (jsonb_typeof(item->'image')='string' and length(item->>'image')<=250000 and

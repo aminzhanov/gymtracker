@@ -1,5 +1,28 @@
 import type { ProfileIllustrations, ProfileIllustration } from "./types.ts";
 
+export const ILLUSTRATION_PRESET_IDS = [
+  "cat-face",
+  "cat-back",
+  "sticker",
+  "sticker2",
+  "sticker3",
+  "sticker4",
+  "5",
+  "sticker6",
+  "sticker7",
+  "sticker8",
+  "sticker9",
+  "sticker10",
+  "sticker11",
+  "sticker12",
+  "sticker13",
+  "sticker15",
+  "sticker17",
+  "sticker18",
+  "sticker19",
+  "sticker20",
+  "sticker21",
+] as const;
 export const ILLUSTRATION_SLOTS = [
   "dashboard",
   "menu",
@@ -36,6 +59,11 @@ export function validateIllustrations(value: unknown): ProfileIllustrations {
     const item = source[target];
     if (
       !item ||
+      (item.preset !== undefined &&
+        (!ILLUSTRATION_PRESET_IDS.includes(
+          item.preset as (typeof ILLUSTRATION_PRESET_IDS)[number],
+        ) ||
+          item.image !== null)) ||
       (item.enabled !== undefined && typeof item.enabled !== "boolean") ||
       (item.image !== null &&
         (typeof item.image !== "string" ||
@@ -47,6 +75,7 @@ export function validateIllustrations(value: unknown): ProfileIllustrations {
       );
     result[target] = {
       image: item.image,
+      ...(item.preset === undefined ? {} : { preset: item.preset }),
       ...(item.enabled === undefined ? {} : { enabled: item.enabled }),
       desktop: { ...item.desktop },
       phone: { ...item.phone },

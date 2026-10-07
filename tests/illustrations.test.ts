@@ -7,6 +7,7 @@ import {
   validateIllustrations,
   illustrationVariables,
   ILLUSTRATION_SLOTS,
+  ILLUSTRATION_PRESET_IDS,
 } from "../src/illustrations.ts";
 test("illustration settings keep phone and desktop independent and reject unsafe or oversized images", () => {
   const value = structuredClone(DEFAULT_ILLUSTRATIONS);
@@ -80,6 +81,35 @@ test("legacy profiles gain new placements without changing original art, and eve
       todayEmpty: { ...upgraded.todayEmpty, enabled: false },
     }).todayEmpty.enabled,
     false,
+  );
+});
+test("all bundled image choices are valid WebP assets and roundtrip without embedding image bytes", async () => {
+  for (const preset of ILLUSTRATION_PRESET_IDS) {
+    const asset = await readFile(
+      new URL(`../src/assets/${preset}.webp`, import.meta.url),
+    );
+    assert.equal(asset.toString("ascii", 0, 4), "RIFF");
+    assert.equal(asset.toString("ascii", 8, 12), "WEBP");
+    const value = structuredClone(DEFAULT_ILLUSTRATIONS);
+    value.dashboard.preset = preset;
+    assert.equal(validateIllustrations(value).dashboard.preset, preset);
+  }
+  assert.equal(ILLUSTRATION_PRESET_IDS.length, 21);
+  assert.throws(() =>
+    validateIllustrations({
+      ...DEFAULT_ILLUSTRATIONS,
+      menu: { ...DEFAULT_ILLUSTRATIONS.menu, preset: "unknown" },
+    }),
+  );
+  assert.throws(() =>
+    validateIllustrations({
+      ...DEFAULT_ILLUSTRATIONS,
+      menu: {
+        ...DEFAULT_ILLUSTRATIONS.menu,
+        image: "data:image/webp;base64,AAAA",
+        preset: "cat-face",
+      },
+    }),
   );
 });
 test("illustration migration is rerunnable, coach scoped, and separate from training", async () => {
@@ -170,6 +200,32 @@ test("illustration migration is rerunnable, coach scoped, and separate from trai
     await login(coach);
     await save(athlete, settings);
     await save(coach, DEFAULT_ILLUSTRATIONS);
+    settings.todayEmpty.image = null;
+    settings.todayEmpty.preset = "sticker21";
+    await save(athlete, settings);
+    assert.deepEqual(
+      (await load(athlete)).rows[0].load_profile_illustrations.illustrations,
+      settings,
+    );
+    await assert.rejects(
+      () =>
+        save(athlete, {
+          ...settings,
+          todayEmpty: { ...settings.todayEmpty, preset: "unknown" },
+        }),
+      /Invalid illustration/,
+    );
+    await assert.rejects(
+      () =>
+        save(athlete, {
+          ...settings,
+          todayEmpty: {
+            ...settings.todayEmpty,
+            image: "data:image/webp;base64,AAAA",
+          },
+        }),
+      /Invalid illustration/,
+    );
     await save(athlete, { dashboard: settings.dashboard, menu: settings.menu });
     assert.deepEqual(
       (await load(athlete)).rows[0].load_profile_illustrations.illustrations,
