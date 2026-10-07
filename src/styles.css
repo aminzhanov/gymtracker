@@ -3903,9 +3903,15 @@ summary {
   position: relative;
   z-index: 1;
 }
-.dashboard-welcome > .dumbbell-art {
+.dashboard-welcome > .dashboard-cat {
   width: 210px;
-  margin-left: 0;
+  height: auto;
+  flex: none;
+  align-self: center;
+  object-fit: contain;
+  transform: rotate(-5deg);
+  pointer-events: none;
+  user-select: none;
 }
 .welcome-stat-tags {
   display: flex;
@@ -4021,7 +4027,7 @@ summary {
   font-weight: 600;
 }
 @media (max-width: 850px) {
-  .dashboard-welcome > .dumbbell-art {
+  .dashboard-welcome > .dashboard-cat {
     width: 140px;
   }
 }
@@ -4030,23 +4036,24 @@ summary {
     display: block;
     padding: 22px 18px;
   }
-  .dashboard-welcome > .dumbbell-art {
+  .dashboard-welcome > .dashboard-cat {
     position: absolute;
     width: 105px;
     top: 16px;
     right: 8px;
-    opacity: 0.7;
+    opacity: 1;
     z-index: 0;
   }
   .dashboard-welcome h1 {
-    padding-right: 66px;
+    padding-right: 100px;
     font-size: 29px;
   }
   .dashboard-welcome .eyebrow {
-    max-width: 200px;
+    max-width: calc(100% - 100px);
     display: block;
   }
   .dashboard-welcome .personal-message {
+    padding-right: 82px;
     font-size: 20px;
     margin-top: 8px;
   }
@@ -5629,5 +5636,50 @@ button.stat-detail-row:hover {
   }
   .exercise-identity > .text-button {
     min-height: 44px;
+  }
+}
+
+/* The cat peeks over the message; the opaque shape covers its lower edge. */
+.sidebar {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.sidebar nav,
+.sidebar .logo,
+.sidebar-foot {
+  flex-shrink: 0;
+}
+.sidebar-cheer-scene {
+  position: relative;
+  isolation: isolate;
+  flex-shrink: 0;
+  margin: 30px 10px 24px;
+  padding-top: 124px;
+}
+.sidebar-cheer-scene .sidebar-cheer {
+  margin: 0;
+  z-index: 1;
+}
+.sidebar-cat {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 175px;
+  height: 175px;
+  max-width: none;
+  object-fit: contain;
+  transform: translateX(-50%) rotate(-5deg);
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+@media (min-width: 651px) and (max-width: 850px) {
+  .sidebar-cheer-scene {
+    margin-inline: 4px;
+    padding-top: 110px;
+  }
+  .sidebar-cat {
+    width: 155px;
+    height: 155px;
   }
 }

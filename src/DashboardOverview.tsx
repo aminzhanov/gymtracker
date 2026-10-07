@@ -11,7 +11,8 @@ import {
   doneSets,
   volume,
 } from "./model";
-import { InfoButton, DumbbellArt, Modal, Empty } from "./components";
+import catFace from "./assets/cat-face.webp";
+import { InfoButton, Modal, Empty } from "./components";
 import { Dumbbell, Trophy, TrendingUp } from "lucide-react";
 
 export function DashboardOverview({
@@ -116,7 +117,15 @@ export function DashboardOverview({
             </div>
           </div>
         </div>
-        <DumbbellArt />
+        <img
+          className="dashboard-cat"
+          src={catFace}
+          width={512}
+          height={512}
+          alt=""
+          aria-hidden="true"
+          draggable={false}
+        />
       </section>
       {detail && (
         <Modal

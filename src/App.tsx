@@ -1,3 +1,4 @@
+import catBack from "./assets/cat-back.webp";
 import { SearchResults } from "./SearchResults";
 import { librarySessionWeeks } from "./libraryWeeks";
 import { CoachInbox } from "./CoachInbox";
@@ -775,14 +776,25 @@ export default function App() {
               </button>
             ))}
         </nav>
-        <div className="sidebar-cheer">
-          <span>✦</span>
-          <strong className="personal-message">
-            {messages.sidebar === DEFAULT_MESSAGES.sidebar
-              ? t(messages.sidebar)
-              : messages.sidebar}
-          </strong>
-          <small>{t("One rep at a time.")}</small>
+        <div className="sidebar-cheer-scene">
+          <img
+            className="sidebar-cat"
+            src={catBack}
+            width={512}
+            height={512}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+          />
+          <div className="sidebar-cheer">
+            <span>✦</span>
+            <strong className="personal-message">
+              {messages.sidebar === DEFAULT_MESSAGES.sidebar
+                ? t(messages.sidebar)
+                : messages.sidebar}
+            </strong>
+            <small>{t("One rep at a time.")}</small>
+          </div>
         </div>
         <div className="sidebar-foot">
           {t("Made for showing up ")}
