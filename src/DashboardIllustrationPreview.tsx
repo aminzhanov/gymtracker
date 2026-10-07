@@ -22,24 +22,38 @@ export function DashboardIllustrationPreview({
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [doc, setDoc] = useState<Document | null>(null);
-  const [viewport, setViewport] = useState(window.innerWidth);
+  const [viewport, setViewport] = useState(() => ({
+    width: window.innerWidth,
+    contentWidth: document.documentElement.clientWidth,
+  }));
   const [available, setAvailable] = useState(0);
   const [card, setCard] = useState({ width: 0, height: 0, left: 0 });
   const frameWidth =
     mode === "phone"
-      ? viewport <= 640
-        ? viewport
+      ? viewport.width <= 640
+        ? viewport.width
         : 390
-      : viewport > 640
-        ? viewport
+      : viewport.width > 640
+        ? viewport.width
         : 1280;
+  // The live page may reserve a scrollbar gutter; the isolated frame does not.
+  const contentWidth =
+    frameWidth === viewport.width ? viewport.contentWidth : frameWidth;
 
   useEffect(() => {
-    const resize = () => setViewport(window.innerWidth);
+    const resize = () =>
+      setViewport((old) => {
+        const width = window.innerWidth;
+        const contentWidth = document.documentElement.clientWidth;
+        return old.width === width && old.contentWidth === contentWidth
+          ? old
+          : { width, contentWidth };
+      });
     window.addEventListener("resize", resize);
-    const observer = new ResizeObserver(([entry]) =>
-      setAvailable(entry.contentRect.width),
-    );
+    const observer = new ResizeObserver(([entry]) => {
+      setAvailable(entry.contentRect.width);
+      resize();
+    });
     if (wrap.current) observer.observe(wrap.current);
     return () => {
       window.removeEventListener("resize", resize);
@@ -62,7 +76,7 @@ export function DashboardIllustrationPreview({
     observer.observe(hero);
     measure();
     return () => observer.disconnect();
-  }, [doc, frameWidth]);
+  }, [doc, frameWidth, contentWidth]);
 
   const scale =
     card.width && available ? Math.min(1, available / card.width) : 1;
@@ -101,15 +115,17 @@ export function DashboardIllustrationPreview({
       />
       {doc &&
         createPortal(
-          <div className="main-shell" inert>
-            <main>
-              <DashboardOverview
-                data={data}
-                message={message}
-                illustration={illustration}
-                onSession={() => {}}
-              />
-            </main>
+          <div style={{ width: contentWidth }} inert>
+            <div className="main-shell">
+              <main>
+                <DashboardOverview
+                  data={data}
+                  message={message}
+                  illustration={illustration}
+                  onSession={() => {}}
+                />
+              </main>
+            </div>
           </div>,
           doc.body,
         )}
