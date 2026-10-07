@@ -43,15 +43,26 @@ export function DashboardOverview({
     <>
       <section className="welcome dashboard-welcome">
         <div className="welcome-content">
-          <span className="eyebrow">{t("LET'S MAKE TODAY A GOOD ONE")}</span>
-          <h1>
-            {t("Hey ")}
-            {data.settings.name} <span>💪</span>
-          </h1>
-          <p className="personal-message">
-            {message === "Ready to move today?" ? t(message) : message}
-          </p>
-          <span className="welcome-date">{fullDate(today)}</span>
+          <div className="welcome-intro">
+            <span className="eyebrow">{t("LET'S MAKE TODAY A GOOD ONE")}</span>
+            <h1>
+              {t("Hey ")}
+              {data.settings.name} <span>💪</span>
+            </h1>
+            <p className="personal-message">
+              {message === "Ready to move today?" ? t(message) : message}
+            </p>
+            <span className="welcome-date">{fullDate(today)}</span>
+            <img
+              className="dashboard-cat"
+              src={catFace}
+              width={512}
+              height={512}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+            />
+          </div>
           <div className="welcome-stat-tags">
             <div className="welcome-stat-tag welcome-stat-strength">
               <button
@@ -117,15 +128,6 @@ export function DashboardOverview({
             </div>
           </div>
         </div>
-        <img
-          className="dashboard-cat"
-          src={catFace}
-          width={512}
-          height={512}
-          alt=""
-          aria-hidden="true"
-          draggable={false}
-        />
       </section>
       {detail && (
         <Modal
