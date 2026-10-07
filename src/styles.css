@@ -3908,10 +3908,10 @@ summary {
 }
 .dashboard-welcome .dashboard-cat {
   position: absolute;
-  width: clamp(270px, 26vw, 370px);
+  width: clamp(270px, 24vw, 340px);
   height: auto;
   right: -62px;
-  bottom: -70px;
+  bottom: -90px;
   object-fit: contain;
   z-index: 0;
   pointer-events: none;
