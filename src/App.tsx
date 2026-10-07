@@ -1069,7 +1069,7 @@ export default function App() {
                   <div className="dashboard-grid">
                     <Panel
                       title={t("Today's workout")}
-                      className="today-panel"
+                      className={`today-panel${todaySessions.length ? "" : " illustrated-empty-panel"}`}
                       action={
                         <button
                           className="text-button"

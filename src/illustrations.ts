@@ -90,7 +90,9 @@ export function validateIllustrations(value: unknown): ProfileIllustrations {
         !Number.isFinite(p.x) ||
         Math.abs(p.x) > 100 ||
         !Number.isFinite(p.y) ||
-        Math.abs(p.y) > 100
+        Math.abs(p.y) > 100 ||
+        (p.rotation !== undefined &&
+          (!Number.isFinite(p.rotation) || Math.abs(p.rotation) > 180))
       )
         throw new Error("Illustration position is outside the allowed range.");
     }
@@ -102,9 +104,17 @@ export function illustrationVariables(item: ProfileIllustration) {
     "--art-scale": item.desktop.scale / 100,
     "--art-x": `${item.desktop.x}px`,
     "--art-y": `${item.desktop.y}px`,
+    "--art-rotation": `${item.desktop.rotation ?? 0}deg`,
+    // Background positions span the whole card, with the image center kept
+    // inside it. The card clips any image edges that extend beyond it.
+    "--art-position-x": `${50 + item.desktop.x / 2}%`,
+    "--art-position-y": `${50 + item.desktop.y / 2}%`,
     "--art-phone-scale": item.phone.scale / 100,
     "--art-phone-x": `${item.phone.x}px`,
     "--art-phone-y": `${item.phone.y}px`,
+    "--art-phone-rotation": `${item.phone.rotation ?? 0}deg`,
+    "--art-phone-position-x": `${50 + item.phone.x / 2}%`,
+    "--art-phone-position-y": `${50 + item.phone.y / 2}%`,
   };
 }
 

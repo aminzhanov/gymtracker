@@ -743,6 +743,7 @@ export const ru: Record<string, string> = {
   "Image size": "Размер изображения",
   "Left / right": "Влево / вправо",
   "Up / down": "Вверх / вниз",
+  Rotation: "Поворот",
   "Move right or down with positive values. Dashboard phone placement is saved separately.":
     "Положительные значения сдвигают вправо или вниз. Размещение на телефоне сохраняется отдельно.",
   "Reset illustration": "Сбросить иллюстрацию",

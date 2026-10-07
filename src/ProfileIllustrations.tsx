@@ -42,7 +42,8 @@ export function IllustrationEditor({
   const [failed, setFailed] = useState(false);
   const item = draft[target];
   const device = target === "menu" ? "desktop" : mode;
-  const setPlacement = (field: "scale" | "x" | "y", n: number) => {
+  const background = target === "inboxEmpty" || target === "todayEmpty";
+  const setPlacement = (field: "scale" | "x" | "y" | "rotation", n: number) => {
     setDraft((old) => ({
       ...old,
       [target]: {
@@ -251,14 +252,14 @@ export function IllustrationEditor({
                   }
                 />
               ) : target === "inboxEmpty" ? (
-                <section className="panel illustration-preview-panel">
+                <section className="panel illustrated-empty-panel illustration-preview-panel">
                   <InboxEmpty illustration={item} />
                 </section>
               ) : target === "todayEmpty" ? (
                 <div className="dashboard-grid">
                   <Panel
                     title={t("Today's workout")}
-                    className="today-panel illustration-preview-panel"
+                    className="today-panel illustrated-empty-panel illustration-preview-panel"
                     action={
                       <button className="text-button">
                         <Plus size={16} />
@@ -311,8 +312,9 @@ export function IllustrationEditor({
           {(
             [
               ["scale", "Image size", 60, 150, "%"],
-              ["x", "Left / right", -100, 100, "px"],
-              ["y", "Up / down", -100, 100, "px"],
+              ["x", "Left / right", -100, 100, background ? "%" : "px"],
+              ["y", "Up / down", -100, 100, background ? "%" : "px"],
+              ["rotation", "Rotation", -180, 180, "°"],
             ] as const
           ).map(([field, label, min, max, unit]) => (
             <label key={field}>
@@ -323,11 +325,11 @@ export function IllustrationEditor({
                   aria-label={t(label)}
                   min={min}
                   max={max}
-                  value={item[device][field]}
+                  value={item[device][field] ?? 0}
                   onChange={(e) => setPlacement(field, Number(e.target.value))}
                 />
                 <output>
-                  {item[device][field]}
+                  {item[device][field] ?? 0}
                   {unit}
                 </output>
               </span>

@@ -81,6 +81,7 @@ export interface IllustrationPlacement {
   scale: number;
   x: number;
   y: number;
+  rotation?: number;
 }
 export interface ProfileIllustration {
   image: string | null;
