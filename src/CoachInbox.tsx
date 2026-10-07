@@ -210,7 +210,7 @@ export function CoachInbox({
           ))}
         </div>
       ) : (
-        <section className="panel">
+        <section className="panel illustrated-empty-panel">
           {ready && !loading && !error && tab === "unread" && unread === 0 ? (
             <InboxEmpty illustration={illustration} />
           ) : (

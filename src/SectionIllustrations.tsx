@@ -1,6 +1,6 @@
 import { illustrationSource } from "./illustrationAssets";
 import type { CSSProperties, ReactNode } from "react";
-import { Plus } from "lucide-react";
+import { Inbox, Plus } from "lucide-react";
 import { Empty } from "./components";
 import { t } from "./i18n";
 import { illustrationVariables } from "./illustrations";
@@ -11,13 +11,18 @@ import catBack from "./assets/cat-back.webp";
 export function SectionArt({
   illustration,
   back = false,
+  background = false,
 }: {
   illustration: ProfileIllustration;
   back?: boolean;
+  background?: boolean;
 }) {
   if (illustration.enabled === false) return null;
   return (
-    <div className="section-art" aria-hidden="true">
+    <div
+      className={`section-art${background ? " section-art-background" : ""}`}
+      aria-hidden="true"
+    >
       <img
         src={illustrationSource(illustration, back ? catBack : catFace)}
         style={illustrationVariables(illustration) as CSSProperties}
@@ -81,14 +86,10 @@ export function TodayEmpty({
 }) {
   return (
     <div className="personalized-empty">
+      <SectionArt illustration={illustration} background />
       <Empty
         title={t("A fresh page for today")}
         detail={t("Plan a session, or enjoy your recovery day.")}
-        visual={
-          illustration.enabled === false ? undefined : (
-            <SectionArt illustration={illustration} />
-          )
-        }
         action={
           <button className="button primary" onClick={onPlan}>
             <Plus size={16} />
@@ -107,16 +108,13 @@ export function InboxEmpty({
 }) {
   return (
     <div className="personalized-empty">
+      <SectionArt illustration={illustration} back background />
       <Empty
         title={t("All caught up")}
         detail={t(
           "New completions will appear here. Existing workout history stays in Training.",
         )}
-        visual={
-          illustration.enabled === false ? undefined : (
-            <SectionArt illustration={illustration} back />
-          )
-        }
+        action={<Inbox size={28} aria-hidden="true" />}
       />
     </div>
   );

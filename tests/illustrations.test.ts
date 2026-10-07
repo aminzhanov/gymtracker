@@ -44,6 +44,35 @@ test("illustration settings keep phone and desktop independent and reject unsafe
       }),
     );
 });
+test("rotation preserves legacy positions and stays independent for desktop and phone", () => {
+  const value = structuredClone(DEFAULT_ILLUSTRATIONS);
+  assert.equal(
+    illustrationVariables(value.todayEmpty)["--art-rotation"],
+    "0deg",
+  );
+  value.todayEmpty.desktop.rotation = 45;
+  value.todayEmpty.desktop.x = 100;
+  value.todayEmpty.phone.rotation = -90;
+  value.todayEmpty.phone.x = -100;
+  const saved = validateIllustrations(value);
+  assert.equal(saved.todayEmpty.desktop.rotation, 45);
+  assert.equal(saved.todayEmpty.phone.rotation, -90);
+  const variables = illustrationVariables(saved.todayEmpty);
+  assert.equal(variables["--art-rotation"], "45deg");
+  assert.equal(variables["--art-phone-rotation"], "-90deg");
+  assert.equal(variables["--art-position-x"], "100%");
+  assert.equal(variables["--art-phone-position-x"], "0%");
+  for (const rotation of [NaN, Infinity, -181, 181, null, "45"])
+    assert.throws(() =>
+      validateIllustrations({
+        ...value,
+        todayEmpty: {
+          ...value.todayEmpty,
+          phone: { ...value.todayEmpty.phone, rotation },
+        },
+      }),
+    );
+});
 test("legacy profiles gain new placements without changing original art, and every slot is validated", () => {
   const legacy = {
     dashboard: structuredClone(DEFAULT_ILLUSTRATIONS.dashboard),
@@ -202,6 +231,9 @@ test("illustration migration is rerunnable, coach scoped, and separate from trai
     await save(coach, DEFAULT_ILLUSTRATIONS);
     settings.todayEmpty.image = null;
     settings.todayEmpty.preset = "sticker21";
+    // Rotation uses existing JSON settings; no database update is needed.
+    settings.todayEmpty.desktop.rotation = 45;
+    settings.todayEmpty.phone.rotation = -90;
     await save(athlete, settings);
     assert.deepEqual(
       (await load(athlete)).rows[0].load_profile_illustrations.illustrations,

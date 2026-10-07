@@ -3913,6 +3913,7 @@ summary {
   right: calc(-62px - var(--art-x, 0px));
   bottom: calc(-55px - var(--art-y, 0px));
   object-fit: contain;
+  transform: rotate(var(--art-rotation, 0deg));
   z-index: 0;
   pointer-events: none;
   user-select: none;
@@ -4057,6 +4058,7 @@ summary {
     width: calc(151px * var(--art-phone-scale, 1));
     right: calc(-64px - var(--art-phone-x, 0px));
     bottom: calc(-24px - var(--art-phone-y, 0px));
+    transform: rotate(var(--art-phone-rotation, 0deg));
   }
   .dashboard-welcome h1 {
     padding-right: 100px;
@@ -5686,7 +5688,7 @@ button.stat-detail-row:hover {
   height: calc(175px * var(--art-scale, 1));
   max-width: none;
   object-fit: contain;
-  transform: translateX(-50%) rotate(-5deg);
+  transform: translateX(-50%) rotate(calc(-5deg + var(--art-rotation, 0deg)));
   z-index: 0;
   pointer-events: none;
   user-select: none;
@@ -5908,15 +5910,29 @@ button.stat-detail-row:hover {
   height: auto;
   left: calc(50% + var(--art-x, 0px));
   top: calc(50% + var(--art-y, 0px));
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) rotate(var(--art-rotation, 0deg));
 }
-.personalized-empty .section-art {
-  height: 165px;
-  max-width: 320px;
-  margin: 0 auto 12px;
+.illustrated-empty-panel {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
 }
-.personalized-empty .section-art img {
-  width: calc(160px * var(--art-scale, 1));
+.illustrated-empty-panel > .panel-title,
+.personalized-empty > .empty {
+  position: relative;
+  z-index: 1;
+}
+.personalized-empty .section-art-background {
+  position: absolute;
+  inset: 0;
+  height: auto;
+  z-index: 0;
+  user-select: none;
+}
+.section-art-background img {
+  width: calc(320px * var(--art-scale, 1));
+  left: var(--art-position-x, 50%);
+  top: var(--art-position-y, 50%);
 }
 .message-fields .illustration-visible {
   display: flex;
@@ -5969,12 +5985,12 @@ button.stat-detail-row:hover {
     width: calc(103px * var(--art-phone-scale, 1));
     left: calc(50% + var(--art-phone-x, 0px));
     top: calc(50% + var(--art-phone-y, 0px));
+    transform: translate(-50%, -50%) rotate(var(--art-phone-rotation, 0deg));
   }
-  .personalized-empty .section-art {
-    height: 145px;
-  }
-  .personalized-empty .section-art img {
-    width: calc(140px * var(--art-phone-scale, 1));
+  .section-art-background img {
+    width: calc(220px * var(--art-phone-scale, 1));
+    left: var(--art-phone-position-x, 50%);
+    top: var(--art-phone-position-y, 50%);
   }
   .page-head.illustrated-page-head.without-art {
     grid-template-columns: minmax(0, 1fr);
