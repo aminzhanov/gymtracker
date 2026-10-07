@@ -1425,7 +1425,7 @@ export default function App() {
                         value={illustrations}
                         ready={illustrationsReady}
                         messages={messages}
-                        name={data.settings.name}
+                        data={data}
                         onSave={async (next) => {
                           if (demo)
                             localStorage.setItem(

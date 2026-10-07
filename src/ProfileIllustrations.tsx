@@ -1,28 +1,27 @@
 import { useState, type CSSProperties } from "react";
 import { Save } from "lucide-react";
 import { t } from "./i18n";
-import type { ProfileIllustrations, CoachMessages } from "./types";
+import type { ProfileIllustrations, CoachMessages, AppData } from "./types";
+import { DashboardIllustrationPreview } from "./DashboardIllustrationPreview";
 import {
   DEFAULT_ILLUSTRATIONS,
   illustrationVariables,
   prepareIllustration,
   validateIllustrations,
 } from "./illustrations";
-import catFace from "./assets/cat-face.webp";
 import catBack from "./assets/cat-back.webp";
-import { dateKey, fullDate } from "./model";
 
 export function IllustrationEditor({
   value,
   ready,
   messages,
-  name,
+  data,
   onSave,
 }: {
   value: ProfileIllustrations;
   ready: boolean;
   messages: CoachMessages;
-  name: string;
+  data: AppData;
   onSave: (value: ProfileIllustrations) => Promise<void>;
 }) {
   const [draft, setDraft] = useState(value);
@@ -132,34 +131,12 @@ export function IllustrationEditor({
         </div>
         <div className="illustration-preview-wrap">
           {target === "dashboard" ? (
-            <section
-              className={`welcome dashboard-welcome illustration-preview illustration-preview-${mode}`}
-            >
-              <div className="welcome-content">
-                <div className="welcome-intro">
-                  <span className="eyebrow">
-                    {t("LET'S MAKE TODAY A GOOD ONE")}
-                  </span>
-                  <h1>
-                    {t("Hey ")} {name} 💪
-                  </h1>
-                  <p className="personal-message">{t(messages.dashboard)}</p>
-                  <span className="welcome-date">{fullDate(dateKey())}</span>
-                  <img
-                    className="dashboard-cat"
-                    src={item.image || catFace}
-                    style={illustrationVariables(item) as CSSProperties}
-                    alt=""
-                    draggable={false}
-                  />
-                </div>
-                <div className="welcome-stat-tags">
-                  <div className="welcome-stat-tag welcome-stat-strength">
-                    {t("Strength · 30 days")}
-                  </div>
-                </div>
-              </div>
-            </section>
+            <DashboardIllustrationPreview
+              data={data}
+              message={messages.dashboard}
+              illustration={item}
+              mode={mode}
+            />
           ) : (
             <div className="illustration-menu-preview">
               <div className="sidebar-cheer-scene">

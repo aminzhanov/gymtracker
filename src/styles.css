@@ -3908,7 +3908,7 @@ summary {
 }
 .dashboard-welcome .dashboard-cat {
   position: absolute;
-  width: calc(clamp(230px, 21vw, 290px) * var(--art-scale, 1));
+  width: calc(250px * var(--art-scale, 1));
   height: auto;
   right: calc(-62px - var(--art-x, 0px));
   bottom: calc(-55px - var(--art-y, 0px));
@@ -4054,7 +4054,7 @@ summary {
     min-height: 150px;
   }
   .dashboard-welcome .dashboard-cat {
-    width: calc(clamp(150px, 42vw, 185px) * var(--art-phone-scale, 1));
+    width: calc(151px * var(--art-phone-scale, 1));
     right: calc(-64px - var(--art-phone-x, 0px));
     bottom: calc(-24px - var(--art-phone-y, 0px));
   }
@@ -5739,84 +5739,18 @@ button.stat-detail-row:hover {
   overflow-x: auto;
   margin: 16px 0;
 }
-.illustration-preview {
-  margin: 0;
+/* The card keeps its native geometry; only the whole preview is scaled. */
+.dashboard-illustration-preview {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
   pointer-events: none;
 }
-.illustration-preview-desktop {
-  width: 640px;
-  min-width: 640px;
-  padding: 26px 32px;
-  display: flex;
-}
-.illustration-preview-desktop .welcome-content {
-  padding-right: 175px;
-}
-.illustration-preview-desktop .welcome-intro {
-  position: static;
-  min-height: 0;
-}
-.illustration-preview-desktop .dashboard-cat {
-  width: calc(250px * var(--art-scale, 1));
-  right: calc(-62px - var(--art-x, 0px));
-  bottom: calc(-55px - var(--art-y, 0px));
-}
-.illustration-preview-desktop h1 {
-  padding-right: 0;
-  font-size: 37px;
-}
-.illustration-preview-desktop .eyebrow {
-  max-width: none;
-}
-.illustration-preview-desktop .personal-message {
-  padding-right: 0;
-  font-size: 21px;
-}
-.illustration-preview-desktop .welcome-date {
-  padding-right: 0;
-}
-.illustration-preview-phone {
-  width: 360px;
-  max-width: 100%;
-  display: block;
-  padding: 22px 18px;
-}
-.illustration-preview-phone .welcome-content {
-  padding-right: 0;
-}
-.illustration-preview-phone .welcome-intro {
-  position: relative;
-  min-height: 150px;
-}
-.illustration-preview-phone .dashboard-cat {
-  width: calc(151px * var(--art-phone-scale, 1));
-  right: calc(-64px - var(--art-phone-x, 0px));
-  bottom: calc(-24px - var(--art-phone-y, 0px));
-}
-.illustration-preview-phone h1 {
-  padding-right: 100px;
-  font-size: 29px;
-}
-.illustration-preview-phone .eyebrow {
-  max-width: calc(100% - 100px);
-  display: block;
-}
-.illustration-preview-phone .personal-message {
-  padding-right: 100px;
-  font-size: 20px;
-  margin-top: 8px;
-}
-.illustration-preview-phone .welcome-date {
-  display: block;
-  padding-right: 100px;
-}
-.illustration-preview-phone .welcome-stat-tags {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-}
-.illustration-preview-phone .welcome-stat-tag {
-  min-height: 64px;
-  border-radius: 22px;
+.dashboard-illustration-preview iframe {
+  position: absolute;
+  top: 0;
+  border: 0;
+  transform-origin: top left;
 }
 .illustration-menu-preview {
   width: 220px;
