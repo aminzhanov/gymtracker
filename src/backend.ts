@@ -17,6 +17,11 @@ const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
 export const supabase = url && key ? createClient(url, key) : null;
 export async function loadProfiles(): Promise<Profile[]> {
   if (!supabase) return [];
+  const roster = await supabase.rpc("load_people");
+  if (!roster.error) return roster.data as Profile[];
+  if (roster.error.code !== "PGRST202" && roster.error.code !== "42883")
+    throw roster.error;
+  // Existing projects retain their direct-coach roster until migration 011.
   const { data, error } = await supabase
     .from("profiles")
     .select("id,name,role,active")

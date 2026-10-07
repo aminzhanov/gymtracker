@@ -68,6 +68,8 @@ export interface Profile {
   name: string;
   role: "coach" | "athlete";
   active: boolean;
+  coachId?: string | null;
+  coachName?: string | null;
 }
 export interface CoachMessages {
   appName: string;

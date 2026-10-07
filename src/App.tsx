@@ -462,6 +462,36 @@ export default function App() {
   const me = demo ? DEMO_PROFILES[0] : profiles.find((p) => p.id === authId);
   const viewing = profiles.find((p) => p.id === owner);
   const coach = me?.role === "coach";
+  useEffect(() => {
+    if (demo || !authId || !coach || page !== "People") return;
+    let active = true;
+    let busy = false;
+    const refresh = async () => {
+      if (!active || busy || document.visibilityState === "hidden") return;
+      busy = true;
+      try {
+        const next = await loadProfiles();
+        if (active)
+          setProfiles((old) =>
+            JSON.stringify(old) === JSON.stringify(next) ? old : next,
+          );
+      } catch (error) {
+        if (active) setError((error as Error).message);
+      } finally {
+        busy = false;
+      }
+    };
+    void refresh();
+    const timer = window.setInterval(() => void refresh(), 30000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [authId, demo, coach, page]);
   const reviewerId = demo ? "demo-self" : (authId ?? "");
   const refreshReviews = async () => {
     if (!coach || !reviewerId) return;
@@ -1312,6 +1342,11 @@ export default function App() {
                             action={<span className="avatar">{p.name[0]}</span>}
                           >
                             <div className="flex">
+                              {p.role === "coach" && (
+                                <span className="badge tint-sky">
+                                  {t("Coach")}
+                                </span>
+                              )}
                               {d?.settings.useABSplit && (
                                 <WeekBadge week={currentWeek(d)} />
                               )}
@@ -1321,6 +1356,11 @@ export default function App() {
                                 {p.active ? t("Active") : t("Inactive")}
                               </span>
                             </div>
+                            {p.coachName && (
+                              <p className="muted">
+                                {t("Coach:")} {p.coachName}
+                              </p>
+                            )}
                             <p>
                               {d
                                 ? t(
@@ -1346,25 +1386,31 @@ export default function App() {
                               className="button primary full"
                               onClick={() => switchOwner(p.id)}
                             >
-                              Open training <ArrowRight size={16} />
+                              {t("Open training")} <ArrowRight size={16} />
                             </button>
-                            {!demo && (
-                              <button
-                                className="text-button"
-                                onClick={async () => {
-                                  const { error } = await supabase!.rpc(
-                                    "set_athlete_active",
-                                    { athlete_id: p.id, is_active: !p.active },
-                                  );
-                                  if (error) setError(error.message);
-                                  else setProfiles(await loadProfiles());
-                                }}
-                              >
-                                {p.active
-                                  ? t("Deactivate access")
-                                  : t("Reactivate access")}
-                              </button>
-                            )}
+                            {!demo &&
+                              p.role === "athlete" &&
+                              (p.coachId === undefined ||
+                                p.coachId === authId) && (
+                                <button
+                                  className="text-button"
+                                  onClick={async () => {
+                                    const { error } = await supabase!.rpc(
+                                      "set_athlete_active",
+                                      {
+                                        athlete_id: p.id,
+                                        is_active: !p.active,
+                                      },
+                                    );
+                                    if (error) setError(error.message);
+                                    else setProfiles(await loadProfiles());
+                                  }}
+                                >
+                                  {p.active
+                                    ? t("Deactivate access")
+                                    : t("Reactivate access")}
+                                </button>
+                              )}
                           </Panel>
                         );
                       })}

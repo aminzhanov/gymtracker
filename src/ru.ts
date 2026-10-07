@@ -1,4 +1,6 @@
 export const ru: Record<string, string> = {
+  Coach: "Тренер",
+  "Coach:": "Тренер:",
   "Search sessions and exercises": "Поиск тренировок и упражнений",
   "Find a session or exercise…": "Найти тренировку или упражнение…",
   "Open search": "Открыть поиск",
