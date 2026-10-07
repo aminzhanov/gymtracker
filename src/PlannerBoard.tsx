@@ -1,4 +1,11 @@
-import { CheckCircle2, Clock3, Copy, SquarePen } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  Clock3,
+  Copy,
+  SquarePen,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { AppData, Session, WorkoutExercise } from "./types";
 import { t, exerciseName } from "./i18n";
@@ -12,6 +19,8 @@ import {
   newExercise,
   parseDate,
   exerciseSummary,
+  volume,
+  doneSets,
 } from "./model";
 import {
   matchingSets,
@@ -291,6 +300,7 @@ export function PlannerBoard({
 }) {
   const compact = useMediaQuery("(max-width: 1150px)");
   const [drafts, setDrafts] = useState<Record<string, Session>>({});
+  const [expandedDone, setExpandedDone] = useState<Record<string, boolean>>({});
   const draftRef = useRef(drafts);
   const dataRef = useRef(data);
   dataRef.current = data;
@@ -346,116 +356,170 @@ export function PlannerBoard({
               </h2>
               {g.sessions.map((original) => {
                 const s = current(original);
+                const completed = s.status === "done";
+                const collapsed = completed && !expandedDone[s.id];
                 return (
                   <article
-                    className={`planner-session ${s.status === "done" ? "planner-session-done" : ""}`}
+                    className={`planner-session ${completed ? "planner-session-done" : ""} ${collapsed ? "planner-session-collapsed" : ""}`}
                     key={s.id}
                   >
-                    <header>
-                      <div className="planner-session-identity">
-                        <h3>
-                          {s.icon} {s.name}
-                        </h3>
-                        <span
-                          className={`planner-status ${s.status === "done" ? "status-done" : ""}`}
-                        >
-                          {s.status === "done" ? (
-                            <CheckCircle2 size={17} />
-                          ) : (
-                            <Clock3 size={17} />
-                          )}
-                          {t(s.status === "done" ? "Completed" : "Planned")}
-                        </span>
-                      </div>
-                      <div className="planner-session-toolbar">
-                        <DateField
-                          hideLabel
-                          label={t("Move to date")}
-                          value={s.date}
-                          onChange={(date) => {
-                            draft({ ...current(s), date });
-                            save(s);
-                          }}
-                        />
-                        <div className="planner-session-actions">
-                          <button
-                            className="button secondary compact"
-                            aria-label={t("Duplicate")}
-                            title={t("Duplicate")}
-                            onClick={() => {
-                              const latest = current(s);
-                              save(s);
-                              onDuplicate(latest);
-                            }}
-                          >
-                            <Copy size={17} aria-hidden="true" />
-                            <span>{t("Duplicate")}</span>
-                          </button>
-                          <button
-                            className="button secondary compact"
-                            aria-label={t("Open full editor")}
-                            title={t("Open full editor")}
-                            onClick={() => {
-                              const latest = current(s);
-                              save(s);
-                              onOpen(latest);
-                            }}
-                          >
-                            <SquarePen size={17} aria-hidden="true" />
-                            <span>{t("Open full editor")}</span>
-                          </button>
-                        </div>
-                      </div>
-                    </header>
-                    {s.exercises.map((e) => (
-                      <ExerciseRow
-                        key={e.id}
-                        e={e}
-                        s={s}
-                        previous={previousPlannerExercise(
-                          preview.sessions,
-                          s,
-                          e,
-                        )}
-                        onDraft={(next) => {
-                          const latest = current(s);
-                          draft({
-                            ...latest,
-                            exercises: latest.exercises.map((x) =>
-                              x.id === e.id ? next : x,
-                            ),
-                          });
-                        }}
-                        onSave={() => save(s)}
-                      />
-                    ))}
-                    <select
-                      aria-label={`${t("Add exercise")} · ${s.name}`}
-                      value=""
-                      onChange={(ev) => {
-                        const found = data.exercises.find(
-                          (x) => x.id === ev.target.value,
-                        );
-                        if (found) {
-                          const latest = current(s);
-                          draft({
-                            ...latest,
-                            exercises: [
-                              ...latest.exercises,
-                              newExercise(found.id, found.name),
-                            ],
-                          });
-                          save(s);
+                    {collapsed ? (
+                      <button
+                        className="planner-completed-summary"
+                        aria-expanded={false}
+                        aria-label={`${t("Expand completed session")} · ${s.name}`}
+                        onClick={() =>
+                          setExpandedDone((old) => ({ ...old, [s.id]: true }))
                         }
-                      }}
-                    >
-                      <option value="">+ {t("Add exercise")}</option>
-                      {data.exercises.map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {exerciseName(e.name, e.id)}
-                        </option>
-                      ))}
-                    </select>
+                      >
+                        <span className="planner-completed-title">
+                          <strong>
+                            {s.icon} {s.name}
+                          </strong>
+                          <span className="planner-status status-done">
+                            <CheckCircle2 size={17} />
+                            {t("Completed")}
+                          </span>
+                        </span>
+                        <span className="planner-completed-meta">
+                          <span>{shortDate(s.date)}</span>
+                          <span>
+                            {s.exercises.length} {t("exercises")}
+                          </span>
+                          <span>
+                            {doneSets(s).length} {t("completed sets")}
+                          </span>
+                          <span>{number(volume(s))} kg</span>
+                        </span>
+                        <ChevronDown size={20} aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <>
+                        <header>
+                          <div className="planner-session-identity">
+                            <h3>
+                              {s.icon} {s.name}
+                            </h3>
+                            <span
+                              className={`planner-status ${s.status === "done" ? "status-done" : ""}`}
+                            >
+                              {s.status === "done" ? (
+                                <CheckCircle2 size={17} />
+                              ) : (
+                                <Clock3 size={17} />
+                              )}
+                              {t(s.status === "done" ? "Completed" : "Planned")}
+                            </span>
+                            {completed && (
+                              <button
+                                type="button"
+                                className="button secondary compact planner-collapse"
+                                aria-expanded={true}
+                                aria-label={`${t("Collapse completed session")} · ${s.name}`}
+                                onClick={() => {
+                                  save(s);
+                                  setExpandedDone((old) => ({
+                                    ...old,
+                                    [s.id]: false,
+                                  }));
+                                }}
+                              >
+                                <ChevronUp size={17} />
+                                <span>{t("Collapse")}</span>
+                              </button>
+                            )}
+                          </div>
+                          <div className="planner-session-toolbar">
+                            <DateField
+                              hideLabel
+                              label={t("Move to date")}
+                              value={s.date}
+                              onChange={(date) => {
+                                draft({ ...current(s), date });
+                                save(s);
+                              }}
+                            />
+                            <div className="planner-session-actions">
+                              <button
+                                className="button secondary compact"
+                                aria-label={t("Duplicate")}
+                                title={t("Duplicate")}
+                                onClick={() => {
+                                  const latest = current(s);
+                                  save(s);
+                                  onDuplicate(latest);
+                                }}
+                              >
+                                <Copy size={17} aria-hidden="true" />
+                                <span>{t("Duplicate")}</span>
+                              </button>
+                              <button
+                                className="button secondary compact"
+                                aria-label={t("Open full editor")}
+                                title={t("Open full editor")}
+                                onClick={() => {
+                                  const latest = current(s);
+                                  save(s);
+                                  onOpen(latest);
+                                }}
+                              >
+                                <SquarePen size={17} aria-hidden="true" />
+                                <span>{t("Open full editor")}</span>
+                              </button>
+                            </div>
+                          </div>
+                        </header>
+                        {s.exercises.map((e) => (
+                          <ExerciseRow
+                            key={e.id}
+                            e={e}
+                            s={s}
+                            previous={previousPlannerExercise(
+                              preview.sessions,
+                              s,
+                              e,
+                            )}
+                            onDraft={(next) => {
+                              const latest = current(s);
+                              draft({
+                                ...latest,
+                                exercises: latest.exercises.map((x) =>
+                                  x.id === e.id ? next : x,
+                                ),
+                              });
+                            }}
+                            onSave={() => save(s)}
+                          />
+                        ))}
+                        <select
+                          aria-label={`${t("Add exercise")} · ${s.name}`}
+                          value=""
+                          onChange={(ev) => {
+                            const found = data.exercises.find(
+                              (x) => x.id === ev.target.value,
+                            );
+                            if (found) {
+                              const latest = current(s);
+                              draft({
+                                ...latest,
+                                exercises: [
+                                  ...latest.exercises,
+                                  newExercise(found.id, found.name),
+                                ],
+                              });
+                              save(s);
+                            }
+                          }}
+                        >
+                          <option value="">+ {t("Add exercise")}</option>
+                          {data.exercises.map((e) => (
+                            <option key={e.id} value={e.id}>
+                              {exerciseName(e.name, e.id)}
+                            </option>
+                          ))}
+                        </select>
+                      </>
+                    )}
                   </article>
                 );
               })}

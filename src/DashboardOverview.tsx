@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
+import { DEFAULT_ILLUSTRATIONS, illustrationVariables } from "./illustrations";
+import type { ProfileIllustration } from "./types";
 import { dashboardStats } from "./dashboardStats";
 import { t, exerciseName } from "./i18n";
 import type { AppData, Session } from "./types";
@@ -19,10 +21,12 @@ export function DashboardOverview({
   data,
   message,
   onSession,
+  illustration = DEFAULT_ILLUSTRATIONS.dashboard,
 }: {
   data: AppData;
   message: string;
   onSession: (session: Session) => void;
+  illustration?: ProfileIllustration;
 }) {
   const today = dateKey();
   const { trend, lifting, volumeSessions, recordEvents } = dashboardStats(
@@ -55,7 +59,8 @@ export function DashboardOverview({
             <span className="welcome-date">{fullDate(today)}</span>
             <img
               className="dashboard-cat"
-              src={catFace}
+              src={illustration.image || catFace}
+              style={illustrationVariables(illustration) as CSSProperties}
               width={512}
               height={512}
               alt=""

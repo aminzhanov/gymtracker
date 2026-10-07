@@ -75,3 +75,17 @@ export interface CoachMessages {
   sidebar: string;
 }
 export type TechniqueVideos = Record<string, string>;
+export interface IllustrationPlacement {
+  scale: number;
+  x: number;
+  y: number;
+}
+export interface ProfileIllustration {
+  image: string | null;
+  desktop: IllustrationPlacement;
+  phone: IllustrationPlacement;
+}
+export interface ProfileIllustrations {
+  dashboard: ProfileIllustration;
+  menu: ProfileIllustration;
+}

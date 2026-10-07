@@ -729,4 +729,28 @@ export const ru: Record<string, string> = {
     "Меньший вес или меньше повторений могут отражать намеренно лёгкую тренировку. График показывает ваши записи.",
   "Tap a point to see its completed sets, previous result and original workout. Volume sums weight × reps for completed sets of each exercise per day.":
     "Нажмите на точку, чтобы увидеть выполненные подходы, предыдущий результат и тренировку. Объём — сумма веса × повторений выполненных подходов упражнения за день.",
+  Illustrations: "Иллюстрации",
+  "Customize images for this profile. Transparent images work best.":
+    "Настройте изображения для этого профиля. Лучше использовать прозрачный фон.",
+  Placement: "Размещение",
+  Layout: "Устройство",
+  Desktop: "Компьютер",
+  Phone: "Телефон",
+  "Upload image": "Загрузить изображение",
+  Preview: "Предпросмотр",
+  "Image size": "Размер изображения",
+  "Left / right": "Влево / вправо",
+  "Up / down": "Вверх / вниз",
+  "Move right or down with positive values. Dashboard phone placement is saved separately.":
+    "Положительные значения сдвигают вправо или вниз. Размещение на телефоне сохраняется отдельно.",
+  "Reset illustration": "Сбросить иллюстрацию",
+  "Save illustrations": "Сохранить иллюстрации",
+  "Illustrations saved.": "Иллюстрации сохранены.",
+  "Could not save illustrations.": "Не удалось сохранить иллюстрации.",
+  "Could not read this image.": "Не удалось прочитать изображение.",
+  "Illustration controls will be available after the account update.":
+    "Настройка иллюстраций станет доступна после обновления базы данных.",
+  "Expand completed session": "Развернуть выполненную тренировку",
+  "Collapse completed session": "Свернуть выполненную тренировку",
+  Collapse: "Свернуть",
 };

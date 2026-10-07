@@ -1,4 +1,8 @@
 import catBack from "./assets/cat-back.webp";
+import { IllustrationEditor } from "./ProfileIllustrations";
+import { DEFAULT_ILLUSTRATIONS, illustrationVariables } from "./illustrations";
+import type { ProfileIllustrations } from "./types";
+import type { CSSProperties } from "react";
 import { SearchResults } from "./SearchResults";
 import { librarySessionWeeks } from "./libraryWeeks";
 import { CoachInbox } from "./CoachInbox";
@@ -59,6 +63,8 @@ import {
   saveWorkoutReview,
   loadLocal,
   loadLocalMessages,
+  loadLocalIllustrations,
+  saveProfileIllustrations,
   saveCoachMessages,
   loadSharedLibrary,
   loadLocalSharedLibrary,
@@ -247,6 +253,10 @@ export default function App() {
   const [programPreferenceReady, setProgramPreferenceReady] =
     useState(!supabase);
   const [messages, setMessages] = useState<CoachMessages>(DEFAULT_MESSAGES);
+  const [illustrations, setIllustrations] = useState<ProfileIllustrations>(
+    DEFAULT_ILLUSTRATIONS,
+  );
+  const [illustrationsReady, setIllustrationsReady] = useState(!supabase);
   const [messagesReady, setMessagesReady] = useState(!supabase);
   const [languageReady, setLanguageReady] = useState(!supabase);
   const [appNameReady, setAppNameReady] = useState(!supabase);
@@ -371,6 +381,8 @@ export default function App() {
     setError("");
     setData(null);
     setMessages(DEFAULT_MESSAGES);
+    setIllustrations(DEFAULT_ILLUSTRATIONS);
+    setIllustrationsReady(false);
     setMessagesReady(false);
     setLanguageReady(false);
     setAppNameReady(false);
@@ -395,6 +407,8 @@ export default function App() {
           programPreferenceReady: true,
           trainingWeeksReady: true,
           messages: loadLocalMessages(owner),
+          illustrations: loadLocalIllustrations(owner),
+          illustrationsReady: true,
           messagesReady: true,
           appNameReady: true,
           techniqueVideos: loadLocalSharedLibrary(owner).techniqueVideos,
@@ -408,6 +422,8 @@ export default function App() {
         setProgramPreferenceReady(result.programPreferenceReady);
         setTrainingWeeksReady(result.trainingWeeksReady);
         setMessages(result.messages);
+        setIllustrations(result.illustrations);
+        setIllustrationsReady(result.illustrationsReady);
         setMessagesReady(result.messagesReady);
         setAppNameReady(result.appNameReady);
         setLanguageReady(result.languageReady);
@@ -779,7 +795,8 @@ export default function App() {
         <div className="sidebar-cheer-scene">
           <img
             className="sidebar-cat"
-            src={catBack}
+            src={illustrations.menu.image || catBack}
+            style={illustrationVariables(illustrations.menu) as CSSProperties}
             width={512}
             height={512}
             alt=""
@@ -990,6 +1007,7 @@ export default function App() {
                     key={owner}
                     data={data}
                     message={messages.dashboard}
+                    illustration={illustrations.dashboard}
                     onSession={setEditor}
                   />
                   <div className="dashboard-grid">
@@ -1400,6 +1418,23 @@ export default function App() {
                           else
                             await saveCoachMessages(owner, next, appNameReady);
                           if (messageOwner.current === owner) setMessages(next);
+                        }}
+                      />
+                      <IllustrationEditor
+                        key={`illustrations-${owner}`}
+                        value={illustrations}
+                        ready={illustrationsReady}
+                        messages={messages}
+                        name={data.settings.name}
+                        onSave={async (next) => {
+                          if (demo)
+                            localStorage.setItem(
+                              `liftlog-illustrations-${owner}`,
+                              JSON.stringify(next),
+                            );
+                          else await saveProfileIllustrations(owner, next);
+                          if (messageOwner.current === owner)
+                            setIllustrations(next);
                         }}
                       />
                     </Panel>

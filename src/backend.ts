@@ -5,6 +5,8 @@ import type { AppData, Profile, CoachMessages, TechniqueVideos } from "./types";
 import { DEFAULT_MESSAGES, validateMessages } from "./messages";
 import { driveVideoLink, normalizeTechniqueVideos } from "./technique";
 import { emptyData, validateBackup } from "./model";
+import { DEFAULT_ILLUSTRATIONS, validateIllustrations } from "./illustrations";
+import type { ProfileIllustrations } from "./types";
 import {
   mergeLocalLibraries,
   exerciseNameKey,
@@ -27,23 +29,25 @@ export async function loadCloud(owner: string) {
     target_owner: owner,
   });
   if (error) throw error;
-  const [messageResult, nameResult, videoResult, library] = await Promise.all([
-    supabase!
-      .from("coach_messages")
-      .select("dashboard_message,sidebar_message")
-      .eq("owner_user_id", owner)
-      .maybeSingle(),
-    supabase!
-      .from("coach_messages")
-      .select("app_name")
-      .eq("owner_user_id", owner)
-      .maybeSingle(),
-    supabase!
-      .from("exercise_technique_videos")
-      .select("exercise_id,drive_file_id,resource_key")
-      .eq("owner_user_id", owner),
-    loadSharedLibrary(owner),
-  ]);
+  const [messageResult, nameResult, videoResult, library, illustrations] =
+    await Promise.all([
+      supabase!
+        .from("coach_messages")
+        .select("dashboard_message,sidebar_message")
+        .eq("owner_user_id", owner)
+        .maybeSingle(),
+      supabase!
+        .from("coach_messages")
+        .select("app_name")
+        .eq("owner_user_id", owner)
+        .maybeSingle(),
+      supabase!
+        .from("exercise_technique_videos")
+        .select("exercise_id,drive_file_id,resource_key")
+        .eq("owner_user_id", owner),
+      loadSharedLibrary(owner),
+      loadProfileIllustrations(owner),
+    ]);
   const { data: messages, error: messagesError } = messageResult;
   const validated = validateBackup(data.data);
   return {
@@ -72,6 +76,8 @@ export async function loadCloud(owner: string) {
       : DEFAULT_MESSAGES,
     messagesReady: !messagesError,
     appNameReady: !nameResult.error,
+    illustrations: illustrations.value,
+    illustrationsReady: illustrations.ready,
     techniqueVideos:
       library?.techniqueVideos ??
       (Object.fromEntries(
@@ -229,6 +235,38 @@ export function loadLocalMessages(owner: string): CoachMessages {
   } catch {
     return DEFAULT_MESSAGES;
   }
+}
+export function loadLocalIllustrations(owner: string): ProfileIllustrations {
+  try {
+    const raw = localStorage.getItem(`liftlog-illustrations-${owner}`);
+    return raw ? validateIllustrations(JSON.parse(raw)) : DEFAULT_ILLUSTRATIONS;
+  } catch {
+    return DEFAULT_ILLUSTRATIONS;
+  }
+}
+export async function loadProfileIllustrations(owner: string) {
+  const { data, error } = await supabase!
+    .from("profile_illustrations")
+    .select("illustrations")
+    .eq("owner_user_id", owner)
+    .maybeSingle();
+  if (error && !["PGRST205", "42P01"].includes(error.code)) throw error;
+  return {
+    value: data
+      ? validateIllustrations(data.illustrations)
+      : DEFAULT_ILLUSTRATIONS,
+    ready: !error,
+  };
+}
+export async function saveProfileIllustrations(
+  owner: string,
+  value: ProfileIllustrations,
+) {
+  const { error } = await supabase!.rpc("save_profile_illustrations", {
+    target_owner: owner,
+    payload: validateIllustrations(value),
+  });
+  if (error) throw new Error(error.message || "Could not save illustrations.");
 }
 export async function saveCloud(
   owner: string,
